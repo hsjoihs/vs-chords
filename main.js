@@ -19,7 +19,7 @@ const PRESETS = [
     "Cmaj7 → A7 → Dm7 → G7",
     "C → Am → F → G",
     "Cm7b5 → F7 → B♭maj7",
-    "Gm → F♯+ → B♭/F → Eø",
+    "Gm → G♭+ → B♭/F → Eø",
     "Am7 → Dø(9,13)omit3 → G7(b9,13)omit5 → C",
 ];
 
@@ -319,16 +319,16 @@ function build() {
             const d = Math.abs(mv.dist);
             if (d === 0) {
                 // no change: thick sturdy solid line
-                group.add(tube(p0, p1, COLORS.voiceLeading.hold, 0.055));
+                group.add(tube(p0, p1, COLORS.voiceLeading.hold, 0.1));
             } else if (d === 1) {
                 // semitone: dense dotted line
-                dashLine(p0, p1, COLORS.voiceLeading.semitone, 0.036, 24, 0.32);
+                dashLine(p0, p1, COLORS.voiceLeading.semitone, 0.07, 12, 0.5);
             } else if (d === 2) {
                 // whole tone: dashed line (denser than a leap)
-                dashLine(p0, p1, COLORS.voiceLeading.wholeTone, 0.036, 9, 0.55);
+                dashLine(p0, p1, COLORS.voiceLeading.wholeTone, 0.049, 9, 0.55);
             } else {
                 // larger leap: sparse dashes
-                dashLine(p0, p1, COLORS.voiceLeading.leap, 0.03, 6, 0.5);
+                dashLine(p0, p1, COLORS.voiceLeading.leap, 0.0343, 6, 0.5);
             }
         });
     }
