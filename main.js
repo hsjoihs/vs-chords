@@ -33,6 +33,48 @@ function noteName(ch, pc) {
     return nameInWindow(pc, ch.fifthStart);
 }
 
+/* ====================== palette ======================
+ * All scene colors live here under semantic names so the palette can be
+ * swapped wholesale later. Values mirror the CSS custom properties in
+ * style.css (--tritone, --whole, --semitone, --voice, --accent, --accent2);
+ * keep the two in sync if you re-theme. 0x… are WebGL colors, "#…" are the
+ * CSS strings used for the canvas text labels.
+ */
+const COLORS = {
+    scene: {
+        background: 0x0e1116,
+        light: 0xffffff,
+        shell: 0x223049,
+        railEven: 0x2b3a52,
+        railOdd: 0x1f2a3b,
+        baseRing: 0x2b3444,
+        chordRing: 0x1c2738,
+    },
+    vertex: 0xffd166,
+    vertexEmissive: 0x3a2c00,
+    // intervals drawn inside a chord, by interval class
+    interval: {
+        tritone: 0xff5d6c,
+        wholeStep: 0xffb454,
+        semitone: 0x5ad17a,
+        other: 0x7fc8ff,
+    },
+    // voice-leading lines between chords, by how far the voice moves
+    voiceLeading: {
+        hold: 0xffd166, // no change
+        semitone: 0x5ad17a, // 1 semitone
+        wholeTone: 0xffb454, // 2 semitones
+        leap: 0xc792ea, // larger
+    },
+    // canvas text labels (CSS color strings)
+    label: {
+        default: "#e6edf3",
+        rail: "#5f6b7a",
+        vertex: "#ffffff",
+        chord: "#4ea1ff",
+    },
+};
+
 /* ====================== three.js scene ====================== */
 let renderer, scene, camera, group;
 const R = 5; // cylinder radius
@@ -47,10 +89,10 @@ function initThree() {
     renderer.setSize(stage.clientWidth, stage.clientHeight);
     stage.appendChild(renderer.domElement);
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0e1116);
+    scene.background = new THREE.Color(COLORS.scene.background);
     camera = new THREE.PerspectiveCamera(45, stage.clientWidth / stage.clientHeight, 0.1, 200);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
-    const dl = new THREE.DirectionalLight(0xffffff, 0.6);
+    scene.add(new THREE.AmbientLight(COLORS.scene.light, 0.85));
+    const dl = new THREE.DirectionalLight(COLORS.scene.light, 0.6);
     dl.position.set(6, 10, 8);
     scene.add(dl);
     group = new THREE.Group();
@@ -139,21 +181,28 @@ function pcPos(pc, y) {
     return new THREE.Vector3(R * Math.cos(a), y, R * Math.sin(a));
 }
 
-function makeLabel(text, color = "#e6edf3") {
+// Build a text sprite. The canvas is sized to the text so long chord symbols
+// (e.g. "Dø(9,13)omit3") are not cropped; worldHeight sets the on-screen size
+// and the sprite's width is derived from the measured text so it never squishes.
+function makeLabel(text, color = COLORS.label.default, worldHeight = 1.6) {
+    const fontPx = 60;
+    const pad = 14;
     const c = document.createElement("canvas");
-    const s = 128;
-    c.width = s;
-    c.height = s;
-    const g = c.getContext("2d");
-    g.font = "bold 60px -apple-system,Arial";
+    let g = c.getContext("2d");
+    g.font = `bold ${fontPx}px -apple-system,Arial`;
+    const textW = Math.ceil(g.measureText(text).width);
+    c.width = textW + pad * 2; // resizing the canvas clears it...
+    c.height = fontPx + pad * 2;
+    g = c.getContext("2d");
+    g.font = `bold ${fontPx}px -apple-system,Arial`; // ...so set the font again
     g.textAlign = "center";
     g.textBaseline = "middle";
     g.fillStyle = color;
-    g.fillText(text, s / 2, s / 2 + 4);
+    g.fillText(text, c.width / 2, c.height / 2);
     const tex = new THREE.CanvasTexture(c);
     tex.minFilter = THREE.LinearFilter;
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
-    sp.scale.set(1.6, 1.6, 1);
+    sp.scale.set(worldHeight * (c.width / c.height), worldHeight, 1);
     return sp;
 }
 
@@ -163,11 +212,21 @@ function tube(p1, p2, color, radius) {
     return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color }));
 }
 
+// dashed/dotted line from p0 to p1: `period` evenly spaced marks, each covering
+// `onFrac` of its cell (small onFrac -> dots, larger -> dashes).
+function dashLine(p0, p1, color, radius, period, onFrac) {
+    for (let s = 0; s < period; s++) {
+        const a = p0.clone().lerp(p1, s / period);
+        const b = p0.clone().lerp(p1, (s + onFrac) / period);
+        group.add(tube(a, b, color, radius));
+    }
+}
+
 function intervalColor(semi) {
-    if (semi === 6) return 0xff5d6c; // tritone
-    if (semi === 2 || semi === 10) return 0xffb454; // whole step (or its inversion)
-    if (semi === 1 || semi === 11) return 0x5ad17a; // semitone
-    return 0x7fc8ff;
+    if (semi === 6) return COLORS.interval.tritone;
+    if (semi === 2 || semi === 10) return COLORS.interval.wholeStep; // whole step or its inversion
+    if (semi === 1 || semi === 11) return COLORS.interval.semitone; // semitone or its inversion
+    return COLORS.interval.other;
 }
 
 function build() {
@@ -182,7 +241,7 @@ function build() {
     const shellGeo = new THREE.CylinderGeometry(R, R, Math.max(totalH + 2, 3), 48, 1, true);
     const shell = new THREE.Mesh(
         shellGeo,
-        new THREE.MeshBasicMaterial({ color: 0x223049, transparent: true, opacity: 0.1, side: THREE.DoubleSide }),
+        new THREE.MeshBasicMaterial({ color: COLORS.scene.shell, transparent: true, opacity: 0.1, side: THREE.DoubleSide }),
     );
     shell.position.y = totalH / 2;
     group.add(shell);
@@ -190,14 +249,13 @@ function build() {
         const a = pcAngle(pc);
         const x = R * Math.cos(a),
             z = R * Math.sin(a);
-        const railColor = pc % 2 === 0 ? 0x2b3a52 : 0x1f2a3b;
+        const railColor = pc % 2 === 0 ? COLORS.scene.railEven : COLORS.scene.railOdd;
         const g = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(x, -1, z),
             new THREE.Vector3(x, totalH + 1, z),
         ]);
         group.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: railColor })));
-        const lbl = makeLabel(NOTE_NAMES[pc], "#5f6b7a");
-        lbl.scale.set(1.0, 1.0, 1);
+        const lbl = makeLabel(NOTE_NAMES[pc], COLORS.label.rail, 1.0);
         lbl.position.set(x * 1.12, -1.6, z * 1.12);
         group.add(lbl);
     }
@@ -207,7 +265,7 @@ function build() {
         const a = (i / 48) * Math.PI * 2;
         ringPts.push(new THREE.Vector3(R * Math.cos(a), -1, R * Math.sin(a)));
     }
-    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts), new THREE.LineBasicMaterial({ color: 0x2b3444 })));
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts), new THREE.LineBasicMaterial({ color: COLORS.scene.baseRing })));
 
     // each chord layer
     chords.forEach((ch, idx) => {
@@ -219,7 +277,7 @@ function build() {
             const a = (i / 48) * Math.PI * 2;
             rp.push(new THREE.Vector3(R * Math.cos(a), y, R * Math.sin(a)));
         }
-        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rp), new THREE.LineBasicMaterial({ color: 0x1c2738 })));
+        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rp), new THREE.LineBasicMaterial({ color: COLORS.scene.chordRing })));
 
         // interior intervals: complete graph among notes
         for (let i = 0; i < pcs.length; i++)
@@ -236,22 +294,21 @@ function build() {
             const p = pcPos(pc, y);
             const dot = new THREE.Mesh(
                 new THREE.SphereGeometry(0.22, 16, 16),
-                new THREE.MeshStandardMaterial({ color: 0xffd166, emissive: 0x3a2c00, roughness: 0.4 }),
+                new THREE.MeshStandardMaterial({ color: COLORS.vertex, emissive: COLORS.vertexEmissive, roughness: 0.4 }),
             );
             dot.position.copy(p);
             group.add(dot);
-            const lbl = makeLabel(noteName(ch, pc), "#ffffff");
+            const lbl = makeLabel(noteName(ch, pc), COLORS.label.vertex);
             lbl.position.copy(p).add(new THREE.Vector3(0, 0.55, 0));
             group.add(lbl);
         });
-        // chord name label, floating outward
-        const cname = makeLabel(ch.symbol, "#4ea1ff");
-        cname.scale.set(2.6, 2.6, 1);
+        // chord name label, floating outward (sized to its text, never cropped)
+        const cname = makeLabel(ch.symbol, COLORS.label.chord, 2.4);
         cname.position.set(0, y, -R - 2.4);
         group.add(cname);
     });
 
-    // voice leading between consecutive chords (dashed via thin segmented tubes)
+    // voice leading between consecutive chords, styled by how far each voice moves
     for (let i = 0; i < chords.length - 1; i++) {
         const y0 = i * LAYER,
             y1 = (i + 1) * LAYER;
@@ -259,12 +316,19 @@ function build() {
         moves.forEach((mv) => {
             const p0 = pcPos(mv.from, y0),
                 p1 = pcPos(mv.to, y1);
-            const segs = 10;
-            for (let s = 0; s < segs; s++) {
-                if (s % 2 === 1) continue;
-                const a = p0.clone().lerp(p1, s / segs),
-                    b = p0.clone().lerp(p1, (s + 1) / segs);
-                group.add(tube(a, b, 0xc792ea, 0.03));
+            const d = Math.abs(mv.dist);
+            if (d === 0) {
+                // no change: thick sturdy solid line
+                group.add(tube(p0, p1, COLORS.voiceLeading.hold, 0.055));
+            } else if (d === 1) {
+                // semitone: dense dotted line
+                dashLine(p0, p1, COLORS.voiceLeading.semitone, 0.036, 24, 0.32);
+            } else if (d === 2) {
+                // whole tone: dashed line (denser than a leap)
+                dashLine(p0, p1, COLORS.voiceLeading.wholeTone, 0.036, 9, 0.55);
+            } else {
+                // larger leap: sparse dashes
+                dashLine(p0, p1, COLORS.voiceLeading.leap, 0.03, 6, 0.5);
             }
         });
     }
