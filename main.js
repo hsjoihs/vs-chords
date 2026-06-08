@@ -61,7 +61,7 @@ const COLORS = {
     },
     // voice-leading lines between chords, by how far the voice moves
     voiceLeading: {
-        hold: 0xffd166, // no change
+        hold: 0x999999, // no change
         semitone: 0x5ad17a, // 1 semitone
         wholeTone: 0xffb454, // 2 semitones
         leap: 0xc792ea, // larger
@@ -319,16 +319,16 @@ function build() {
             const d = Math.abs(mv.dist);
             if (d === 0) {
                 // no change: thick sturdy solid line
-                group.add(tube(p0, p1, COLORS.voiceLeading.hold, 0.1));
+                group.add(tube(p0, p1, COLORS.voiceLeading.hold, 0.15));
             } else if (d === 1) {
                 // semitone: dense dotted line
-                dashLine(p0, p1, COLORS.voiceLeading.semitone, 0.07, 12, 0.5);
+                dashLine(p0, p1, COLORS.voiceLeading.semitone, 0.086, 12, 0.5);
             } else if (d === 2) {
                 // whole tone: dashed line (denser than a leap)
-                dashLine(p0, p1, COLORS.voiceLeading.wholeTone, 0.049, 9, 0.55);
+                dashLine(p0, p1, COLORS.voiceLeading.wholeTone, 0.05, 9, 0.55);
             } else {
                 // larger leap: sparse dashes
-                dashLine(p0, p1, COLORS.voiceLeading.leap, 0.0343, 6, 0.5);
+                dashLine(p0, p1, COLORS.voiceLeading.leap, 0.0289, 6, 0.5);
             }
         });
     }
