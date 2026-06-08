@@ -136,3 +136,78 @@ test("nonsense symbols throw", () => {
     assert.throws(() => T.parseChord("Cbogus"), /Unknown chord/i);
     assert.throws(() => T.parseChord("Gqux9"), /Unknown chord/i);
 });
+
+/* =====================================================================
+ * Line / spiral of fifths — the spelling slider
+ * ===================================================================== */
+
+/* ---- a 12-segment of the spiral, and sliding it ------------------- */
+test("a length-12 window of the spiral of fifths, and a notch left", () => {
+    // the worked example from the brief
+    assert.deepEqual(T.windowFifths(-3), ["E♭", "B♭", "F", "C", "G", "D", "A", "E", "B", "F♯", "C♯", "G♯"]);
+    // shifting one notch toward the flat side
+    assert.deepEqual(T.windowFifths(-4), ["A♭", "E♭", "B♭", "F", "C", "G", "D", "A", "E", "B", "F♯", "C♯"]);
+});
+
+test("the extremes are all-flat and all-sharp", () => {
+    // every 12-window has the 7 naturals plus 5 accidental black keys
+    assert.deepEqual(T.windowFifths(-6), ["G♭", "D♭", "A♭", "E♭", "B♭", "F", "C", "G", "D", "A", "E", "B"]);
+    assert.deepEqual(T.windowFifths(-1), ["F", "C", "G", "D", "A", "E", "B", "F♯", "C♯", "G♯", "D♯", "A♯"]);
+});
+
+test("nameInWindow flips an enharmonic pair as the window slides", () => {
+    // pitch class 6 is F♯ in a sharp window, G♭ in a flat one
+    assert.equal(T.nameInWindow(6, -1), "F♯");
+    assert.equal(T.nameInWindow(6, -6), "G♭");
+    // the white keys never change
+    assert.equal(T.nameInWindow(0, -6), "C");
+    assert.equal(T.nameInWindow(0, -1), "C");
+});
+
+/* ---- auto-fitting the slider to a parsed chord -------------------- */
+// spell a chord's pitch classes through the window auto-chosen for it
+function viaWindow(sym) {
+    const c = T.parseChord(sym);
+    const start = T.bestFifthStart(c.notes);
+    return c.pcs.map((pc) => T.nameInWindow(pc, start)).join(" ");
+}
+
+test("auto-fit reproduces the symbol's spelling for diatonic chords", () => {
+    assert.equal(viaWindow("C"), "C E G");
+    assert.equal(viaWindow("G7"), "G B D F");
+    assert.equal(viaWindow("Fm"), "F A♭ C"); // leans flat, gets A♭ (not G♯)
+    assert.equal(viaWindow("Cm"), "C E♭ G");
+    assert.equal(viaWindow("Cmaj7"), "C E G B");
+    assert.equal(viaWindow("B♭"), "B♭ D F");
+    assert.equal(viaWindow("Eø"), "E G B♭ D");
+    assert.equal(viaWindow("A7"), "A C♯ E G"); // leans sharp, gets C♯
+    assert.equal(viaWindow("D"), "D F♯ A");
+});
+
+test("auto-fit leans the right way even when it cannot be exact", () => {
+    // F♯+ wants a double-sharp (Cx) the slider cannot reach, but it should
+    // still pick a sharp window so F♯ and A♯ are spelled with sharps
+    const c = T.parseChord("F♯+");
+    const start = T.bestFifthStart(c.notes);
+    assert.equal(T.nameInWindow(6, start), "F♯");
+    assert.equal(T.nameInWindow(10, start), "A♯");
+});
+
+test("bestFifthStart stays inside the offered slider range", () => {
+    for (const sym of ["C", "F♯+", "Cdim7", "G♭7", "Am7", "E7", "Fm"]) {
+        const start = T.bestFifthStart(T.parseChord(sym).notes);
+        assert.ok(start >= T.FIFTH_MIN && start <= T.FIFTH_MAX, `${sym} -> ${start} out of range`);
+    }
+});
+
+/* ---- describe(): naming a hand-built set with a tagged root ------- */
+test("describe uses a tagged root and the chosen window", () => {
+    // {F, A♭, C} with F tagged as root, flat window -> "Fm"
+    assert.equal(T.describe([5, 8, 0], 5, -4), "Fm");
+    // same notes, no root tag -> still recognises a minor triad somewhere
+    assert.equal(T.describe([5, 8, 0]), "Fm");
+    // a symmetric diminished seventh: the tagged root names the chord, and the
+    // window decides how that root is spelled
+    assert.equal(T.describe([0, 3, 6, 9], 3, -1), "D♯dim7"); // sharp window: pc3 = D♯
+    assert.equal(T.describe([0, 3, 6, 9], 3, -6), "E♭dim7"); // flat window:  pc3 = E♭
+});

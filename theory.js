@@ -367,32 +367,133 @@
         return false;
     }
 
-    // name a raw pitch-class set (used when the user edits a chord by clicking
-    // notes on the ring; no root context, so chromatic ♯ spelling is fine)
-    function describe(pcs) {
-        if (pcs.length < 2) return pcs.map((p) => NOTE_NAMES[p]).join("");
+    // chord quality keyed by the sorted set of intervals above the root
+    const QUALITY_SUFFIX = {
+        "0,4,7": "",
+        "0,3,7": "m",
+        "0,3,6": "dim",
+        "0,4,8": "aug",
+        "0,4,7,10": "7",
+        "0,4,7,11": "maj7",
+        "0,3,7,10": "m7",
+        "0,3,6,10": "ø",
+        "0,3,6,9": "dim7",
+        "0,4,7,9": "6",
+        "0,3,7,9": "m6",
+        "0,5,7": "sus4",
+        "0,2,7": "sus2",
+        "0,7": "5",
+    };
+
+    // name a raw pitch-class set. When the root is known (the user tagged it
+    // by right-clicking), spell the root through the chosen line-of-fifths
+    // window and append the recognised quality; otherwise fall back to trying
+    // each note as a root.
+    function describe(pcs, rootPc, fifthStart) {
+        if (pcs.length === 0) return "";
+        if (rootPc != null) {
+            const rel = pcs
+                .map((p) => mod12(p - rootPc))
+                .sort((a, b) => a - b);
+            const suffix = QUALITY_SUFFIX[rel.join(",")];
+            const rootName =
+                fifthStart != null ? nameInWindow(rootPc, fifthStart) : NOTE_NAMES[rootPc];
+            if (suffix !== undefined) return rootName + suffix;
+        }
+        const spell = (p) => (fifthStart != null ? nameInWindow(p, fifthStart) : NOTE_NAMES[p]);
+        if (pcs.length < 2) return spell(pcs[0]);
         for (const r of pcs) {
             const rel = pcs.map((p) => mod12(p - r)).sort((a, b) => a - b);
-            const key = rel.join(",");
-            const dict = {
-                "0,4,7": "",
-                "0,3,7": "m",
-                "0,3,6": "dim",
-                "0,4,8": "aug",
-                "0,4,7,10": "7",
-                "0,4,7,11": "maj7",
-                "0,3,7,10": "m7",
-                "0,3,6,10": "m7♭5",
-                "0,3,6,9": "dim7",
-                "0,4,7,9": "6",
-                "0,3,7,9": "m6",
-                "0,5,7": "sus4",
-                "0,2,7": "sus2",
-                "0,7": "5",
-            };
-            if (key in dict) return NOTE_NAMES[r] + dict[key];
+            const suffix = QUALITY_SUFFIX[rel.join(",")];
+            if (suffix !== undefined) return spell(r) + suffix;
         }
-        return pcs.map((p) => NOTE_NAMES[p]).join("·");
+        return pcs.map(spell).join("·");
+    }
+
+    /* ---- line / spiral of fifths -------------------------------------
+     * The Pythagorean spiral of fifths is the infinite chain
+     *   … F♭ C♭ G♭ D♭ A♭ E♭ B♭ F C G D A E B F♯ C♯ G♯ D♯ A♯ E♯ B♯ …
+     * Index 0 is C; +1 is a fifth up (G), -1 a fifth down (F). Adopting a
+     * contiguous length-12 segment as the circle of fifths fixes one spelling
+     * for every pitch class. Sliding the segment toward the flat end adds
+     * flats, toward the sharp end adds sharps.
+     */
+    const FIFTH_LETTERS = ["F", "C", "G", "D", "A", "E", "B"];
+    // range of segment start positions offered by the UI slider 
+    // -8 <= index <= 1 would be the range where it needs no double accidentals: ♭ side reaches F♭/C♭, ♯ side E♯/B♯
+    // However, since dim7 and aug frequently appear in reality, we should be a little more lenient with double accidentals
+    const FIFTH_MIN = -13;
+    const FIFTH_MAX = 6;
+    const FIFTH_NEUTRAL = -3; // tie-break preference: a balanced, central segment
+
+    // name at spiral position i, e.g. fifthName(0)="C", fifthName(6)="F♯"
+    function fifthName(i) {
+        return formatNote(FIFTH_LETTERS[mod7(i + 1)], Math.floor((i + 1) / 7));
+    }
+
+    // the segment [start .. start+11] in fifth order (what the slider selects),
+    // e.g. windowFifths(-3) = ["E♭","B♭","F","C","G","D","A","E","B","F♯","C♯","G♯"]
+    function windowFifths(start) {
+        const out = [];
+        for (let i = start; i < start + 12; i++) out.push(fifthName(i));
+        return out;
+    }
+
+    // the same segment as a pitch-class -> name lookup (index 0..11)
+    function windowSpelling(start) {
+        const names = new Array(12);
+        for (let i = start; i < start + 12; i++) names[mod12(7 * i)] = fifthName(i);
+        return names;
+    }
+
+    function nameInWindow(pc, start) {
+        return fifthName(mateFifthIndex(pc, start));
+    }
+
+    // the unique spiral index in [start, start+11] whose pitch class is pc
+    function mateFifthIndex(pc, start) {
+        // 7*i ≡ pc (mod 12)  ⇒  i ≡ 7*pc (mod 12)  (7 is its own inverse mod 12)
+        let i = mod12(7 * pc);
+        while (i < start) i += 12;
+        while (i > start + 11) i -= 12;
+        return i;
+    }
+
+    function accidentalLoad(name) {
+        let n = 0;
+        for (const ch of name) {
+            if (ch === "♯" || ch === "♭") n += 1;
+            else if (ch === "x") n += 2;
+        }
+        return n;
+    }
+
+    // pick the slider position whose spelling best matches a set of spelled
+    // notes (typically the notes a chord symbol implies). Ties are broken
+    // toward simpler, more central segments.
+    function bestFifthStart(notes) {
+        let best = FIFTH_NEUTRAL;
+        let bestScore = -1,
+            bestLoad = Infinity,
+            bestDist = Infinity;
+        for (let start = FIFTH_MIN; start <= FIFTH_MAX; start++) {
+            const w = windowSpelling(start);
+            let score = 0;
+            for (const n of notes) if (w[n.pc] === n.name) score++;
+            const load = w.reduce((s, nm) => s + accidentalLoad(nm), 0);
+            const dist = Math.abs(start - FIFTH_NEUTRAL);
+            if (
+                score > bestScore ||
+                (score === bestScore &&
+                    (load < bestLoad || (load === bestLoad && dist < bestDist)))
+            ) {
+                best = start;
+                bestScore = score;
+                bestLoad = load;
+                bestDist = dist;
+            }
+        }
+        return best;
     }
 
     return {
@@ -407,5 +508,13 @@
         hasTritone,
         describe,
         formatNote,
+        fifthName,
+        windowFifths,
+        windowSpelling,
+        nameInWindow,
+        bestFifthStart,
+        FIFTH_MIN,
+        FIFTH_MAX,
+        FIFTH_NEUTRAL,
     };
 });

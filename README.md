@@ -17,8 +17,22 @@ python3 -m http.server   # then visit http://localhost:8000
 ```
 
 Type a progression such as `G7 → C`, `Gm → F♯+ → B♭/F → Eø`, or
-`Am7 → Dø(9,13)omit3 → G7(b9,13)omit5 → C`, or click notes on each chord's ring
-to fine‑tune.
+`Am7 → Dø(9,13)omit3 → G7(b9,13)omit5 → C`, or edit each chord on its ring.
+
+### Ring editor
+
+Each chord chip has twelve pitch-class buttons and a spelling slider:
+
+- **Left-click** a button to add or remove that note.
+- **Right-click** a button to tag it as the **root** (highlighted green).
+  Parsing a chord symbol sets the root automatically.
+- **Spelling slider** (_Prefer ♭_ ↔ _Prefer ♯_): the position chooses which
+  contiguous length-12 segment of the spiral of fifths is adopted as the circle
+  of fifths, which fixes the spelling of all twelve notes. Sliding one notch
+  toward the flat side turns, e.g., `E♭ B♭ F C G D A E B F♯ C♯ G♯` into
+  `A♭ E♭ B♭ F C G D A E B F♯ C♯`. When you type a chord symbol, the slider is
+  auto-set to the segment that best matches the symbol's implied enharmonics
+  (so `Fm` lands on a flat segment and shows `A♭`, not `G♯`).
 
 ## Project layout
 
@@ -30,8 +44,6 @@ to fine‑tune.
 | `index.html` | Wires the three together (loads `theory.js` before `main.js`).        |
 | `test/`      | Parser tests for Node's built‑in runner.                              |
 
-The split exists so the music theory can be tested headlessly in Node while the
-exact same file runs in the browser.
 
 ## The parser
 

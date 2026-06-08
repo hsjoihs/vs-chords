@@ -8,7 +8,10 @@
  * ===================================================================== */
 
 /* ====================== state ====================== */
-let chords = []; // [{ symbol, pcs:[...], notes:[{name,pc,deg}]|null }]
+// each chord: { symbol, pcs:[...], rootPc:Number|null, fifthStart:Number }
+// fifthStart is the chord's spelling: which length-12 segment of the spiral of
+// fifths is adopted as the circle of fifths (see theory.js).
+let chords = [];
 
 const PRESETS = [
     "G7 → C",
@@ -20,14 +23,14 @@ const PRESETS = [
     "Am7 → Dø(9,13)omit3 → G7(b9,13)omit5 → C",
 ];
 
-// name of a pitch class within a given chord: prefer the chord's spelling,
-// fall back to the chromatic axis label (e.g. for ring-edited chords).
+// build an editor chord from a parsed symbol, auto-choosing the spelling slider
+function chordFromParsed(c) {
+    return { symbol: c.symbol, pcs: c.pcs, rootPc: c.rootPc, fifthStart: bestFifthStart(c.notes) };
+}
+
+// name of a pitch class within a chord, via that chord's spelling window
 function noteName(ch, pc) {
-    if (ch.notes) {
-        const hit = ch.notes.find((n) => n.pc === pc);
-        if (hit) return hit.name;
-    }
-    return NOTE_NAMES[pc];
+    return nameInWindow(pc, ch.fifthStart);
 }
 
 /* ====================== three.js scene ====================== */
@@ -269,36 +272,89 @@ function build() {
 }
 
 /* ====================== UI ====================== */
+// re-name a hand-edited chord from its notes, tagged root and spelling window
+function renameChord(ch) {
+    ch.symbol = describe(ch.pcs, ch.rootPc, ch.fifthStart);
+}
+
 function renderChips() {
     const wrap = document.getElementById("chips");
     wrap.innerHTML = "";
     chords.forEach((ch, idx) => {
         const chip = document.createElement("div");
         chip.className = "chip";
-        const noteList = ch.pcs.map((p) => noteName(ch, p)).join(" ");
-        chip.innerHTML = `<div class="hd"><div class="nm">${ch.symbol || "chord " + (idx + 1)} <small>${noteList}</small></div>
-      <button class="del">✕</button></div><div class="ring"></div>`;
+        chip.innerHTML = `
+      <div class="hd"><div class="nm"></div><button class="del">✕</button></div>
+      <div class="ring"></div>
+      <div class="spec">
+        <span>Prefer ♭</span>
+        <input class="slider" type="range" min="${FIFTH_MIN}" max="${FIFTH_MAX}" step="1" value="${ch.fifthStart}">
+        <span>Prefer ♯</span>
+      </div>
+      <div class="spechint">left-click: add/remove · right-click: tag root</div>`;
+        const nm = chip.querySelector(".nm");
         const ring = chip.querySelector(".ring");
+        const buttons = [];
+
+        // refresh the chip's text + button labels/classes (cheap, keeps the
+        // slider element alive so dragging it stays smooth)
+        const refresh = () => {
+            nm.innerHTML = `${ch.symbol || "chord " + (idx + 1)} <small>${ch.pcs
+                .map((p) => noteName(ch, p))
+                .join(" ")}</small>`;
+            for (let pc = 0; pc < 12; pc++) {
+                const b = buttons[pc];
+                b.textContent = noteName(ch, pc);
+                b.className = "pc" + (pc === ch.rootPc ? " root" : ch.pcs.includes(pc) ? " on" : "");
+            }
+        };
+
         for (let pc = 0; pc < 12; pc++) {
             const b = document.createElement("div");
-            b.className = "pc" + (ch.pcs.includes(pc) ? " on" : "");
-            b.textContent = NOTE_NAMES[pc];
+            buttons[pc] = b;
+            // left-click: toggle membership
             b.onclick = () => {
-                if (ch.pcs.includes(pc)) ch.pcs = ch.pcs.filter((x) => x !== pc);
-                else ch.pcs = [...ch.pcs, pc].sort((a, b) => a - b);
-                ch.notes = null; // hand-edited: drop the parsed spelling
-                ch.symbol = describe(ch.pcs);
-                renderChips();
+                if (ch.pcs.includes(pc)) {
+                    ch.pcs = ch.pcs.filter((x) => x !== pc);
+                    if (ch.rootPc === pc) ch.rootPc = null; // root must be a member
+                } else {
+                    ch.pcs = [...ch.pcs, pc].sort((a, b) => a - b);
+                }
+                renameChord(ch);
+                refresh();
+                build();
+            };
+            // right-click: tag (or untag) the root
+            b.oncontextmenu = (e) => {
+                e.preventDefault();
+                if (ch.rootPc === pc) {
+                    ch.rootPc = null;
+                } else {
+                    ch.rootPc = pc;
+                    if (!ch.pcs.includes(pc)) ch.pcs = [...ch.pcs, pc].sort((a, b) => a - b);
+                }
+                renameChord(ch);
+                refresh();
                 build();
             };
             ring.appendChild(b);
         }
+
+        // spelling slider: choose which 12-segment of the spiral of fifths to adopt
+        chip.querySelector(".slider").oninput = (e) => {
+            ch.fifthStart = Number(e.target.value);
+            renameChord(ch);
+            refresh(); // relabel buttons live, in place
+            build();
+        };
         chip.querySelector(".del").onclick = () => {
             chords.splice(idx, 1);
             renderChips();
             build();
         };
+
         wrap.appendChild(chip);
+        refresh();
     });
 }
 
@@ -353,7 +409,7 @@ function doRender() {
             err.textContent = "Enter at least one chord.";
             return;
         }
-        chords = parsed.map((c) => ({ symbol: c.symbol, pcs: c.pcs, notes: c.notes }));
+        chords = parsed.map(chordFromParsed);
         renderChips();
         build();
     } catch (e) {
@@ -367,8 +423,7 @@ function setupUI() {
         if (e.key === "Enter") doRender();
     });
     document.getElementById("add").onclick = () => {
-        const c = parseChord("C");
-        chords.push({ symbol: c.symbol, pcs: c.pcs, notes: c.notes });
+        chords.push(chordFromParsed(parseChord("C")));
         renderChips();
         build();
     };
