@@ -1,0 +1,21 @@
+#!/bin/sh
+# Pre-commit hook: block the commit unless the parser tests pass.
+# Enable once per clone with:  git config core.hooksPath .githooks
+# (npm install runs this automatically via the "prepare" script.)
+
+echo "pre-commit: running parser tests..."
+
+# Syntax-check the browser scripts (they reference THREE/window at runtime,
+# so we only parse them here rather than execute).
+node --check theory.js || { echo "theory.js failed syntax check"; exit 1; }
+node --check main.js   || { echo "main.js failed syntax check"; exit 1; }
+
+# Run the test suite (zero dependencies — Node's built-in runner).
+node --test || {
+    echo
+    echo "✗ tests failed — commit aborted."
+    echo "  Fix the failures (or run 'node --test' to see them) and try again."
+    exit 1
+}
+
+echo "✓ tests passed."

@@ -1,0 +1,16 @@
+{
+    "name": "cylindrical-analysis-of-chord-progression",
+    "version": "1.0.0",
+    "description": "Analyze short chord progressions as polygons on an octave cylinder, with correct enharmonic spelling.",
+    "private": true,
+    "type": "commonjs",
+    "scripts": {
+        "test": "node --test",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "prepare": "git config core.hooksPath .githooks || true"
+    },
+    "devDependencies": {
+        "prettier": "^3.3.3"
+    }
+}
