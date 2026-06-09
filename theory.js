@@ -1,5 +1,5 @@
 /* =====================================================================
- * theory.js — pure music-theory core (no DOM, no THREE).
+ * theory.js — pure music-theory core
  *
  * Loadable both as a browser global (attached to window) and as a Node
  * CommonJS module (require), so the exact same code the web page runs is
@@ -113,6 +113,8 @@
 
         ["ø7", { 1: 0, 3: 3, 5: 6, 7: 10 }],
         ["ø", { 1: 0, 3: 3, 5: 6, 7: 10 }],
+
+        ["@", { 1: 0, 2: 2, 5: 6, 7: 10 }],
 
         ["aug7", { 1: 0, 3: 4, 5: 8, 7: 10 }],
         ["augmaj7", { 1: 0, 3: 4, 5: 8, 7: 11 }],
@@ -388,7 +390,7 @@
     const NAME_PREF = [
         "", "m", "dim", "aug", "sus2", "sus4", "5",        
         "6", "m6", "69",
-        "7", "Δ7", "m7", "ø", "dim7", "mM7", "aug7", 
+        "7", "Δ7", "m7", "ø", "@", "dim7", "mM7", "aug7", 
         "9", "maj9", "m9", "add9",
         "11", "m11", "13", "maj13", "m13",
     ];

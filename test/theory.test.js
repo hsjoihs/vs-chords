@@ -45,6 +45,7 @@ const SEVENTHS = [
     ["B♭maj7", "B♭ D F A"],
     ["Cm7b5", "C E♭ G♭ B♭"], // half-diminished spelled with flats
     ["Eø", "E G B♭ D"],
+    ["C@", "C D G♭ B♭"], // blackadder
     ["Bdim7", "B D F A♭"],
     ["Cdim7", "C E♭ G♭ B♭♭"], // diminished 7th really is a double-flat
 ];

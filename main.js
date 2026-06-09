@@ -14,13 +14,16 @@
 let chords = [];
 
 const PRESETS = [
-    "G7 → C",
+    "G7 → C", "E7 → Am",
     "Dm7 → G7 → C",
-    "Cmaj7 → A7 → Dm7 → G7",
+    "CM7 → A7 → Dm7 → G7",
     "C → Am → F → G",
+    "Abdim7 → C6",
+    "G - F#@ - F",
     "Dm → E7/D → C/D → D7",
     "Cm7b5 → F7 → B♭maj7",
     "Gm → G♭+ → B♭/F → Eø",
+    "C - C+ - C - F#@ - BΔ7",
     "Am7 → Dø(9,13)omit3 → G7(b9,13)omit5 → C",
     "EbΔ7 - Dm7 - CΔ7 - Bm7 - AΔ7 - G#m7 - GbΔ7 - Fm7 - EbΔ7"
 ];
