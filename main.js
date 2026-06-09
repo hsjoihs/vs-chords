@@ -59,13 +59,13 @@ const COLORS = {
         semitone: 0x5ad17a,
         other: 0x7fc8ff,
     },
-    // voice-leading lines between chords, by how far the voice moves
+    // connection lines between chords, by how far the note moves (<= whole tone)
     voiceLeading: {
         hold: 0x999999, // no change
         semitone: 0x5ad17a, // 1 semitone
         wholeTone: 0xffb454, // 2 semitones
-        leap: 0xc792ea, // larger
     },
+    heldPane: 0x999999, // 45° wire mesh emphasising a pair of held notes
     // canvas text labels (CSS color strings)
     label: {
         default: "#e6edf3",
@@ -222,6 +222,37 @@ function dashLine(p0, p1, color, radius, period, onFrac) {
     }
 }
 
+// Faint 45° cross-hatch filling the planar rectangle whose vertical sides are
+// the held notes p and q (between heights y0 and y1). Used to emphasise that a
+// pair of notes is held constant across two chords.
+const HATCH_SPACING = 0.55; // world units between mesh lines
+const HATCH_OPACITY = 0.9;
+function hatchPane(p, q, y0, y1, color) {
+    const P0 = pcPos(p, y0),
+        Q0 = pcPos(q, y0);
+    const W = P0.distanceTo(Q0); // pane width  (the interval, as a straight chord)
+    const H = y1 - y0; // pane height (one layer)
+    if (W < 1e-6) return;
+    const dHat = new THREE.Vector3().subVectors(Q0, P0).normalize();
+    const at = (s, t) => P0.clone().addScaledVector(dHat, s).add(new THREE.Vector3(0, t, 0));
+    const pts = [];
+    // "/" family: s - t = c
+    for (let c = -H; c <= W; c += HATCH_SPACING) {
+        const tLo = Math.max(0, -c),
+            tHi = Math.min(H, W - c);
+        if (tHi > tLo) pts.push(at(tLo + c, tLo), at(tHi + c, tHi));
+    }
+    // "\" family: s + t = c
+    for (let c = 0; c <= W + H; c += HATCH_SPACING) {
+        const tLo = Math.max(0, c - W),
+            tHi = Math.min(H, c);
+        if (tHi > tLo) pts.push(at(c - tLo, tLo), at(c - tHi, tHi));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: HATCH_OPACITY });
+    group.add(new THREE.LineSegments(geo, mat));
+}
+
 function intervalColor(semi) {
     if (semi === 6) return COLORS.interval.tritone;
     if (semi === 2 || semi === 10) return COLORS.interval.wholeStep; // whole step or its inversion
@@ -308,12 +339,14 @@ function build() {
         group.add(cname);
     });
 
-    // voice leading between consecutive chords, styled by how far each voice moves
+    // connections between consecutive chords: every pair of notes within a
+    // whole tone, styled by how far the note moves
     for (let i = 0; i < chords.length - 1; i++) {
         const y0 = i * LAYER,
             y1 = (i + 1) * LAYER;
-        const moves = voiceLeading(chords[i].pcs, chords[i + 1].pcs);
-        moves.forEach((mv) => {
+        const A = chords[i].pcs,
+            B = chords[i + 1].pcs;
+        voiceLeading(A, B).forEach((mv) => {
             const p0 = pcPos(mv.from, y0),
                 p1 = pcPos(mv.to, y1);
             const d = Math.abs(mv.dist);
@@ -323,14 +356,18 @@ function build() {
             } else if (d === 1) {
                 // semitone: dense dotted line
                 dashLine(p0, p1, COLORS.voiceLeading.semitone, 0.086, 12, 0.5);
-            } else if (d === 2) {
-                // whole tone: dashed line (denser than a leap)
-                dashLine(p0, p1, COLORS.voiceLeading.wholeTone, 0.05, 9, 0.55);
             } else {
-                // larger leap: sparse dashes
-                dashLine(p0, p1, COLORS.voiceLeading.leap, 0.0289, 6, 0.5);
+                // whole tone: dashed line
+                dashLine(p0, p1, COLORS.voiceLeading.wholeTone, 0.05, 9, 0.55);
             }
         });
+        // each pair of notes held across both chords spans a rectangular pane;
+        // emphasise it with a faint 45° wire mesh
+        const held = A.filter((pc) => B.includes(pc));
+        for (let m = 0; m < held.length; m++)
+            for (let n = m + 1; n < held.length; n++) {
+                hatchPane(held[m], held[n], y0, y1, COLORS.heldPane);
+            }
     }
     renderAnalysis();
 }
@@ -428,35 +465,27 @@ function renderAnalysis() {
         el.innerHTML = "<h3>Analysis</h3><div style='color:var(--muted)'>Add a second chord to see voice leading.</div>";
         return;
     }
-    let html = "<h3>Voice leading</h3>";
+    let html = "<h3>Connections</h3>";
     for (let i = 0; i < chords.length - 1; i++) {
         const A = chords[i],
             B = chords[i + 1];
         html += `<div style="margin:6px 0 4px;font-weight:600;color:var(--accent)">${A.symbol} → ${B.symbol}</div>`;
-        const moves = voiceLeading(A.pcs, B.pcs);
-        let total = 0;
-        moves.forEach((mv) => {
+        voiceLeading(A.pcs, B.pcs).forEach((mv) => {
             const d = mv.dist;
-            total += Math.abs(d);
-            let tag = "hold",
-                txt = "hold";
-            if (Math.abs(d) === 1) {
+            let tag, txt;
+            if (d === 0) {
+                tag = "hold";
+                txt = "held";
+            } else if (Math.abs(d) === 1) {
                 tag = "semi";
                 txt = (d > 0 ? "+" : "") + d + " st";
-            } else if (Math.abs(d) === 2) {
-                tag = "whole";
-                txt = (d > 0 ? "+" : "") + d + " st";
-            } else if (d === 0) {
-                tag = "hold";
-                txt = "—";
             } else {
-                tag = "leap";
+                tag = "whole";
                 txt = (d > 0 ? "+" : "") + d + " st";
             }
             const arrow = `${noteName(A, mv.from)}→${noteName(B, mv.to)}`;
             html += `<div class="mv"><b>${arrow}</b><span class="tag ${tag}">${txt}</span></div>`;
         });
-        html += `<div class="mv" style="margin-top:4px"><span style="color:var(--muted)">total motion</span><b>${total} st</b></div>`;
         if (hasTritone(A.pcs) && !hasTritone(B.pcs)) {
             html += `<div class="hint">Tritone resolves: dissonance released.</div>`;
         }

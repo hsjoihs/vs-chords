@@ -316,46 +316,21 @@
         return Math.abs(dirDistance(a, b));
     }
 
-    // greedy nearest-note matching between two pc-sets (minimal total motion)
+    // Largest step (in semitones) still drawn as a connection between chords.
+    const MAX_VOICE_STEP = 2; // a whole tone
+
+    // Connect every note of A to every note of B that lies within a whole tone
+    // (0, 1 or 2 semitones). Unlike single-voice leading this lets one note fan
+    // out to several neighbours, which reads better for non-choral / pop motion:
+    // e.g. A7 → Dm7 draws C♯→C and C♯→D, plus E→D, E→F, G→F, G→A. Each move is
+    // { from, to, dist } with a signed dist in -2..+2.
     function voiceLeading(A, B) {
         const moves = [];
-        const usedA = new Array(A.length).fill(false);
-        const usedB = new Array(B.length).fill(false);
-        const pairs = [];
-        for (let i = 0; i < A.length; i++)
-            for (let j = 0; j < B.length; j++)
-                pairs.push({ i, j, d: absDistance(A[i], B[j]) });
-        pairs.sort((x, y) => x.d - y.d);
-        for (const p of pairs) {
-            if (usedA[p.i] || usedB[p.j]) continue;
-            usedA[p.i] = usedB[p.j] = true;
-            moves.push({ from: A[p.i], to: B[p.j], dist: dirDistance(A[p.i], B[p.j]) });
-        }
-        for (let i = 0; i < A.length; i++) {
-            if (usedA[i]) continue;
-            let best = 0,
-                bd = 99;
-            for (let j = 0; j < B.length; j++) {
-                const d = absDistance(A[i], B[j]);
-                if (d < bd) {
-                    bd = d;
-                    best = j;
-                }
+        for (const a of A) {
+            for (const b of B) {
+                const dist = dirDistance(a, b);
+                if (Math.abs(dist) <= MAX_VOICE_STEP) moves.push({ from: a, to: b, dist });
             }
-            moves.push({ from: A[i], to: B[best], dist: dirDistance(A[i], B[best]) });
-        }
-        for (let j = 0; j < B.length; j++) {
-            if (usedB[j]) continue;
-            let best = 0,
-                bd = 99;
-            for (let i = 0; i < A.length; i++) {
-                const d = absDistance(A[i], B[j]);
-                if (d < bd) {
-                    bd = d;
-                    best = i;
-                }
-            }
-            moves.push({ from: A[best], to: B[j], dist: dirDistance(A[best], B[j]), appear: true });
         }
         return moves;
     }
@@ -505,6 +480,7 @@
         dirDistance,
         absDistance,
         voiceLeading,
+        MAX_VOICE_STEP,
         hasTritone,
         describe,
         formatNote,

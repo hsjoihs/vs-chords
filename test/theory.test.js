@@ -115,17 +115,39 @@ test("a full progression string parses into the right number of chords", () => {
     assert.equal(q[1].notes.length, 5);
 });
 
-/* ---- voice leading: the G7 → C tritone resolution ------------------ */
-test("G7 → C resolves the tritone by two semitones, 4 st total", () => {
-    const A = T.parseChord("G7").pcs; // 7 11 2 5  (G B D F)
-    const B = T.parseChord("C").pcs; // 0 4 7     (C E G)
-    const moves = T.voiceLeading(A, B);
-    const total = moves.reduce((s, m) => s + Math.abs(m.dist), 0);
-    assert.equal(total, 4);
-    // B(11) → C(0) is +1 ; F(5) → E(4) is -1
-    const byFrom = Object.fromEntries(moves.map((m) => [m.from, m.dist]));
-    assert.equal(byFrom[11], 1, "B should rise a semitone to C");
-    assert.equal(byFrom[5], -1, "F should fall a semitone to E");
+/* ---- connections: every pair within a whole tone ------------------- */
+// collect the moves as an order-independent set of "from→to" pitch-class pairs
+function connections(symA, symB) {
+    return new Set(T.voiceLeading(T.parseChord(symA).pcs, T.parseChord(symB).pcs).map((m) => `${m.from}-${m.to}`));
+}
+
+test("A7 → Dm7 fans each note out to every neighbour within a whole tone", () => {
+    // A=9 C♯=1 E=4 G=7 ;  D=2 F=5 A=9 C=0
+    // expected: A→A, C♯→C, C♯→D, E→D, E→F, G→F, G→A
+    const got = connections("A7", "Dm7");
+    const want = new Set(["9-9", "1-0", "1-2", "4-2", "4-5", "7-5", "7-9"]);
+    assert.deepEqual(got, want);
+});
+
+test("every drawn connection moves by at most a whole tone", () => {
+    for (const [a, b] of [
+        ["G7", "C"],
+        ["Cmaj7", "A7"],
+        ["Dm7", "G7"],
+        ["Am7", "Dm7"],
+    ]) {
+        for (const m of T.voiceLeading(T.parseChord(a).pcs, T.parseChord(b).pcs)) {
+            assert.ok(Math.abs(m.dist) <= T.MAX_VOICE_STEP, `${a}→${b}: ${m.from}->${m.to} = ${m.dist}`);
+        }
+    }
+});
+
+test("G7 → C still shows the tritone resolving by semitones", () => {
+    const A = T.parseChord("G7").pcs; // G B D F
+    const B = T.parseChord("C").pcs; // C E G
+    const conn = connections("G7", "C");
+    assert.ok(conn.has("11-0"), "B → C (+1 semitone)");
+    assert.ok(conn.has("5-4"), "F → E (-1 semitone)");
     assert.equal(T.hasTritone(A), true);
     assert.equal(T.hasTritone(B), false);
 });
