@@ -82,7 +82,9 @@ let renderer, scene, camera, group;
 const R = 5; // cylinder radius
 const LAYER = 4.2; // vertical gap between chords
 let spin = false,
-    showAll = true;
+    showAll = true,
+    showIntervalLabels = true,
+    showConnections = true;
 
 function initThree() {
     const stage = document.getElementById("stage");
@@ -264,6 +266,22 @@ function intervalColor(semi) {
     return 0xff00ff; // should be unreachable
 }
 
+// short label for an interval class (counting the smaller of the two inversions)
+function intervalLabel(semi) {
+    if (semi === 6) return "TT"; // tritone
+    if (semi === 5 || semi === 7) return "P4"; // perfect fourth / fifth
+    if (semi === 4 || semi === 8) return "M3"; // major third / minor sixth
+    if (semi === 3 || semi === 9) return "m3"; // minor third / major sixth
+    if (semi === 2 || semi === 10) return "W"; // whole step
+    if (semi === 1 || semi === 11) return "H"; // half step
+    return "";
+}
+
+// numeric WebGL color -> CSS "#rrggbb" string (for canvas text + DOM legend)
+function hexCss(n) {
+    return "#" + n.toString(16).padStart(6, "0");
+}
+
 function build() {
     clearGroup();
     if (chords.length === 0) return;
@@ -322,7 +340,15 @@ function build() {
                 if (!showAll && !isTri) continue;
                 const col = intervalColor(semi);
                 const rad = isTri ? 0.075 : 0.038;
-                group.add(tube(pcPos(pcs[i], y), pcPos(pcs[j], y), col, rad));
+                const a = pcPos(pcs[i], y),
+                    b = pcPos(pcs[j], y);
+                group.add(tube(a, b, col, rad));
+                if (showIntervalLabels) {
+                    // interval name (H/W/m3/M3/P4/TT) at the segment midpoint
+                    const lbl = makeLabel(intervalLabel(semi), hexCss(col), 0.95);
+                    lbl.position.copy(a.clone().lerp(b, 0.5));
+                    group.add(lbl);
+                }
             }
         // vertices, labelled with the chord's own spelling
         pcs.forEach((pc) => {
@@ -343,35 +369,37 @@ function build() {
         group.add(cname);
     });
 
-    // connections between consecutive chords: every pair of notes within a
-    // whole tone, styled by how far the note moves
-    for (let i = 0; i < chords.length - 1; i++) {
-        const y0 = i * LAYER,
-            y1 = (i + 1) * LAYER;
-        const A = chords[i].pcs,
-            B = chords[i + 1].pcs;
-        voiceLeading(A, B).forEach((mv) => {
-            const p0 = pcPos(mv.from, y0),
-                p1 = pcPos(mv.to, y1);
-            const d = Math.abs(mv.dist);
-            if (d === 0) {
-                // no change: thick sturdy solid line
-                group.add(tube(p0, p1, COLORS.voiceLeading.hold, 0.15));
-            } else if (d === 1) {
-                // semitone: dense dotted line
-                dashLine(p0, p1, COLORS.voiceLeading.semitone, 0.086, 12, 0.5);
-            } else {
-                // whole tone: dashed line
-                dashLine(p0, p1, COLORS.voiceLeading.wholeTone, 0.05, 9, 0.55);
-            }
-        });
-        // each pair of notes held across both chords spans a rectangular pane;
-        // emphasise it with a faint 45° wire mesh
-        const held = A.filter((pc) => B.includes(pc));
-        for (let m = 0; m < held.length; m++)
-            for (let n = m + 1; n < held.length; n++) {
-                hatchPane(held[m], held[n], y0, y1, COLORS.heldPane);
-            }
+    // connections between consecutive chords (toggleable): every pair of notes
+    // within a whole tone, styled by how far the note moves
+    if (showConnections) {
+        for (let i = 0; i < chords.length - 1; i++) {
+            const y0 = i * LAYER,
+                y1 = (i + 1) * LAYER;
+            const A = chords[i].pcs,
+                B = chords[i + 1].pcs;
+            voiceLeading(A, B).forEach((mv) => {
+                const p0 = pcPos(mv.from, y0),
+                    p1 = pcPos(mv.to, y1);
+                const d = Math.abs(mv.dist);
+                if (d === 0) {
+                    // no change: thick sturdy solid line
+                    group.add(tube(p0, p1, COLORS.voiceLeading.hold, 0.15));
+                } else if (d === 1) {
+                    // semitone: dense dotted line
+                    dashLine(p0, p1, COLORS.voiceLeading.semitone, 0.086, 12, 0.5);
+                } else {
+                    // whole tone: dashed line
+                    dashLine(p0, p1, COLORS.voiceLeading.wholeTone, 0.05, 9, 0.55);
+                }
+            });
+            // each pair of notes held across both chords spans a rectangular
+            // pane; emphasise it with a faint 45° wire mesh
+            const held = A.filter((pc) => B.includes(pc));
+            for (let m = 0; m < held.length; m++)
+                for (let n = m + 1; n < held.length; n++) {
+                    hatchPane(held[m], held[n], y0, y1, COLORS.heldPane);
+                }
+        }
     }
     renderAnalysis();
 }
@@ -526,6 +554,14 @@ function setupUI() {
     };
     document.getElementById("tShowAll").onchange = (e) => {
         showAll = e.target.checked;
+        build();
+    };
+    document.getElementById("tIntervalLabels").onchange = (e) => {
+        showIntervalLabels = e.target.checked;
+        build();
+    };
+    document.getElementById("tConnections").onchange = (e) => {
+        showConnections = e.target.checked;
         build();
     };
     document.getElementById("tSpin").onchange = (e) => {

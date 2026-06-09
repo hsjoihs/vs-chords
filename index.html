@@ -30,30 +30,37 @@
     </div>
 
     <div class="block">
-      <h2>Legend</h2>
+      <h2>Inside a chord</h2>
       <div class="legend">
-        <div style="margin-bottom:2px">Inside a chord</div>
-        <div><i style="border-color:var(--semitone)"></i>Half step (1 st)</div>
-        <div><i style="border-color:var(--whole)"></i>Whole step (2 st)</div>
-        <div><i style="border-color:var(--minor3rd)"></i>Minor 3rd (3 st)</div>
-        <div><i style="border-color:var(--major3rd)"></i>Major 3rd (4 st)</div>
-        <div><i style="border-color:var(--p4p5)"></i>Perfect 4th/5th (5 st)</div>
-        <div><i style="border-color:var(--tritone)"></i>Tritone (6 st)</div>
-        <div style="margin:7px 0 2px">Between chords (within a whole tone)</div>
+        <div><i style="border-color:var(--semitone)"></i><b>H</b> — half step (1 st)</div>
+        <div><i style="border-color:var(--whole)"></i><b>W</b> — whole step (2 st)</div>
+        <div><i style="border-color:var(--minor3rd)"></i><b>m3</b> — minor 3rd (3 st)</div>
+        <div><i style="border-color:var(--major3rd)"></i><b>M3</b> — major 3rd (4 st)</div>
+        <div><i style="border-color:var(--p4p5)"></i><b>P4</b> — perfect 4th/5th (5 st)</div>
+        <div><i style="border-color:var(--tritone)"></i><b>TT</b> — tritone (6 st)</div>
+        <div class="toggle"><input type="checkbox" id="tShowAll" checked><label for="tShowAll">Show all interior intervals</label></div>
+        <div class="toggle"><input type="checkbox" id="tIntervalLabels" checked><label for="tIntervalLabels">Label intervals (H/W/m3/M3/P4/TT)</label></div>
+      </div>
+    </div>
+    <div class="block">
+      <h2>Between chords</h2>
+      <div class="legend">
         <div><i style="border-color:#999999"></i>No change — held note (solid)</div>
         <div><i style="border-color:#999999;border-top-style:dotted"></i>Held-note pair → wire-mesh pane</div>
         <div><i style="border-color:var(--semitone);border-top-style:dotted"></i>Semitone move, 1 st (dotted)</div>
         <div><i style="border-color:var(--whole);border-top-style:dashed"></i>Whole-tone move, 2 st (dashed)</div>
+        <div class="toggle"><input type="checkbox" id="tConnections" checked><label for="tConnections">Show between-chord connections</label></div>
       </div>
-      <div class="toggle"><input type="checkbox" id="tShowAll" checked><label for="tShowAll">Show all interior intervals</label></div>
-      <div class="toggle"><input type="checkbox" id="tSpin"><label for="tSpin">Auto-rotate</label></div>
-      <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan.</div>
+      
     </div>
   </div>
 
   <div id="stage">
     <div id="analysis"></div>
-    <div id="overlay">TODO: add some adequate overlay messages</div>
+    <div id="overlay">
+      <div class="toggle"><input type="checkbox" id="tSpin"><label for="tSpin">Auto-rotate</label></div>
+      <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan.</div>
+    </div>
   </div>
 </div>
 
