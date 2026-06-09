@@ -15,6 +15,10 @@ python3 -m http.server   # then visit http://localhost:8000
 
 Type a progression such as `G7 → C`, `Gm → F♯+ → B♭/F → Eø`, or
 `Am7 → Dø(9,13)omit3 → G7(b9,13)omit5 → C`, or edit each chord on its ring.
+**↓ Render** turns the text into chord chips; **↑ To text** turns the chips back
+into a progression string. The two are true inverses at the pitch-class level:
+`parseChord(describe(notes))` always yields the notes you started with, so you
+can edit a chip and convert back without it degrading into a note list.
 
 ### Chord chip
 

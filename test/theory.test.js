@@ -233,3 +233,69 @@ test("describe uses a tagged root and the chosen window", () => {
     assert.equal(T.describe([0, 3, 6, 9], 3, -1), "D♯dim7"); // sharp window: pc3 = D♯
     assert.equal(T.describe([0, 3, 6, 9], 3, -6), "E♭dim7"); // flat window:  pc3 = E♭
 });
+
+/* ---- describe ⟷ parseChord round-trip ----------------------------- */
+// the core contract: naming a set then re-parsing it yields the same notes
+const sortSet = (a) => [...new Set(a)].sort((x, y) => x - y);
+
+const ROUNDTRIP_SYMBOLS = [
+    // triads & suspensions
+    "C", "Cm", "Cdim", "Caug", "Csus2", "Csus4", "C5",
+    // sixths & sevenths
+    "C6", "Cm6", "C69", "C7", "Cmaj7", "Cm7", "Cm7b5", "Eø", "Cdim7", "CmMaj7",
+    // extensions
+    "C9", "Cmaj9", "Cm9", "C11", "Cm11", "C13", "Cmaj13", "Cadd9",
+    // altered dominants
+    "C7b9", "C7#9", "C7#11", "C7b5", "Caug7", "G7(b9,13)omit5",
+    // the awkward ones
+    "F#+", "Dø(9,13)omit3", "Bbmaj7", "A7", "G13", "F#m7b5", "Abm",
+    // slash chords (pc set includes the bass)
+    "C/D", "E7/D", "Bb/F",
+];
+
+test("describe → parseChord round-trips the pitch-class set (named root)", () => {
+    for (const sym of ROUNDTRIP_SYMBOLS) {
+        const c = T.parseChord(sym);
+        const name = T.describe(c.pcs, c.rootPc, null);
+        const got = T.parseChord(name).pcs;
+        assert.deepEqual(sortSet(got), sortSet(c.pcs), `${sym} → "${name}" → ${got}`);
+    }
+});
+
+test("describe → parseChord round-trips with an auto-chosen root", () => {
+    for (const sym of ROUNDTRIP_SYMBOLS) {
+        const c = T.parseChord(sym);
+        const name = T.describe(c.pcs, null, null);
+        const got = T.parseChord(name).pcs;
+        assert.deepEqual(sortSet(got), sortSet(c.pcs), `${sym} → "${name}" → ${got}`);
+    }
+});
+
+test("describe → parseChord round-trips arbitrary pitch-class sets", () => {
+    // deterministic LCG so failures are reproducible
+    let seed = 0x2545f4914f6cdd1d % 2147483647;
+    const rand = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    for (let iter = 0; iter < 500; iter++) {
+        const size = 1 + Math.floor(rand() * 7); // 1..7 notes
+        const set = new Set();
+        while (set.size < size) set.add(Math.floor(rand() * 12));
+        const pcs = [...set];
+        for (const root of [pcs[0], null]) {
+            const name = T.describe(pcs, root, null);
+            const got = T.parseChord(name).pcs;
+            assert.deepEqual(sortSet(got), sortSet(pcs), `set ${pcs} (root ${root}) → "${name}" → ${got}`);
+        }
+    }
+});
+
+// the exact scenario from the bug report: toggling a note off then on must not
+// degrade the chip into an unparseable "C·D·E·…" string
+test("toggling a note keeps the chip a real, re-parseable symbol", () => {
+    const c = T.parseChord("Dø(9,13)omit3"); // D A♭ C E B, root D=2
+    // simulate the ring editor: drop E (pc 4) then add it back, sorted order
+    let pcs = c.pcs.filter((p) => p !== 4);
+    pcs = [...pcs, 4].sort((a, b) => a - b);
+    const name = T.describe(pcs, c.rootPc, -3);
+    assert.ok(!name.includes("·"), `expected a real symbol, got "${name}"`);
+    assert.deepEqual(sortSet(T.parseChord(name).pcs), sortSet(c.pcs), `"${name}"`);
+});

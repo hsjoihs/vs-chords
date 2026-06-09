@@ -18,6 +18,7 @@ const PRESETS = [
     "Dm7 → G7 → C",
     "Cmaj7 → A7 → Dm7 → G7",
     "C → Am → F → G",
+    "Dm → E7/D → C/D → D7",
     "Cm7b5 → F7 → B♭maj7",
     "Gm → G♭+ → B♭/F → Eø",
     "Am7 → Dø(9,13)omit3 → G7(b9,13)omit5 → C",
@@ -549,6 +550,15 @@ function setupUI() {
     document.getElementById("prog").addEventListener("keydown", (e) => {
         if (e.key === "Enter") doRender();
     });
+    // inverse of Render: turn the current chips back into a progression string.
+    // Each chip's symbol is describe()-generated, so it re-parses to the same notes.
+    document.getElementById("toText").onclick = () => {
+        document.getElementById("prog").value = chords
+            .map((ch) => ch.symbol)
+            .filter(Boolean)
+            .join(" → ");
+        document.getElementById("err").textContent = "";
+    };
     document.getElementById("add").onclick = () => {
         chords.push(chordFromParsed(parseChord("C")));
         renderChips();

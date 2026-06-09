@@ -324,12 +324,18 @@
     // out to several neighbours, which reads better for non-choral / pop motion:
     // e.g. A7 → Dm7 draws C♯→C and C♯→D, plus E→D, E→F, G→F, G→A. Each move is
     // { from, to, dist } with a signed dist in -2..+2.
+
+    // HOWEVER, when D and E are held for two chords, we only want D→D and E→E; 
+    // showing D→E and E→D is just visual noise.
     function voiceLeading(A, B) {
         const moves = [];
         for (const a of A) {
             for (const b of B) {
                 const dist = dirDistance(a, b);
-                if (Math.abs(dist) <= MAX_VOICE_STEP) moves.push({ from: a, to: b, dist });
+                if (Math.abs(dist) <= MAX_VOICE_STEP) {
+                    if (A.includes(b) && B.includes(a) && dist !== 0) continue;
+                    else moves.push({ from: a, to: b, dist });
+                }
             }
         }
         return moves;
@@ -342,47 +348,169 @@
         return false;
     }
 
-    // chord quality keyed by the sorted set of intervals above the root
-    const QUALITY_SUFFIX = {
-        "0,4,7": "",
-        "0,3,7": "m",
-        "0,3,6": "dim",
-        "0,4,8": "aug",
-        "0,4,7,10": "7",
-        "0,4,7,11": "maj7",
-        "0,3,7,10": "m7",
-        "0,3,6,10": "ø",
-        "0,3,6,9": "dim7",
-        "0,4,7,9": "6",
-        "0,3,7,9": "m6",
-        "0,5,7": "sus4",
-        "0,2,7": "sus2",
-        "0,7": "5",
+    /* ---- naming a pitch-class set (inverse of parseChord) -------------
+     * describe() round-trips: parseChord(describe(pcs, root, …)).pcs is the same
+     * pitch-class set as `pcs`. It (1) finds the richest chord quality from the
+     * parser's own QUALITIES table whose notes are all present, then expresses
+     * the remaining notes as parenthesised tensions; or (2) if no quality fits,
+     * falls back to a major triad with the 3rd and 5th omitted and every note
+     * added explicitly. Both forms re-parse to the original set, so the chord
+     * chips and the text box stay in sync.
+     */
+
+    // accidental offset -> the glyph parseChord accepts as an add/alter prefix
+    const ADD_ACC = { "-2": "bb", "-1": "b", 0: "", 1: "#", 2: "x" };
+    // a chord degree's natural pitch class (NAT, reduced mod 12)
+    const DEG_PC = { 1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11, 9: 2, 11: 5, 13: 9 };
+    const ADD_DEGS = [1, 2, 3, 4, 5, 6, 7, 9, 11, 13];
+    // preferred (degree, accidental) spellings for each interval above the root
+    const ADD_CAND = {
+        0: [[1, 0]],
+        1: [[9, -1], [2, -1]],
+        2: [[9, 0], [2, 0]],
+        3: [[9, 1], [3, -1], [2, 1]],
+        4: [[3, 0], [11, -1], [4, -1]],
+        5: [[11, 0], [4, 0]],
+        6: [[11, 1], [5, -1], [4, 1]],
+        7: [[5, 0]],
+        8: [[13, -1], [5, 1], [6, -1]],
+        9: [[13, 0], [6, 0]],
+        10: [[7, -1], [13, 1], [6, 1]],
+        11: [[7, 0], [6, 2]],
     };
 
-    // name a raw pitch-class set. When the root is known (the user tagged it
-    // by right-clicking), spell the root through the chosen line-of-fifths
-    // window and append the recognised quality; otherwise fall back to trying
-    // each note as a root.
+    const formulaIntervals = (formula) => new Set(Object.values(formula).map((s) => mod12(s)));
+
+    // canonical name preference: lower rank = nicer token on a size tie, so we
+    // get "dim7" not "°7", "maj7" not "M7"/"Δ7", "ø" not "m7b5".
+    const NAME_PREF = [
+        "", "m", "dim", "aug", "sus2", "sus4", "5",
+        "6", "m6", "69",
+        "7", "maj7", "m7", "ø", "dim7", "mMaj7", "aug7",
+        "9", "maj9", "m9", "add9",
+        "11", "m11", "13", "maj13", "m13",
+    ];
+    const nameRank = (token) => {
+        const i = NAME_PREF.indexOf(token);
+        return i >= 0 ? i : 1000 + token.length;
+    };
+
+    // the richest quality (most notes) whose intervals are all contained in T;
+    // ties broken toward the most canonical name. Returns { token, degs, set } | null.
+    function bestSubsetQuality(T) {
+        let best = null;
+        for (const [token, formula] of QUALITIES) {
+            if (token.includes("/")) continue; // "6/9" would look like a slash chord
+            const ivs = formulaIntervals(formula);
+            if (ivs.size < 2) continue;
+            let ok = true;
+            for (const iv of ivs)
+                if (!T.has(iv)) {
+                    ok = false;
+                    break;
+                }
+            if (!ok) continue;
+            if (
+                !best ||
+                ivs.size > best.set.size ||
+                (ivs.size === best.set.size && nameRank(token) < nameRank(best.token))
+            ) {
+                best = { token, degs: new Set(Object.keys(formula).map(Number)), set: ivs };
+            }
+        }
+        return best;
+    }
+
+    // Assign each interval (a pitch class above the root, never 0) to a distinct
+    // chord degree with an accidental in [-2,+2], avoiding `forbidden` degrees.
+    // Uses backtracking so it always finds an assignment when one exists (greedy
+    // can dead-end by spending a degree a later note needed). Returns a
+    // Map(interval -> [deg, acc]) or null if the notes cannot all be placed.
+    function assignDegrees(intervals, forbidden) {
+        const cand = intervals.map((v) => {
+            const list = [];
+            const seen = new Set();
+            for (const [d, a] of ADD_CAND[v] || []) {
+                if (!forbidden.has(d)) {
+                    list.push([d, a]);
+                    seen.add(d);
+                }
+            }
+            for (const d of ADD_DEGS) {
+                if (forbidden.has(d) || seen.has(d)) continue;
+                let a = mod12(v - DEG_PC[d]);
+                if (a > 6) a -= 12;
+                if (a >= -2 && a <= 2) list.push([d, a]);
+            }
+            return { v, list };
+        });
+        cand.sort((x, y) => x.list.length - y.list.length); // most-constrained first
+        const used = new Set();
+        const result = new Map();
+        const bt = (i) => {
+            if (i === cand.length) return true;
+            for (const [d, a] of cand[i].list) {
+                if (used.has(d)) continue;
+                used.add(d);
+                result.set(cand[i].v, [d, a]);
+                if (bt(i + 1)) return true;
+                used.delete(d);
+                result.delete(cand[i].v);
+            }
+            return false;
+        };
+        return bt(0) ? result : null;
+    }
+
+    const tokensFor = (assignment) =>
+        [...assignment.keys()]
+            .sort((a, b) => a - b)
+            .map((v) => {
+                const [d, a] = assignment.get(v);
+                return ADD_ACC[a] + d;
+            });
+
+    // Build a chord symbol for `pcs` using `r` as the root, or null if the set
+    // cannot be spelled from that root (every degree slot exhausted).
+    function buildFromRoot(pcs, r, rootName) {
+        const T = new Set(pcs.map((p) => mod12(p - r)));
+        const base = bestSubsetQuality(T);
+        if (base) {
+            const leftover = [...T].filter((v) => !base.set.has(v));
+            const asn = assignDegrees(leftover, base.degs);
+            if (asn) {
+                const toks = tokensFor(asn);
+                return rootName + base.token + (toks.length ? "(" + toks.join(",") + ")" : "");
+            }
+        }
+        // no quality fits (or its degrees boxed us in): major triad, 3rd and 5th
+        // removed, then every note added explicitly
+        const asn = assignDegrees([...T].filter((v) => v !== 0), new Set([1]));
+        if (!asn) return null;
+        return rootName + "(" + ["omit3", "omit5", ...tokensFor(asn)].join(",") + ")";
+    }
+
     function describe(pcs, rootPc, fifthStart) {
-        if (pcs.length === 0) return "";
-        if (rootPc != null) {
-            const rel = pcs
-                .map((p) => mod12(p - rootPc))
-                .sort((a, b) => a - b);
-            const suffix = QUALITY_SUFFIX[rel.join(",")];
-            const rootName =
-                fifthStart != null ? nameInWindow(rootPc, fifthStart) : NOTE_NAMES[rootPc];
-            if (suffix !== undefined) return rootName + suffix;
-        }
+        if (!pcs || pcs.length === 0) return "";
         const spell = (p) => (fifthStart != null ? nameInWindow(p, fifthStart) : NOTE_NAMES[p]);
-        if (pcs.length < 2) return spell(pcs[0]);
-        for (const r of pcs) {
-            const rel = pcs.map((p) => mod12(p - r)).sort((a, b) => a - b);
-            const suffix = QUALITY_SUFFIX[rel.join(",")];
-            if (suffix !== undefined) return spell(r) + suffix;
+
+        // honour a tagged root if the set can be spelled from it
+        if (rootPc != null) {
+            const res = buildFromRoot(pcs, rootPc, spell(rootPc));
+            if (res) return res;
         }
-        return pcs.map(spell).join("·");
+        // otherwise pick the root giving the nicest spellable name (prefer a
+        // real quality over the omit-fallback, then the shorter string)
+        let best = null;
+        for (const cand of pcs) {
+            const res = buildFromRoot(pcs, cand, spell(cand));
+            if (!res) continue;
+            const score = [res.includes("omit3,omit5") ? 1 : 0, res.length];
+            if (!best || score[0] < best.score[0] || (score[0] === best.score[0] && score[1] < best.score[1])) {
+                best = { res, score };
+            }
+        }
+        return best ? best.res : spell(pcs[0]);
     }
 
     /* ---- line / spiral of fifths -------------------------------------
