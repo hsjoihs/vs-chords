@@ -418,13 +418,15 @@ function renderChips() {
         chip.className = "chip";
         chip.innerHTML = `
       <div class="hd"><div class="nm"></div><button class="del">✕</button></div>
+      <details>
+      <summary>Edit</summary>
       <div class="ring"></div>
       <div class="spec">
         <span>Prefer ♭</span>
         <input class="slider" type="range" min="${FIFTH_MIN}" max="${FIFTH_MAX}" step="1" value="${ch.fifthStart}">
         <span>Prefer ♯</span>
       </div>
-      <div class="spechint">left-click: add/remove · right-click: tag root</div>`;
+      <div class="spechint">left-click: add/remove · right-click: tag root</div></details>`;
         const nm = chip.querySelector(".nm");
         const ring = chip.querySelector(".ring");
         const buttons = [];

@@ -83,11 +83,17 @@ h1 {
     margin: 0 0 8px
 }
 
-label.fld {
+.fld {
     display: block;
     font-size: 12px;
     color: var(--muted);
     margin: 8px 0 4px
+}
+
+summary {
+    font-size: 12px;
+    color: var(--muted);
+    padding-bottom: 4px;
 }
 
 input[type=text] {
