@@ -60,7 +60,7 @@ double‑flat. Input accepts ASCII or Unicode (`#`/`♯`, `b`/`♭`, `##`/`x`/`�
 `bb`/`𝄫`).
 
 Supported: triads (`maj`, `m`, `dim`/`°`, `aug`/`+`, `sus2`, `sus4`, `5`),
-sevenths (`7`, `maj7`/`Δ`, `m7`, `m7b5`/`ø`, `dim7`/`°7`, `mMaj7`, `aug7`),
+sevenths (`7`, `maj7`/`Δ7`/`M7`, `m7`, `m7b5`/`ø`, `dim7`/`°7`, `mM7`/`mMaj7`, `aug7`),
 sixths (`6`, `m6`, `6/9`), extensions (`9`, `11`, `13`, `maj9`, `m9`, …),
 added tones and parenthetical tensions (`add9`, `(9,13)`, `(b9,13)`, `#11`, …),
 omissions (`omit3`, `no5`, `drop9`), and slash chords (`B♭/F`).

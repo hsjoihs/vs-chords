@@ -242,7 +242,7 @@ const ROUNDTRIP_SYMBOLS = [
     // triads & suspensions
     "C", "Cm", "Cdim", "Caug", "Csus2", "Csus4", "C5",
     // sixths & sevenths
-    "C6", "Cm6", "C69", "C7", "Cmaj7", "Cm7", "Cm7b5", "Eø", "Cdim7", "CmMaj7",
+    "C6", "Cm6", "C69", "C7", "CΔ7", "Cm7", "Cm7b5", "Eø", "Cdim7", "CmM7",
     // extensions
     "C9", "Cmaj9", "Cm9", "C11", "Cm11", "C13", "Cmaj13", "Cadd9",
     // altered dominants

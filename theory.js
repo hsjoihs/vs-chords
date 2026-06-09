@@ -89,6 +89,7 @@
         ["Δ", { 1: 0, 3: 4, 5: 7, 7: 11 }],
         ["maj", { 1: 0, 3: 4, 5: 7 }],
 
+        ["mM7", { 1: 0, 3: 3, 5: 7, 7: 11 }],
         ["mMaj7", { 1: 0, 3: 3, 5: 7, 7: 11 }],
         ["mmaj7", { 1: 0, 3: 3, 5: 7, 7: 11 }],
         ["m13", { 1: 0, 3: 3, 5: 7, 7: 10, 9: 14, 11: 17, 13: 21 }],
@@ -382,11 +383,11 @@
     const formulaIntervals = (formula) => new Set(Object.values(formula).map((s) => mod12(s)));
 
     // canonical name preference: lower rank = nicer token on a size tie, so we
-    // get "dim7" not "°7", "maj7" not "M7"/"Δ7", "ø" not "m7b5".
+    // get "dim7" not "°7", "Δ7" not "M7"/"Maj7", "ø" not "m7b5".
     const NAME_PREF = [
         "", "m", "dim", "aug", "sus2", "sus4", "5",
         "6", "m6", "69",
-        "7", "maj7", "m7", "ø", "dim7", "mMaj7", "aug7",
+        "7", "Δ7", "m7", "ø", "dim7", "mM7", "aug7",
         "9", "maj9", "m9", "add9",
         "11", "m11", "13", "maj13", "m13",
     ];
