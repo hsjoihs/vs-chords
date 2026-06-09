@@ -18,7 +18,13 @@ Type a progression such as `G7 → C`, `Gm → F♯+ → B♭/F → Eø`, or
 **↓ Render** turns the text into chord chips; **↑ To text** turns the chips back
 into a progression string. The two are true inverses at the pitch-class level:
 `parseChord(describe(notes))` always yields the notes you started with, so you
-can edit a chip and convert back without it degrading into a note list.
+can edit a chip and convert back without it degrading into a note list. Whichever
+direction has unsaved changes is highlighted: editing the text box lights up
+**Render**, editing a chip lights up **To text**, and pressing either clears both.
+
+The full scene — every chord, the toggles, and the camera angle — is mirrored
+into the URL's query string as you work (via `history.replaceState`, so it never
+clogs the back button). Copy the URL to share or bookmark an exact view.
 
 ### Chord chip
 

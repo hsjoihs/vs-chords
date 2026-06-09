@@ -134,7 +134,10 @@ function setupControls() {
         py = e.clientY;
         e.preventDefault();
     });
-    addEventListener("mouseup", () => (drag = null));
+    addEventListener("mouseup", () => {
+        if (drag !== null) scheduleUrlUpdate(); // persist the new camera angle
+        drag = null;
+    });
     addEventListener("mousemove", (e) => {
         if (drag === null) return;
         const dx = e.clientX - px,
@@ -160,6 +163,7 @@ function setupControls() {
         (e) => {
             camRad = Math.max(8, Math.min(80, camRad + e.deltaY * 0.02));
             applyCam();
+            scheduleUrlUpdate(); // persist the new zoom
             e.preventDefault();
         },
         { passive: false },
@@ -403,6 +407,97 @@ function build() {
         }
     }
     renderAnalysis();
+    updateButtons();
+    scheduleUrlUpdate();
+}
+
+/* ====================== text ⟷ chips sync buttons ======================
+ * "↓ Render" lights up (gains .primary) when the text box is ahead of the
+ * chips; "↑ To text" lights up when the chips are ahead of the text. Pressing
+ * either button re-syncs and clears both.
+ */
+let progEl, renderBtn, toTextBtn;
+let textBaseline = "",
+    chipsBaseline = "";
+function chipsText() {
+    return chords
+        .map((c) => c.symbol)
+        .filter(Boolean)
+        .join(" → ");
+}
+function updateButtons() {
+    if (!renderBtn) return;
+    renderBtn.classList.toggle("primary", progEl.value !== textBaseline);
+    toTextBtn.classList.toggle("primary", chipsText() !== chipsBaseline);
+}
+function syncBaselines() {
+    if (!progEl) return;
+    textBaseline = progEl.value;
+    chipsBaseline = chipsText();
+    updateButtons();
+}
+
+/* ====================== shareable URL state ======================
+ * The whole scene (chords, toggles, camera) is mirrored into ?s=… using
+ * history.replaceState, debounced, so links are shareable without flooding the
+ * back button.
+ */
+let restoring = false;
+let urlTimer = null;
+const round = (x, n) => Math.round(x * 10 ** n) / 10 ** n;
+
+function encodeState() {
+    return {
+        v: 1,
+        c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol]),
+        t: [showAll, showIntervalLabels, showConnections, spin].map((b) => (b ? 1 : 0)),
+        k: [round(camTheta, 3), round(camPhi, 3), round(camRad, 2), round(camTarget.x, 2), round(camTarget.y, 2), round(camTarget.z, 2)],
+    };
+}
+function scheduleUrlUpdate() {
+    if (restoring) return;
+    clearTimeout(urlTimer);
+    urlTimer = setTimeout(() => {
+        history.replaceState(null, "", "?s=" + encodeURIComponent(JSON.stringify(encodeState())));
+    }, 300);
+}
+function restoreState() {
+    const m = location.search.match(/[?&]s=([^&]+)/);
+    if (!m) return false;
+    let st;
+    try {
+        st = JSON.parse(decodeURIComponent(m[1]));
+    } catch (e) {
+        return false;
+    }
+    if (!st || !Array.isArray(st.c)) return false;
+    restoring = true;
+    try {
+        chords = st.c.map(([pcs, rootPc, fifthStart, symbol]) => ({
+            pcs: pcs.slice(),
+            rootPc: rootPc == null ? null : rootPc,
+            fifthStart,
+            symbol,
+        }));
+        if (Array.isArray(st.t)) {
+            [showAll, showIntervalLabels, showConnections, spin] = st.t.map(Boolean);
+            document.getElementById("tShowAll").checked = showAll;
+            document.getElementById("tIntervalLabels").checked = showIntervalLabels;
+            document.getElementById("tConnections").checked = showConnections;
+            document.getElementById("tSpin").checked = spin;
+        }
+        progEl.value = chipsText();
+        renderChips();
+        build(); // build() resets the camera, so restore it afterwards
+        if (Array.isArray(st.k)) {
+            [camTheta, camPhi, camRad, camTarget.x, camTarget.y, camTarget.z] = st.k;
+            applyCam();
+        }
+        syncBaselines();
+    } finally {
+        restoring = false;
+    }
+    return true;
 }
 
 /* ====================== UI ====================== */
@@ -540,24 +635,29 @@ function doRender() {
         chords = parsed.map(chordFromParsed);
         renderChips();
         build();
+        syncBaselines(); // text and chips are now in sync → clear both buttons
     } catch (e) {
         err.textContent = e.message;
     }
 }
 
 function setupUI() {
-    document.getElementById("render").onclick = doRender;
-    document.getElementById("prog").addEventListener("keydown", (e) => {
+    progEl = document.getElementById("prog");
+    renderBtn = document.getElementById("render");
+    toTextBtn = document.getElementById("toText");
+
+    renderBtn.onclick = doRender;
+    progEl.addEventListener("keydown", (e) => {
         if (e.key === "Enter") doRender();
     });
+    // editing the text box makes Render the suggested action
+    progEl.addEventListener("input", updateButtons);
     // inverse of Render: turn the current chips back into a progression string.
     // Each chip's symbol is describe()-generated, so it re-parses to the same notes.
-    document.getElementById("toText").onclick = () => {
-        document.getElementById("prog").value = chords
-            .map((ch) => ch.symbol)
-            .filter(Boolean)
-            .join(" → ");
+    toTextBtn.onclick = () => {
+        progEl.value = chipsText();
         document.getElementById("err").textContent = "";
+        syncBaselines(); // chips and text now match → clear both buttons
     };
     document.getElementById("add").onclick = () => {
         chords.push(chordFromParsed(parseChord("C")));
@@ -578,6 +678,7 @@ function setupUI() {
     };
     document.getElementById("tSpin").onchange = (e) => {
         spin = e.target.checked;
+        scheduleUrlUpdate();
     };
     const pr = document.getElementById("presets");
     PRESETS.forEach((p) => {
@@ -595,7 +696,8 @@ function setupUI() {
 window.addEventListener("DOMContentLoaded", () => {
     initThree();
     setupUI();
-    doRender();
+    // restore a shared scene from ?s=…, else render the default progression
+    if (!restoreState()) doRender();
 });
 // expose for debugging / browser-console verification
 window.__cc = {
