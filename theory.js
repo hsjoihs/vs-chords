@@ -385,9 +385,9 @@
     // canonical name preference: lower rank = nicer token on a size tie, so we
     // get "dim7" not "°7", "Δ7" not "M7"/"Maj7", "ø" not "m7b5".
     const NAME_PREF = [
-        "", "m", "dim", "aug", "sus2", "sus4", "5",
+        "", "m", "dim", "aug", "sus2", "sus4", "5",        
         "6", "m6", "69",
-        "7", "Δ7", "m7", "ø", "dim7", "mM7", "aug7",
+        "7", "Δ7", "m7", "ø", "dim7", "mM7", "aug7", 
         "9", "maj9", "m9", "add9",
         "11", "m11", "13", "maj13", "m13",
     ];
@@ -502,11 +502,14 @@
         }
         // otherwise pick the root giving the nicest spellable name (prefer a
         // real quality over the omit-fallback, then the shorter string)
+        // but we want to prioritize m7 over 6: 
+        // to solve this in an ad-hoc way, the score is adjusted.
         let best = null;
         for (const cand of pcs) {
             const res = buildFromRoot(pcs, cand, spell(cand));
             if (!res) continue;
-            const score = [res.includes("omit3,omit5") ? 1 : 0, res.length];
+            const adjust = res.includes("m7") ? -0.6 : res.includes("6") ? 0.6 : 0;
+            const score = [res.includes("omit3,omit5") ? 1 : 0, res.length + adjust];
             if (!best || score[0] < best.score[0] || (score[0] === best.score[0] && score[1] < best.score[1])) {
                 best = { res, score };
             }
