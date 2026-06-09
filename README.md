@@ -1,12 +1,9 @@
 # Cylindrical analysis of chord progressions
 
 A small web app that draws a short chord progression on a 3‑D cylinder. One
-octave wraps once around the cylinder (12 semitones = 360°). Each chord is a
+octave wraps once around the cylinder. Each chord is a
 ring of vertices joined by **every** interval, the chords stack upward in time,
-and dashed lines between layers trace each voice's motion. The classic example,
-`G7 → C`, shows the tritone B–F closing inward to the major third C–E — a
-quadrilateral (with its diagonals: 4 vertices, 6 segments) collapsing to a
-triangle.
+and dashed lines between layers trace the motion.
 
 ## Running it
 
@@ -19,7 +16,7 @@ python3 -m http.server   # then visit http://localhost:8000
 Type a progression such as `G7 → C`, `Gm → F♯+ → B♭/F → Eø`, or
 `Am7 → Dø(9,13)omit3 → G7(b9,13)omit5 → C`, or edit each chord on its ring.
 
-### Ring editor
+### Chord chip
 
 Each chord chip has twelve pitch-class buttons and a spelling slider:
 
@@ -38,8 +35,8 @@ Each chord chip has twelve pitch-class buttons and a spelling slider:
 
 | File         | Responsibility                                                        |
 | ------------ | --------------------------------------------------------------------- |
-| `theory.js`  | Pure music theory — no DOM, no THREE. Parsing, **spelling**, intervals, voice leading. Loadable as a browser global _and_ a Node module. |
-| `main.js`    | Rendering and UI (THREE.js scene, orbit controls, the ring editor).   |
+| `theory.js`  | Pure music theory. Parsing, **spelling**, intervals, voice leading. Loadable as a browser global _and_ a Node module. |
+| `main.js`    | Rendering and UI (THREE.js scene, orbit controls, the chord chip).   |
 | `style.css`  | Styling.                                                              |
 | `index.html` | Wires the three together (loads `theory.js` before `main.js`).        |
 | `test/`      | Parser tests for Node's built‑in runner.                              |

@@ -10,23 +10,25 @@
 <div id="app">
   <div id="side">
     <h1>Chord Cylinder</h1>
-    <div class="sub">Each chord is a ring of vertices joined by every interval; chords stack upward in time, and lines between layers trace each voice's motion.</div>
+    <div class="sub">Visually inspect all the intervals in a chord and see how they evolve in time.</div>
 
     <div class="block">
       <h2>Progression</h2>
-      <label class="fld" for="prog">Chord symbols (space or → separated)</label>
+      <label class="fld">Choose a preset:</label>
+      <div class="row" id="presets"></div>
+      <label class="fld" for="prog">or, input chord symbols: <br>(separated by a space, <code>→</code> or <code>-></code>)</label>
       <input id="prog" type="text" value="G7 → C" spellcheck="false" autocomplete="off">
       <div class="row">
         <button class="primary" id="render">Render</button>
-        <button id="add">+ Add chord</button>
       </div>
       <div class="err" id="err"></div>
-      <div class="row" id="presets"></div>
+      
     </div>
 
     <div class="block">
       <h2>Chords — click notes to fine-tune</h2>
       <div class="chips" id="chips"></div>
+      <button id="add">+ Add chord</button>
     </div>
 
     <div class="block">

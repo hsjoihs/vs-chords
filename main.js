@@ -518,9 +518,9 @@ function renderAnalysis() {
             const arrow = `${noteName(A, mv.from)}→${noteName(B, mv.to)}`;
             html += `<div class="mv"><b>${arrow}</b><span class="tag ${tag}">${txt}</span></div>`;
         });
-        if (hasTritone(A.pcs) && !hasTritone(B.pcs)) {
+        /*if (hasTritone(A.pcs) && !hasTritone(B.pcs)) {
             html += `<div class="hint">Tritone resolves: dissonance released.</div>`;
-        }
+        }*/
     }
     el.innerHTML = html;
 }
