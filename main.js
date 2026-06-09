@@ -80,13 +80,17 @@ const COLORS = {
 };
 
 /* ====================== three.js scene ====================== */
-let renderer, scene, camera, group;
+let renderer, scene, camera, group, nameGroup;
 const R = 5; // cylinder radius
-const LAYER = 4.2; // vertical gap between chords
+let LAYER = 4.2; // vertical gap between chords (stretch/compress the cylinder)
 let spin = false,
     showAll = true,
     showIntervalLabels = true,
     showConnections = true;
+// chord-name sprite placement (shared by every chord): azimuth + distance from axis
+let nameAzDeg = 270, // 270° = the F♯ side, the original fixed position
+    nameDist = R + 2.4,
+    nameSpinOffset = 0; // accumulated counter-spin so names appear to hold still
 
 function initThree() {
     const stage = document.getElementById("stage");
@@ -101,6 +105,9 @@ function initThree() {
     const dl = new THREE.DirectionalLight(COLORS.scene.light, 0.6);
     dl.position.set(6, 10, 8);
     scene.add(dl);
+    // chord-name sprites live in their own group
+    nameGroup = new THREE.Group();
+    scene.add(nameGroup);
     group = new THREE.Group();
     scene.add(group);
     setupControls();
@@ -170,17 +177,20 @@ function setupControls() {
         { passive: false },
     );
 }
+const SPIN_SPEED = 0.0035; // radians/frame for auto-rotate
 function animate() {
     requestAnimationFrame(animate);
     if (spin) {
-        camTheta += 0.0035;
+        camTheta += SPIN_SPEED;
         applyCam();
     }
+    if (nameGroup) nameGroup.rotation.y = 0;
     renderer.render(scene, camera);
 }
 
 function clearGroup() {
     while (group.children.length) group.remove(group.children[0]);
+    while (nameGroup.children.length) nameGroup.remove(nameGroup.children[0]);
 }
 
 function pcAngle(pc) {
@@ -222,14 +232,42 @@ function tube(p1, p2, color, radius) {
     return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color }));
 }
 
-// dashed/dotted line from p0 to p1: `period` evenly spaced marks, each covering
-// `onFrac` of its cell (small onFrac -> dots, larger -> dashes).
-function dashLine(p0, p1, color, radius, period, onFrac) {
+// A connection between two notes on adjacent layers, as a helix on the cylinder
+// surface: the azimuth and height interpolate linearly while the radius stays R.
+// φ moves by exactly `dist` semitones the short way (so semitone/whole-tone line
+// clichés read as smooth spirals rather than chords through the interior).
+function connCurve(fromPc, toPc, dist, y0, y1) {
+    const a0 = pcAngle(fromPc);
+    const a1 = a0 - (dist / 12) * Math.PI * 2; // signed: short way round
+    return (t) => {
+        const a = a0 + (a1 - a0) * t;
+        const y = y0 + (y1 - y0) * t;
+        return new THREE.Vector3(R * Math.cos(a), y, R * Math.sin(a));
+    };
+}
+
+// dashed/dotted spiral along a parametric curve fn:[0,1]->Vector3. `period`
+// evenly spaced marks, each covering `onFrac` of its cell (small onFrac -> dots).
+function dashSpiral(fn, color, radius, period, onFrac) {
+    const sub = 3; // straight sub-segments per dash, so each dash follows the curve
     for (let s = 0; s < period; s++) {
-        const a = p0.clone().lerp(p1, s / period);
-        const b = p0.clone().lerp(p1, (s + onFrac) / period);
-        group.add(tube(a, b, color, radius));
+        const tA = s / period,
+            tB = (s + onFrac) / period;
+        for (let k = 0; k < sub; k++) {
+            group.add(tube(fn(tA + ((tB - tA) * k) / sub), fn(tA + ((tB - tA) * (k + 1)) / sub), color, radius));
+        }
     }
+}
+
+// a small cone at the curve's midpoint, pointing along travel — an arrowhead
+// that shows the progression advancing up the cylinder
+function arrowCone(fn, color, {coneRadius, t}) {
+    const mid = fn(t);
+    const dir = new THREE.Vector3().subVectors(fn(0.54), fn(0.46)).normalize();
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(coneRadius, 0.45, 12), new THREE.MeshBasicMaterial({ color }));
+    cone.position.copy(mid);
+    cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    group.add(cone);
 }
 
 // Faint 45° cross-hatch filling the planar rectangle whose vertical sides are
@@ -369,10 +407,12 @@ function build() {
             lbl.position.copy(p).add(new THREE.Vector3(0, 0.55, 0));
             group.add(lbl);
         });
-        // chord name label, floating outward (sized to its text, never cropped)
+        // chord name label, at the adjustable azimuth/distance (in nameGroup so
+        // it can be counter-spun); sized to its text, never cropped
+        const az = (nameAzDeg * Math.PI) / 180;
         const cname = makeLabel(ch.symbol, COLORS.label.chord, 2.4);
-        cname.position.set(0, y, -R - 2.4);
-        group.add(cname);
+        cname.position.set(nameDist * Math.cos(az), y, nameDist * Math.sin(az));
+        nameGroup.add(cname);
     });
 
     // connections between consecutive chords (toggleable): every pair of notes
@@ -384,18 +424,20 @@ function build() {
             const A = chords[i].pcs,
                 B = chords[i + 1].pcs;
             voiceLeading(A, B).forEach((mv) => {
-                const p0 = pcPos(mv.from, y0),
-                    p1 = pcPos(mv.to, y1);
+                const fn = connCurve(mv.from, mv.to, mv.dist, y0, y1);
                 const d = Math.abs(mv.dist);
                 if (d === 0) {
                     // no change: thick sturdy solid line
-                    group.add(tube(p0, p1, COLORS.voiceLeading.hold, 0.15));
+                    group.add(tube(fn(0), fn(1), COLORS.voiceLeading.hold, 0.15));
+                    arrowCone(fn, COLORS.voiceLeading.hold, {coneRadius: 0.3, t: 0.6});
                 } else if (d === 1) {
-                    // semitone: dense dotted line
-                    dashLine(p0, p1, COLORS.voiceLeading.semitone, 0.086, 12, 0.5);
+                    // semitone: dense dotted spiral
+                    dashSpiral(fn, COLORS.voiceLeading.semitone, 0.086, 10, 0.4);
+                    arrowCone(fn, COLORS.voiceLeading.semitone, {coneRadius: 0.17, t: 0.475});
                 } else {
-                    // whole tone: dashed line
-                    dashLine(p0, p1, COLORS.voiceLeading.wholeTone, 0.05, 9, 0.55);
+                    // whole tone: dashed spiral
+                    dashSpiral(fn, COLORS.voiceLeading.wholeTone, 0.05, 5, 0.55);
+                    arrowCone(fn, COLORS.voiceLeading.wholeTone, {coneRadius: 0.17, t: 0.5});
                 }
             });
             // each pair of notes held across both chords spans a rectangular
@@ -453,6 +495,9 @@ function encodeState() {
         c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol]),
         t: [showAll, showIntervalLabels, showConnections, spin].map((b) => (b ? 1 : 0)),
         k: [round(camTheta, 3), round(camPhi, 3), round(camRad, 2), round(camTarget.x, 2), round(camTarget.y, 2), round(camTarget.z, 2)],
+        L: round(LAYER, 2),
+        na: Math.round(nameAzDeg),
+        nd: round(nameDist, 2),
     };
 }
 function scheduleUrlUpdate() {
@@ -487,6 +532,12 @@ function restoreState() {
             document.getElementById("tConnections").checked = showConnections;
             document.getElementById("tSpin").checked = spin;
         }
+        if (st.L != null) LAYER = st.L;
+        if (st.na != null) nameAzDeg = st.na;
+        if (st.nd != null) nameDist = st.nd;
+        document.getElementById("layerSlider").value = LAYER;
+        document.getElementById("nameAzimuth").value = nameAzDeg;
+        document.getElementById("nameDistance").value = nameDist;
         progEl.value = chipsText();
         renderChips();
         build(); // build() resets the camera, so restore it afterwards
@@ -681,6 +732,19 @@ function setupUI() {
         spin = e.target.checked;
         scheduleUrlUpdate();
     };
+    document.getElementById("layerSlider").oninput = (e) => {
+        LAYER = Number(e.target.value);
+        build();
+    };
+    document.getElementById("nameAzimuth").oninput = (e) => {
+        nameAzDeg = Number(e.target.value);
+        build();
+    };
+    document.getElementById("nameDistance").oninput = (e) => {
+        nameDist = Number(e.target.value);
+        build();
+    };
+    
     const pr = document.getElementById("presets");
     PRESETS.forEach((p) => {
         const b = document.createElement("button");

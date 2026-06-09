@@ -247,6 +247,13 @@ button.primary:hover {
     cursor: pointer
 }
 
+.vslider {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+    margin-bottom: 4px
+}
+
 .spechint {
     font-size: 10px;
     color: var(--muted);

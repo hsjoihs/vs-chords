@@ -28,14 +28,22 @@
       <button id="add">+ Add chord</button>
     </div>
 
-    
   </div>
 
   <div id="stage">
     <div id="analysis"></div>
     <div id="overlay">
-      <div class="toggle"><input type="checkbox" id="tSpin"><label for="tSpin">Auto-rotate</label></div>
-      <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan.</div>
+      <div class="block" style="border-top: 0 solid var(--line)">
+        <h2>View</h2>
+        <label class="fld" for="layerSlider">Cylinder length (compress ↔ stretch)</label>
+        <input id="layerSlider" class="vslider" type="range" min="1.5" max="9" step="0.1" value="4.2">
+        <label class="fld" for="nameAzimuth">Chord-name angle</label>
+        <input id="nameAzimuth" class="vslider" type="range" min="0" max="360" step="1" value="270">
+        <label class="fld" for="nameDistance">Chord-name distance from axis</label>
+        <input id="nameDistance" class="vslider" type="range" min="6" max="16" step="0.2" value="7.4">
+        <div class="toggle"><input type="checkbox" id="tSpin"><label for="tSpin">Auto-rotate the scene</label></div>
+        <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan.</div>
+      </div>
     </div>
     <div id="legends">
       <div class="block" style="border-top: 0 solid var(--line)">
