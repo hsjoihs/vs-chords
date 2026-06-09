@@ -36,7 +36,7 @@ function noteName(ch, pc) {
 /* ====================== palette ======================
  * All scene colors live here under semantic names so the palette can be
  * swapped wholesale later. Values mirror the CSS custom properties in
- * style.css (--tritone, --whole, --semitone, --voice, --accent, --accent2);
+ * style.css (--semitone, --whole, --p4p5, --tritone, --accent, --accent2);
  * keep the two in sync if you re-theme. 0x… are WebGL colors, "#…" are the
  * CSS strings used for the canvas text labels.
  */
@@ -54,9 +54,10 @@ const COLORS = {
     vertexEmissive: 0x3a2c00,
     // intervals drawn inside a chord, by interval class
     interval: {
-        tritone: 0xff5d6c,
-        wholeStep: 0xffb454,
         semitone: 0x5ad17a,
+        wholeStep: 0xffb454,
+        p4p5: 0xc792ea,
+        tritone: 0xff5d6c,
         other: 0x7fc8ff,
     },
     // connection lines between chords, by how far the note moves (<= whole tone)
@@ -255,8 +256,9 @@ function hatchPane(p, q, y0, y1, color) {
 
 function intervalColor(semi) {
     if (semi === 6) return COLORS.interval.tritone;
-    if (semi === 2 || semi === 10) return COLORS.interval.wholeStep; // whole step or its inversion
-    if (semi === 1 || semi === 11) return COLORS.interval.semitone; // semitone or its inversion
+    if (semi === 5 || semi === 7) return COLORS.interval.p4p5;
+    if (semi === 2 || semi === 10) return COLORS.interval.wholeStep;
+    if (semi === 1 || semi === 11) return COLORS.interval.semitone;
     return COLORS.interval.other;
 }
 
