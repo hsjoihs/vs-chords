@@ -22,6 +22,7 @@ const PRESETS = [
     "Cm7b5 → F7 → B♭maj7",
     "Gm → G♭+ → B♭/F → Eø",
     "Am7 → Dø(9,13)omit3 → G7(b9,13)omit5 → C",
+    "EbΔ7 - Dm7 - CΔ7 - Bm7 - AΔ7 - G#m7 - GbΔ7 - Fm7 - EbΔ7"
 ];
 
 // build an editor chord from a parsed symbol, auto-choosing the spelling slider

@@ -298,8 +298,9 @@
     function parseProgression(text) {
         // split on arrows / dashes-as-arrows / whitespace, but NOT bare "-"
         // (so "C-7" minor still works) and NOT commas inside "(9,13)".
+        // However, we *do* allow bare "-" if both sides are delimited by a whitespace.
         const parts = String(text)
-            .split(/\s*(?:→|⟶|➔|=>|->|—|–|>)\s*|\s+/)
+            .split(/\s*(?:→|⟶|➔|=>|->|—|–|>|\s-\s)\s*|\s+/)
             .map((x) => x.trim())
             .filter(Boolean);
         return parts.map((p) => parseChord(p));
