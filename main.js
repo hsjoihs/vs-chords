@@ -56,9 +56,10 @@ const COLORS = {
     interval: {
         semitone: 0x5ad17a,
         wholeStep: 0xffb454,
+        minor3rd: 0x7fc8ff,
+        major3rd: 0xd8fe4c,
         p4p5: 0xc792ea,
         tritone: 0xff5d6c,
-        other: 0x7fc8ff,
     },
     // connection lines between chords, by how far the note moves (<= whole tone)
     voiceLeading: {
@@ -227,7 +228,6 @@ function dashLine(p0, p1, color, radius, period, onFrac) {
 // the held notes p and q (between heights y0 and y1). Used to emphasise that a
 // pair of notes is held constant across two chords.
 const HATCH_SPACING = 0.55; // world units between mesh lines
-const HATCH_OPACITY = 0.9;
 function hatchPane(p, q, y0, y1, color) {
     const P0 = pcPos(p, y0),
         Q0 = pcPos(q, y0);
@@ -250,16 +250,18 @@ function hatchPane(p, q, y0, y1, color) {
         if (tHi > tLo) pts.push(at(c - tLo, tLo), at(c - tHi, tHi));
     }
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: HATCH_OPACITY });
+    const mat = new THREE.LineBasicMaterial({ color });
     group.add(new THREE.LineSegments(geo, mat));
 }
 
 function intervalColor(semi) {
     if (semi === 6) return COLORS.interval.tritone;
     if (semi === 5 || semi === 7) return COLORS.interval.p4p5;
+    if (semi === 4 || semi === 8) return COLORS.interval.major3rd;
+    if (semi === 3 || semi === 9) return COLORS.interval.minor3rd;
     if (semi === 2 || semi === 10) return COLORS.interval.wholeStep;
     if (semi === 1 || semi === 11) return COLORS.interval.semitone;
-    return COLORS.interval.other;
+    return 0xff00ff; // should be unreachable
 }
 
 function build() {
