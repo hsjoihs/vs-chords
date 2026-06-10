@@ -264,7 +264,8 @@ button.primary:hover {
 .legend {
     font-size: 11.5px;
     line-height: 1.9;
-    color: var(--muted)
+    color: var(--muted);
+    user-select: none;
 }
 
 .legend i {
