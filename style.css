@@ -13,6 +13,7 @@
     --major3rd: #d8fe4c;
     --p4p5: #c792ea;
     --tritone: #ff5d6c;
+    --danger: #ff5d6c;
 }
 
 * {
@@ -156,7 +157,7 @@ button.primary:hover {
 }
 
 .err {
-    color: var(--tritone);
+    color: var(--danger);
     font-size: 11.5px;
     margin-top: 6px;
     min-height: 14px
@@ -197,6 +198,11 @@ button.primary:hover {
 .chip .del {
     font-size: 11px;
     padding: 3px 7px
+}
+
+.chip .del:hover {
+    border-color: var(--danger);
+    background-color: var(--danger);
 }
 
 .ring {
