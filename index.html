@@ -53,7 +53,6 @@
     <div id="overlay">
       <div class="block" style="border-top: 0 solid var(--line)">
         <h2>View</h2>
-        <div class="toggle"><input type="checkbox" id="tFifths"><label for="tFifths">Arrange ring by circle of fifths</label></div>
         <label class="fld" for="layerSlider">Cylinder length (compress ↔ stretch)</label>
         <input id="layerSlider" class="vslider" type="range" min="1.5" max="9" step="0.1" value="4.2">
         <label class="fld" for="nameAzimuth">Chord-name angle</label>
@@ -66,6 +65,12 @@
     </div>
     <div id="legends">
       <div class="block" style="border-top: 0 solid var(--line)">
+        <h2>Ring ordering</h2>
+        <div class="legend">
+        <div class="toggle"><input type="checkbox" id="tFifths"><label for="tFifths">Arrange ring by circle of fifths</label></div>
+        </div>
+      </div>
+      <div class="block">
         <h2>Inside a chord</h2>
         <div class="legend">
           <div><i style="border-color:var(--semitone)"></i><b>H</b> — half step (1 st)</div>

@@ -341,7 +341,7 @@ button.primary:hover {
 
 #overlay {
     position: absolute;
-    left: 14px;
+    right: 14px;
     bottom: 12px;
     font-size: 11.5px;
     color: var(--muted);
