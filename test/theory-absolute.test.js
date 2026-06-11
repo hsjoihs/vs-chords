@@ -328,7 +328,7 @@ test("describe → parseChord round-trips arbitrary pitch-class sets", () => {
     }
 });
 
-// the exact scenario from the bug report: toggling a note off then on must not
+// toggling a note off then on must not
 // degrade the chip into an unparseable "C·D·E·…" string
 test("toggling a note keeps the chip a real, re-parseable symbol", () => {
     const c = T.parseChord("Dø(9,13)omit3"); // D A♭ C E B, root D=2
@@ -337,5 +337,15 @@ test("toggling a note keeps the chip a real, re-parseable symbol", () => {
     pcs = [...pcs, 4].sort((a, b) => a - b);
     const name = T.describe(pcs, c.rootPc, -3);
     assert.ok(!name.includes("·"), `expected a real symbol, got "${name}"`);
+    assert.deepEqual(sortSet(T.parseChord(name).pcs), sortSet(c.pcs), `"${name}"`);
+});
+
+
+// C7omit5 must not degrade into an ugly C(omit3,omit5,3,b7) 
+// omit3 and 3 must not coexist
+test("toggling a note does not cause omit3 and 3 to appear simultaneously", () => {
+    const c = T.parseChord("C7omit5"); 
+    const name = T.describe(c.pcs, c.rootPc, -3);
+    assert.ok(!(name.includes("omit3") && name.includes(",3,")), `expected omit3 and 3 to NOT coexist, got "${name}"`);
     assert.deepEqual(sortSet(T.parseChord(name).pcs), sortSet(c.pcs), `"${name}"`);
 });

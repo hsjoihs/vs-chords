@@ -87,6 +87,8 @@
         ["M7", { 1: 0, 3: 4, 5: 7, 7: 11 }],
         ["Δ7", { 1: 0, 3: 4, 5: 7, 7: 11 }],
         ["Δ", { 1: 0, 3: 4, 5: 7, 7: 11 }],
+        ["△7", { 1: 0, 3: 4, 5: 7, 7: 11 }],
+        ["△", { 1: 0, 3: 4, 5: 7, 7: 11 }],
         ["maj", { 1: 0, 3: 4, 5: 7 }],
         ["Maj", { 1: 0, 3: 4, 5: 7 }],
 
@@ -118,7 +120,7 @@
         ["∅7", { 1: 0, 3: 3, 5: 6, 7: 10 }],
         ["∅", { 1: 0, 3: 3, 5: 6, 7: 10 }],
 
-        ["@", { 1: 0, 2: 2, 5: 6, 7: 10 }],
+        ["@", { 1: 0, 2: 2, 5: 6, 7: 10 }], // blackadder
 
         ["aug7", { 1: 0, 3: 4, 5: 8, 7: 10 }],
         ["augmaj7", { 1: 0, 3: 4, 5: 8, 7: 11 }],
@@ -150,6 +152,12 @@
 
         ["-7", { 1: 0, 3: 3, 5: 7, 7: 10 }],
         ["-", { 1: 0, 3: 3, 5: 7 }],
+
+        // quartal
+        ["q7", {1: 0, 4: 5, 7: 10 }],
+        ["q10", {1: 0, 4: 5, 7: 10, 10: 15 }],
+        ["q13", {1: 0, 4: 5, 7: 10, 10: 15, 13: 20 }],
+        ["q", { 1: 0, 4: 5 }], 
 
         ["", { 1: 0, 3: 4, 5: 7 }], // bare major — must stay last
     ];
@@ -412,7 +420,7 @@
         "6", "m6", "69",
         "7", "Δ7", "m7", "ø", "@", "dim7", "mM7", "aug7", 
         "9", "maj9", "m9", "add9",
-        "11", "m11", "13", "maj13", "m13", "7sus4", "7sus2"
+        "11", "m11", "13", "maj13", "m13", "7sus4", "7sus2", "q", "q7"
     ];
     const nameRank = (token) => {
         const i = NAME_PREF.indexOf(token);
@@ -507,11 +515,23 @@
                 return rootName + base.token + (toks.length ? "(" + toks.join(",") + ")" : "");
             }
         }
-        // no quality fits (or its degrees boxed us in): major triad, 3rd and 5th
-        // removed, then every note added explicitly
+        // no quality fits (or its degrees boxed us in): start from a major triad
+        // and reconcile it with the notes we actually have. Only omit the 3rd or
+        // 5th the assignment doesn't use, and don't re-add a plain 3rd/5th the
+        // triad already supplies — so e.g. {C,E,B♭} is "C(omit5,b7)", never the
+        // self-contradicting "C(omit3,omit5,3,b7)".
         const asn = assignDegrees([...T].filter((v) => v !== 0), new Set([1]));
         if (!asn) return null;
-        return rootName + "(" + ["omit3", "omit5", ...tokensFor(asn)].join(",") + ")";
+        const usedDegs = new Set([...asn.values()].map(([d]) => d));
+        const toks = [];
+        if (!usedDegs.has(3)) toks.push("omit3");
+        if (!usedDegs.has(5)) toks.push("omit5");
+        for (const v of [...asn.keys()].sort((a, b) => a - b)) {
+            const [d, a] = asn.get(v);
+            if (a === 0 && (d === 3 || d === 5)) continue; // already in the major triad
+            toks.push(ADD_ACC[a] + d);
+        }
+        return rootName + "(" + toks.join(",") + ")";
     }
 
     function describe(pcs, rootPc, fifthStart) {
@@ -531,7 +551,11 @@
         for (const cand of pcs) {
             const res = buildFromRoot(pcs, cand, spell(cand));
             if (!res) continue;
-            const adjust = res.includes("m7") ? -0.6 : res.includes("6") ? 0.6 : 0;
+            const adjust = 
+                res.includes("m7") ? -0.6 : /* promote */
+                res.includes("6") ? 0.6 : /* demote */
+                res.includes("q") ? 0.6 : /* demote */
+                0;
             const score = [res.includes("omit3,omit5") ? 1 : 0, res.length + adjust];
             if (!best || score[0] < best.score[0] || (score[0] === best.score[0] && score[1] < best.score[1])) {
                 best = { res, score };
