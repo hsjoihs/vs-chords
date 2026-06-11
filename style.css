@@ -254,6 +254,34 @@ button.primary:hover {
     margin-bottom: 4px
 }
 
+.keypad {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px
+}
+
+.keypad .kp-label {
+    font-size: 10px;
+    color: var(--muted);
+    margin-left: 6px;
+    text-transform: uppercase;
+    letter-spacing: .5px
+}
+
+.keypad .kp-label:first-child {
+    margin-left: 0
+}
+
+.keypad .kp {
+    min-width: 30px;
+    padding: 4px 8px;
+    font-size: 15px;
+    line-height: 1;
+    font-family: ui-monospace, Menlo, Consolas, monospace
+}
+
 .spechint {
     font-size: 10px;
     color: var(--muted);

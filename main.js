@@ -484,6 +484,17 @@ function syncBaselines() {
     updateButtons();
 }
 
+// insert `text` at the caret of an input, then fire `input` so button state updates
+function insertAtCursor(el, text) {
+    const s = el.selectionStart ?? el.value.length;
+    const e = el.selectionEnd ?? el.value.length;
+    el.value = el.value.slice(0, s) + text + el.value.slice(e);
+    const pos = s + text.length;
+    el.focus();
+    el.setSelectionRange(pos, pos);
+    el.dispatchEvent(new Event("input"));
+}
+
 /* ====================== shareable URL state ======================
  * The whole scene (chords, toggles, camera) is mirrored into ?s=… using
  * history.replaceState, debounced, so links are shareable without flooding the
@@ -708,6 +719,16 @@ function setupUI() {
     });
     // editing the text box makes Render the suggested action
     progEl.addEventListener("input", updateButtons);
+    // mini keyboard: click to insert hard-to-type glyphs at the caret
+    const handler = (btn) => {
+        btn.addEventListener("mousedown", (e) => {
+            e.preventDefault(); // keep the text box focused / caret intact
+            insertAtCursor(progEl, btn.dataset.ins);
+        });
+    };
+    document.querySelectorAll("#keypad .kp").forEach(handler);
+    document.querySelectorAll("#keypad2 .kp").forEach(handler);
+    document.querySelectorAll("#keypad3 .kp").forEach(handler);
     // inverse of Render: turn the current chips back into a progression string.
     // Each chip's symbol is describe()-generated, so it re-parses to the same notes.
     toTextBtn.onclick = () => {

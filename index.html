@@ -18,6 +18,24 @@
       <div class="row" id="presets"></div>
       <label class="fld" for="prog">or, input chord symbols: <br>(separated by a space, <code>→</code> or <code>-></code>)</label>
       <input id="prog" type="text" value="G7 → C" spellcheck="false" autocomplete="off">
+      <div class="keypad" id="keypad">
+        <span class="kp-label">accidental</span>
+        <button type="button" class="kp" data-ins="♭" title="flat">♭</button>
+        <button type="button" class="kp" data-ins="♯" title="sharp">♯</button>
+        <button type="button" class="kp" data-ins="𝄪" title="double sharp">𝄪</button>
+        <button type="button" class="kp" data-ins="𝄫" title="double flat">𝄫</button>
+      </div>
+      <div class="keypad" id="keypad2">
+        <span class="kp-label">quality</span>
+        <button type="button" class="kp" data-ins="ø" title="half-diminished">ø</button>
+        <button type="button" class="kp" data-ins="°" title="diminished">°</button>
+        <button type="button" class="kp" data-ins="Δ" title="major 7th">Δ</button>
+        <button type="button" class="kp" data-ins="+" title="augmented">+</button>
+      </div>
+      <div class="keypad" id="keypad3">
+        <span class="kp-label">separator</span>
+        <button type="button" class="kp" data-ins=" → " title="next chord">→</button>
+      </div>
       <div class="row">
         <button class="primary" id="render">↓ Render</button>
         <button id="toText">↑ To text</button>
