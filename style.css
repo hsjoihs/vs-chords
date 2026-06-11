@@ -386,6 +386,23 @@ button.primary:hover {
     color: var(--muted)
 }
 
+.anaSel {
+    width: 100%;
+    margin-bottom: 8px;
+    background: var(--panel2);
+    color: var(--txt);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 5px 6px;
+    font-size: 12.5px;
+    cursor: pointer
+}
+
+.anaSel:focus {
+    outline: none;
+    border-color: var(--accent)
+}
+
 #analysis .mv {
     display: flex;
     justify-content: space-between;

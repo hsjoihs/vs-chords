@@ -666,38 +666,46 @@ function renderChips() {
     });
 }
 
+let analysisIdx = 0; // which transition the analysis panel shows
 function renderAnalysis() {
     const el = document.getElementById("analysis");
     if (chords.length < 2) {
-        el.innerHTML = "<h3>Analysis</h3><div style='color:var(--muted)'>Add a second chord to see voice leading.</div>";
+        el.innerHTML = "<h3>Connections</h3><div style='color:var(--muted)'>Add a second chord to see the connections.</div>";
         return;
     }
-    let html = "<h3>Connections</h3>";
-    for (let i = 0; i < chords.length - 1; i++) {
-        const A = chords[i],
-            B = chords[i + 1];
-        html += `<div style="margin:6px 0 4px;font-weight:600;color:var(--accent)">${A.symbol} → ${B.symbol}</div>`;
-        voiceLeading(A.pcs, B.pcs, circleOfFifths).forEach((mv) => {
-            const s = Math.abs(mv.step);
-            let tag, txt;
-            if (s === 0) {
-                tag = "hold";
-                txt = "held";
-            } else if (s === 1) {
-                tag = circleOfFifths ? "fifth" : "semi";
-                txt = circleOfFifths ? "5th" : "semitone";
-            } else {
-                tag = "whole";
-                txt = "whole tone";
-            }
-            const arrow = `${noteName(A, mv.from)}→${noteName(B, mv.to)}`;
-            html += `<div class="mv"><b>${arrow}</b><span class="tag ${tag}">${txt}</span></div>`;
-        });
-        /*if (hasTritone(A.pcs) && !hasTritone(B.pcs)) {
-            html += `<div class="hint">Tritone resolves: dissonance released.</div>`;
-        }*/
-    }
+    const nT = chords.length - 1;
+    analysisIdx = Math.max(0, Math.min(analysisIdx, nT - 1)); // clamp if chords shrank
+
+    // dropdown to pick a single transition (the whole list would be unwieldy)
+    const options = chords
+        .slice(0, nT)
+        .map((_, i) => `<option value="${i}"${i === analysisIdx ? " selected" : ""}>${chords[i].symbol} → ${chords[i + 1].symbol}</option>`)
+        .join("");
+    let html = `<h3>Connections</h3><select id="analysisSel" class="anaSel">${options}</select>`;
+
+    const A = chords[analysisIdx],
+        B = chords[analysisIdx + 1];
+    voiceLeading(A.pcs, B.pcs, circleOfFifths).forEach((mv) => {
+        const s = Math.abs(mv.step);
+        let tag, txt;
+        if (s === 0) {
+            tag = "hold";
+            txt = "held";
+        } else if (s === 1) {
+            tag = circleOfFifths ? "fifth" : "semi";
+            txt = circleOfFifths ? "5th" : "semitone";
+        } else {
+            tag = "whole";
+            txt = "whole tone";
+        }
+        const arrow = `${noteName(A, mv.from)}→${noteName(B, mv.to)}`;
+        html += `<div class="mv"><b>${arrow}</b><span class="tag ${tag}">${txt}</span></div>`;
+    });
     el.innerHTML = html;
+    document.getElementById("analysisSel").onchange = (e) => {
+        analysisIdx = Number(e.target.value);
+        renderAnalysis();
+    };
 }
 
 function doRender() {
