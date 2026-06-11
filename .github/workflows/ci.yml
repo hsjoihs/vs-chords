@@ -18,7 +18,7 @@ jobs:
       # The test suite has zero dependencies, so no install step is needed.
       - name: Syntax check browser scripts
         run: |
-          node --check theory.js
+          node --check theory-absolute.js
           node --check main.js
       - name: Run tests
         run: node --test

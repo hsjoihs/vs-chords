@@ -2,7 +2,7 @@
  * main.js — rendering + UI for the chord cylinder.
  *
  * All music theory (parsing, spelling, intervals, voice leading) lives in
- * theory.js, which must be loaded BEFORE this file. It exposes these as
+ * theory-absolute.js, which must be loaded BEFORE this file. It exposes these as
  * globals: parseChord, parseProgression, voiceLeading, absDistance,
  * hasTritone, describe, NOTE_NAMES.
  * ===================================================================== */
@@ -10,7 +10,7 @@
 /* ====================== state ====================== */
 // each chord: { symbol, pcs:[...], rootPc:Number|null, fifthStart:Number }
 // fifthStart is the chord's spelling: which length-12 segment of the spiral of
-// fifths is adopted as the circle of fifths (see theory.js).
+// fifths is adopted as the circle of fifths (see theory-absolute.js).
 let chords = [];
 
 const PRESETS = [

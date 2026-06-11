@@ -1,5 +1,5 @@
 /* =====================================================================
- * theory.js — pure music-theory core
+ * theory-absolute.js — pure music-theory core for absolute pitch
  *
  * Loadable both as a browser global (attached to window) and as a Node
  * CommonJS module (require), so the exact same code the web page runs is

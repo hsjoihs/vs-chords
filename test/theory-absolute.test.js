@@ -1,10 +1,9 @@
 /* =====================================================================
- * theory.test.js — parser tests, written so a musician can eyeball them.
+ * theory-absolute.test.js — parser tests, written so a musician can eyeball them.
  *
  * Each row is  [ "what you type", "the notes it must spell" ].
  * Spelling is checked literally, so enharmonics must be RIGHT:
  *   Fm is  F A♭ C   (never F G♯ C)
- *   B°7 is C... etc.
  *
  * Accidental glyphs in the expected strings:
  *   ♯  sharp          ♭  flat
@@ -15,7 +14,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const T = require("../theory.js");
+const T = require("../theory-absolute.js");
 
 const spell = (sym) => T.spellChord(sym).join(" ");
 

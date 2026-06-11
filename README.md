@@ -52,16 +52,16 @@ Each chord chip has twelve pitch-class buttons and a spelling slider:
 
 | File         | Responsibility                                                        |
 | ------------ | --------------------------------------------------------------------- |
-| `theory.js`  | Pure music theory. Parsing, **spelling**, intervals, voice leading. Loadable as a browser global _and_ a Node module. |
+| `theory-absolute.js`  | Pure music theory. Parsing, **spelling**, intervals, voice leading. Loadable as a browser global _and_ a Node module. |
 | `main.js`    | Rendering and UI (THREE.js scene, orbit controls, the chord chip).   |
 | `style.css`  | Styling.                                                              |
-| `index.html` | Wires the three together (loads `theory.js` before `main.js`).        |
+| `index.html` | Wires the three together (loads `theory-absolute.js` before `main.js`).        |
 | `test/`      | Parser tests for Node's built‑in runner.                              |
 
 
 ## The parser
 
-`theory.js` spells chords by interval quality, not by pitch class, so
+`theory-absolute.js` spells chords by interval quality, not by pitch class, so
 enharmonics come out right:
 
 - `Fm` → `F A♭ C` (never `F G♯ C`)
