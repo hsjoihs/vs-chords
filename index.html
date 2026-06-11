@@ -53,6 +53,7 @@
     <div id="overlay">
       <div class="block" style="border-top: 0 solid var(--line)">
         <h2>View</h2>
+        <div class="toggle"><input type="checkbox" id="tFifths"><label for="tFifths">Arrange ring by circle of fifths</label></div>
         <label class="fld" for="layerSlider">Cylinder length (compress ↔ stretch)</label>
         <input id="layerSlider" class="vslider" type="range" min="1.5" max="9" step="0.1" value="4.2">
         <label class="fld" for="nameAzimuth">Chord-name angle</label>
@@ -73,17 +74,19 @@
           <div><i style="border-color:var(--major3rd)"></i><b>M3</b> — major 3rd (4 st)</div>
           <div><i style="border-color:var(--p4p5)"></i><b>P4</b> — perfect 4th (5 st)</div>
           <div><i style="border-color:var(--tritone)"></i><b>TT</b> — tritone (6 st)</div>
-          <div class="toggle"><input type="checkbox" id="tShowAll" checked><label for="tShowAll">Show all interior intervals</label></div>
+          <div class="toggle"><input type="checkbox" id="tConsonant" checked><label for="tConsonant">Show consonant intervals (m3 M3 P4)</label></div>
+          <div class="toggle"><input type="checkbox" id="tDissonant" checked><label for="tDissonant">Show dissonant intervals (H W TT)</label></div>
           <div class="toggle"><input type="checkbox" id="tIntervalLabels" checked><label for="tIntervalLabels">Label intervals (H/W/m3/M3/P4/TT)</label></div>
         </div>
       </div>
       <div class="block">
         <h2>Between chords</h2>
         <div class="legend">
-          <div><i style="border-color:#999999"></i>No change — held note (solid)</div>
+          <div><i style="border-color:#999999"></i>No change — held note</div>
           <div><i style="border-color:#999999;border-top-style:dotted"></i>Held-note pair → wire-mesh pane</div>
-          <div><i style="border-color:var(--semitone);border-top-style:dotted"></i>Semitone move, 1 st (dotted)</div>
-          <div><i style="border-color:var(--whole);border-top-style:dashed"></i>Whole-tone move, 2 st (dashed)</div>
+          <div><i style="border-color:var(--semitone);border-top-style:dotted"></i>1 ring-step: <b>semitone</b></div>
+          <div><i style="border-color:var(--p4p5);border-top-style:dotted"></i>1 ring-step in 5ths mode: <b>fifth</b></div>
+          <div><i style="border-color:var(--whole);border-top-style:dashed"></i>2 ring-steps: <b>whole tone</b></div>
           <div class="toggle"><input type="checkbox" id="tConnections" checked><label for="tConnections">Show between-chord connections</label></div>
         </div>
         

@@ -223,6 +223,46 @@ test("bestFifthStart stays inside the offered slider range", () => {
     }
 });
 
+/* =====================================================================
+ * Ring arrangement: chromatic vs circle of fifths
+ * ===================================================================== */
+
+test("circle of fifths sends every other vertex to its antipode", () => {
+    for (let pc = 0; pc < 12; pc++) {
+        assert.equal(T.ringIndex(pc, false), pc); // chromatic = identity
+        if (pc % 2 === 0) {
+            assert.equal(T.ringIndex(pc, true), pc); // even pcs stay put
+        } else {
+            assert.equal(T.ringIndex(pc, true), (pc + 6) % 12); // odd pcs -> antipode
+        }
+    }
+});
+
+test("a step is a semitone chromatically but a fifth in circle-of-fifths mode", () => {
+    // C(0)→G(7): one step on the circle of fifths, five steps chromatically
+    assert.equal(Math.abs(T.ringStep(0, 7, true)), 1);
+    assert.equal(T.ringStep(0, 7, false), -5);
+    // a whole tone is two steps in BOTH arrangements
+    assert.equal(Math.abs(T.ringStep(0, 2, true)), 2);
+    assert.equal(Math.abs(T.ringStep(0, 2, false)), 2);
+    // a chromatic semitone is one step chromatically, five in fifths (so not connected)
+    assert.equal(Math.abs(T.ringStep(0, 1, false)), 1);
+    assert.equal(Math.abs(T.ringStep(0, 1, true)), 5);
+});
+
+test("voiceLeading connects fifths (not semitones) in circle-of-fifths mode", () => {
+    const key = (m) => `${m.from}-${m.to}`;
+    const fifths = new Set(T.voiceLeading([0], [7, 2, 1], true).map(key));
+    assert.ok(fifths.has("0-7"), "a fifth is one step → connected");
+    assert.ok(fifths.has("0-2"), "a whole tone is two steps → connected");
+    assert.ok(!fifths.has("0-1"), "a semitone is five steps → not connected");
+
+    const chrom = new Set(T.voiceLeading([0], [7, 2, 1], false).map(key));
+    assert.ok(chrom.has("0-1"), "a semitone is one step chromatically → connected");
+    assert.ok(chrom.has("0-2"), "a whole tone → connected");
+    assert.ok(!chrom.has("0-7"), "a fifth is five steps chromatically → not connected");
+});
+
 /* ---- describe(): naming a hand-built set with a tagged root ------- */
 test("describe uses a tagged root and the chosen window", () => {
     // {F, A♭, C} with F tagged as root, flat window -> "Fm"

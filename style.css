@@ -419,6 +419,11 @@ button.primary:hover {
     color: var(--whole)
 }
 
+.tag.fifth {
+    background: rgba(199, 146, 234, .18);
+    color: var(--p4p5)
+}
+
 .tag.hold {
     background: rgba(154, 167, 182, .18);
     color: var(--muted)

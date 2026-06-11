@@ -5,6 +5,13 @@ octave wraps once around the cylinder. Each chord is a
 ring of vertices joined by **every** interval, the chords stack upward in time,
 and dashed lines between layers trace the motion.
 
+The ring can be arranged **chromatically** or by the **circle of fifths** (a
+toggle in the View panel — it sends every other vertex to its antipode). On the
+circle of fifths a single ring step is a fifth rather than a semitone, so the
+between-chord connections show motion by {none, a fifth, a whole tone}; a whole
+tone is two steps either way. Interior intervals can be filtered into
+**consonant** (m3, M3, P4) and **dissonant** (H, W, TT) groups.
+
 ## Running it
 
 It is a static site — open `index.html` in a browser, or serve the folder:

@@ -324,25 +324,41 @@
         return Math.abs(dirDistance(a, b));
     }
 
-    // Largest step (in semitones) still drawn as a connection between chords.
-    const MAX_VOICE_STEP = 2; // a whole tone
+    // Largest distance (in ring steps) still drawn as a connection between chords.
+    const MAX_VOICE_STEP = 2; // two steps = a whole tone in either arrangement
 
-    // Connect every note of A to every note of B that lies within a whole tone
-    // (0, 1 or 2 semitones). Unlike single-voice leading this lets one note fan
-    // out to several neighbours, which reads better for non-choral / pop motion:
-    // e.g. A7 → Dm7 draws C♯→C and C♯→D, plus E→D, E→F, G→F, G→A. Each move is
-    // { from, to, dist } with a signed dist in -2..+2.
+    // Where a pitch class sits around the ring. Chromatic: pc itself. Circle of
+    // fifths: 7·pc mod 12 — which sends every other vertex to its antipode, so a
+    // single ring step is a fifth instead of a semitone.
+    function ringIndex(pc, fifths) {
+        const p = ((pc % 12) + 12) % 12;
+        return fifths ? (7 * p) % 12 : p;
+    }
+    // signed number of ring steps from a to b, in [-6, 6]
+    function ringStep(a, b, fifths) {
+        let d = (ringIndex(b, fifths) - ringIndex(a, fifths)) % 12;
+        if (d < 0) d += 12;
+        if (d > 6) d -= 12;
+        return d;
+    }
 
-    // HOWEVER, when D and E are held for two chords, we only want D→D and E→E; 
-    // showing D→E and E→D is just visual noise.
-    function voiceLeading(A, B) {
+    // Connect every note of A to every note of B within MAX_VOICE_STEP ring
+    // steps. One step is a semitone (chromatic) or a fifth (circle of fifths);
+    // two steps is a whole tone in either arrangement. Letting one note fan out
+    // to several neighbours reads better for non-choral / pop motion: e.g. on the
+    // chromatic ring A7 → Dm7 draws C♯→C and C♯→D, plus E→D, E→F, G→F, G→A.
+    // Each move is { from, to, step, dist }, step signed in -2..+2.
+    //
+    // HOWEVER, when (say) D and E are held across both chords we only want D→D
+    // and E→E; drawing D→E and E→D as well is just visual noise.
+    function voiceLeading(A, B, fifths) {
         const moves = [];
         for (const a of A) {
             for (const b of B) {
-                const dist = dirDistance(a, b);
-                if (Math.abs(dist) <= MAX_VOICE_STEP) {
-                    if (A.includes(b) && B.includes(a) && dist !== 0) continue;
-                    else moves.push({ from: a, to: b, dist });
+                const step = ringStep(a, b, fifths);
+                if (Math.abs(step) <= MAX_VOICE_STEP) {
+                    if (A.includes(b) && B.includes(a) && step !== 0) continue;
+                    moves.push({ from: a, to: b, step, dist: dirDistance(a, b) });
                 }
             }
         }
@@ -618,6 +634,8 @@
         parseProgression,
         dirDistance,
         absDistance,
+        ringIndex,
+        ringStep,
         voiceLeading,
         MAX_VOICE_STEP,
         hasTritone,

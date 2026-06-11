@@ -88,9 +88,11 @@ let renderer, scene, camera, group, nameGroup;
 const R = 5; // cylinder radius
 let LAYER = 4.2; // vertical gap between chords (stretch/compress the cylinder)
 let spin = false,
-    showAll = true,
+    showConsonant = true, // m3, M3, P4/P5 interior intervals
+    showDissonant = true, // H, W, TT interior intervals
     showIntervalLabels = true,
-    showConnections = true;
+    showConnections = true,
+    circleOfFifths = false; // arrange the ring by fifths instead of chromatically
 // chord-name sprite placement (shared by every chord): azimuth + distance from axis
 let nameAzDeg = 270, // 270° = the F♯ side, the original fixed position
     nameDist = R + 2.4,
@@ -198,7 +200,8 @@ function clearGroup() {
 }
 
 function pcAngle(pc) {
-    return (-pc / 12) * Math.PI * 2 + Math.PI / 2; // C at +Z front, going clockwise
+    // position around the ring depends on the arrangement (chromatic / fifths)
+    return (-ringIndex(pc, circleOfFifths) / 12) * Math.PI * 2 + Math.PI / 2;
 }
 function pcPos(pc, y) {
     const a = pcAngle(pc);
@@ -238,11 +241,11 @@ function tube(p1, p2, color, radius) {
 
 // A connection between two notes on adjacent layers, as a helix on the cylinder
 // surface: the azimuth and height interpolate linearly while the radius stays R.
-// φ moves by exactly `dist` semitones the short way (so semitone/whole-tone line
-// clichés read as smooth spirals rather than chords through the interior).
-function connCurve(fromPc, toPc, dist, y0, y1) {
+// φ moves by exactly `step` ring steps the short way (so single-step / whole-tone
+// line clichés read as smooth spirals rather than chords through the interior).
+function connCurve(fromPc, toPc, step, y0, y1) {
     const a0 = pcAngle(fromPc);
-    const a1 = a0 - (dist / 12) * Math.PI * 2; // signed: short way round
+    const a1 = a0 - (step / 12) * Math.PI * 2; // signed: short way round the ring
     return (t) => {
         const a = a0 + (a1 - a0) * t;
         const y = y0 + (y1 - y0) * t;
@@ -383,9 +386,11 @@ function build() {
         // interior intervals: complete graph among notes
         for (let i = 0; i < pcs.length; i++)
             for (let j = i + 1; j < pcs.length; j++) {
-                const semi = absDistance(pcs[i], pcs[j]);
+                const semi = absDistance(pcs[i], pcs[j]); // interval class 1..6
                 const isTri = semi === 6;
-                if (!showAll && !isTri) continue;
+                // consonant = m3 / M3 / P4 (3,4,5); dissonant = H / W / TT (1,2,6)
+                const consonant = semi === 3 || semi === 4 || semi === 5;
+                if (consonant ? !showConsonant : !showDissonant) continue;
                 const col = intervalColor(semi);
                 const rad = isTri ? 0.075 : 0.038;
                 const a = pcPos(pcs[i], y),
@@ -427,21 +432,23 @@ function build() {
                 y1 = (i + 1) * LAYER;
             const A = chords[i].pcs,
                 B = chords[i + 1].pcs;
-            voiceLeading(A, B).forEach((mv) => {
-                const fn = connCurve(mv.from, mv.to, mv.dist, y0, y1);
-                const d = Math.abs(mv.dist);
-                if (d === 0) {
+            voiceLeading(A, B, circleOfFifths).forEach((mv) => {
+                const fn = connCurve(mv.from, mv.to, mv.step, y0, y1);
+                const s = Math.abs(mv.step);
+                if (s === 0) {
                     // no change: thick sturdy solid line
                     group.add(tube(fn(0), fn(1), COLORS.voiceLeading.hold, 0.15));
-                    arrowCone(fn, COLORS.voiceLeading.hold, {coneRadius: 0.3, t: 0.6});
-                } else if (d === 1) {
-                    // semitone: dense dotted spiral
-                    dashSpiral(fn, COLORS.voiceLeading.semitone, 0.086, 10, 0.4);
-                    arrowCone(fn, COLORS.voiceLeading.semitone, {coneRadius: 0.17, t: 0.475});
+                    arrowCone(fn, COLORS.voiceLeading.hold, { coneRadius: 0.3, t: 0.6 });
+                } else if (s === 1) {
+                    // one ring step: a semitone (chromatic) or a fifth (circle of
+                    // fifths) — colour it accordingly
+                    const col = circleOfFifths ? COLORS.interval.p4p5 : COLORS.voiceLeading.semitone;
+                    dashSpiral(fn, col, 0.086, 10, 0.4);
+                    arrowCone(fn, col, { coneRadius: 0.17, t: 0.475 });
                 } else {
-                    // whole tone: dashed spiral
+                    // two ring steps: a whole tone in either arrangement
                     dashSpiral(fn, COLORS.voiceLeading.wholeTone, 0.05, 5, 0.55);
-                    arrowCone(fn, COLORS.voiceLeading.wholeTone, {coneRadius: 0.17, t: 0.5});
+                    arrowCone(fn, COLORS.voiceLeading.wholeTone, { coneRadius: 0.17, t: 0.5 });
                 }
             });
             // each pair of notes held across both chords spans a rectangular
@@ -508,7 +515,7 @@ function encodeState() {
     return {
         v: 1,
         c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol]),
-        t: [showAll, showIntervalLabels, showConnections, spin].map((b) => (b ? 1 : 0)),
+        t: [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths].map((b) => (b ? 1 : 0)),
         k: [round(camTheta, 3), round(camPhi, 3), round(camRad, 2), round(camTarget.x, 2), round(camTarget.y, 2), round(camTarget.z, 2)],
         L: round(LAYER, 2),
         na: Math.round(nameAzDeg),
@@ -541,11 +548,13 @@ function restoreState() {
             symbol,
         }));
         if (Array.isArray(st.t)) {
-            [showAll, showIntervalLabels, showConnections, spin] = st.t.map(Boolean);
-            document.getElementById("tShowAll").checked = showAll;
+            [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths] = st.t.map(Boolean);
+            document.getElementById("tConsonant").checked = showConsonant;
+            document.getElementById("tDissonant").checked = showDissonant;
             document.getElementById("tIntervalLabels").checked = showIntervalLabels;
             document.getElementById("tConnections").checked = showConnections;
             document.getElementById("tSpin").checked = spin;
+            document.getElementById("tFifths").checked = circleOfFifths;
         }
         if (st.L != null) LAYER = st.L;
         if (st.na != null) nameAzDeg = st.na;
@@ -667,18 +676,18 @@ function renderAnalysis() {
         const A = chords[i],
             B = chords[i + 1];
         html += `<div style="margin:6px 0 4px;font-weight:600;color:var(--accent)">${A.symbol} → ${B.symbol}</div>`;
-        voiceLeading(A.pcs, B.pcs).forEach((mv) => {
-            const d = mv.dist;
+        voiceLeading(A.pcs, B.pcs, circleOfFifths).forEach((mv) => {
+            const s = Math.abs(mv.step);
             let tag, txt;
-            if (d === 0) {
+            if (s === 0) {
                 tag = "hold";
                 txt = "held";
-            } else if (Math.abs(d) === 1) {
-                tag = "semi";
-                txt = (d > 0 ? "+" : "") + d + " st";
+            } else if (s === 1) {
+                tag = circleOfFifths ? "fifth" : "semi";
+                txt = circleOfFifths ? "5th" : "semitone";
             } else {
                 tag = "whole";
-                txt = (d > 0 ? "+" : "") + d + " st";
+                txt = "whole tone";
             }
             const arrow = `${noteName(A, mv.from)}→${noteName(B, mv.to)}`;
             html += `<div class="mv"><b>${arrow}</b><span class="tag ${tag}">${txt}</span></div>`;
@@ -741,8 +750,16 @@ function setupUI() {
         renderChips();
         build();
     };
-    document.getElementById("tShowAll").onchange = (e) => {
-        showAll = e.target.checked;
+    document.getElementById("tConsonant").onchange = (e) => {
+        showConsonant = e.target.checked;
+        build();
+    };
+    document.getElementById("tDissonant").onchange = (e) => {
+        showDissonant = e.target.checked;
+        build();
+    };
+    document.getElementById("tFifths").onchange = (e) => {
+        circleOfFifths = e.target.checked;
         build();
     };
     document.getElementById("tIntervalLabels").onchange = (e) => {
