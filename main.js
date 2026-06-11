@@ -461,6 +461,7 @@ function build() {
         }
     }
     renderAnalysis();
+    document.body.classList.toggle("fifths-mode", circleOfFifths); // legend follows arrangement
     updateButtons();
     scheduleUrlUpdate();
 }

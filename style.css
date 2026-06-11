@@ -424,6 +424,19 @@ button.primary:hover {
     color: var(--p4p5)
 }
 
+/* the single-step legend entry follows the ring arrangement */
+.conn-fifths {
+    display: none
+}
+
+body.fifths-mode .conn-chromatic {
+    display: none
+}
+
+body.fifths-mode .conn-fifths {
+    display: block
+}
+
 .tag.hold {
     background: rgba(154, 167, 182, .18);
     color: var(--muted)
