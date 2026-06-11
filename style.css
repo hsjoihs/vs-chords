@@ -259,7 +259,33 @@ button.primary:hover {
     flex-wrap: wrap;
     align-items: center;
     gap: 4px;
-    margin-top: 6px
+    /* hidden until the text box is focused; collapses so it leaves no gap */
+    overflow: hidden;
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition:
+        max-height .22s ease,
+        margin-top .22s ease,
+        opacity .18s ease,
+        transform .22s ease,
+        visibility .22s;
+}
+
+/* reveal every keypad row while the input is focused (focus stays put when
+   clicking the keys, thanks to mousedown/preventDefault) or while tabbing
+   through the keys */
+#prog:focus ~ .keypad,
+.keypad:focus-within {
+    max-height: 200px;
+    margin-top: 6px;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
 }
 
 .keypad .kp-label {
