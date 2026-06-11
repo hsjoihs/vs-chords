@@ -678,9 +678,7 @@ function renderAnalysis() {
     analysisIdx = Math.max(0, Math.min(analysisIdx, nT - 1)); // clamp if chords shrank
 
     // dropdown to pick a single transition (the whole list would be unwieldy)
-    const options = chords
-        .slice(0, nT)
-        .map((_, i) => `<option value="${i}"${i === analysisIdx ? " selected" : ""}>${chords[i].symbol} → ${chords[i + 1].symbol}</option>`)
+    const options = chords.slice(0, nT).map((_, i) => `<option value="${i}"${i === analysisIdx ? " selected" : ""}>⟨${i + 1}⟩ ${chords[i].symbol} → ${chords[i + 1].symbol}</option>`)
         .join("");
     let html = `<h3>Connections</h3><select id="analysisSel" class="anaSel">${options}</select>`;
 
