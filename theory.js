@@ -406,13 +406,13 @@
     const formulaIntervals = (formula) => new Set(Object.values(formula).map((s) => mod12(s)));
 
     // canonical name preference: lower rank = nicer token on a size tie, so we
-    // get "dim7" not "°7", "Δ7" not "M7"/"Maj7", "ø" not "m7b5".
+    // get "dim7" not "°7", "Δ7" not "M7"/"Maj7", "ø" not "m7b5", "7sus4" not "7sus".
     const NAME_PREF = [
         "", "m", "dim", "aug", "sus2", "sus4", "5",        
         "6", "m6", "69",
         "7", "Δ7", "m7", "ø", "@", "dim7", "mM7", "aug7", 
         "9", "maj9", "m9", "add9",
-        "11", "m11", "13", "maj13", "m13",
+        "11", "m11", "13", "maj13", "m13", "7sus4", "7sus2"
     ];
     const nameRank = (token) => {
         const i = NAME_PREF.indexOf(token);

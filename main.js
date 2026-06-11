@@ -21,6 +21,7 @@ const PRESETS = [
     "Abdim7 → C6", "F6 C°7 C6",
     "Fm7 → B♭7 → C6",
     "G - F#@ - F",
+    "G7sus4→G7→C",
     "Dm → E7/D → C/D → D7",
     "Cm7b5 → F7 → B♭maj7",
     "Gm → G♭+ → B♭/F → E∅",
