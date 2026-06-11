@@ -72,7 +72,7 @@
       <div class="block">
         <h2>Inside a chord</h2>
         <div class="legend">
-          <table id="intervals">
+          <table class="intervals">
             <tr><td><i style="border-color:var(--semitone)"></i></td><td><b>H</b></td><td>half step</td><td>1 semitone</td></tr>
             <tr><td><i style="border-color:var(--whole)"></i></td><td><b>W</b></td><td>whole step</td><td>2 semitones</td></tr>
             <tr><td><i style="border-color:var(--minor3rd)"></i></td><td><b>m3</b></td><td>minor 3rd</td><td>3 semitones</td></tr>
@@ -88,12 +88,14 @@
       <div class="block">
         <h2>Between chords</h2>
         <div class="legend">
-          <div><i style="border-color:#999999"></i>held note</div>
-          <div><i style="border-color:#999999;border-top-style:dotted"></i>pair of held notes: wire-mesh pane</div>
-          <div class="conn-chromatic"><i style="border-color:var(--semitone);border-top-style:dotted"></i>1 ring-step: <b>semitone</b></div>
-          <div class="conn-fifths"><i style="border-color:var(--p4p5);border-top-style:dotted"></i>1 ring-step: <b>fifth</b></div>
-          <div><i style="border-color:var(--whole);border-top-style:dashed"></i>2 ring-steps: <b>whole tone</b></div>
-          <div class="toggle"><input type="checkbox" id="tConnections" checked><label for="tConnections">Show between-chord connections</label></div>
+          <table class="intervals">
+            <tr><td><u style="border-color:#999999"></u></td><td>held note</td></tr>
+            <tr><td><i class="diagonal-cross-stripes" style="width: 22px; height: 15px; display: inline-block; border-top: none"></i></td><td>pair of held notes</td></tr>
+            <tr id="conn-single-step"><td><u style="border-color:var(--semitone);border-left-style:dotted"></u></td><td>semitone</td></tr>
+            <tr><td><u style="border-color: var(--whole);border-left-style:dashed;"></u></td><td>whole tone</td></tr>
+          </table>
+          <div></div>
+          <div class="toggle"><input type="checkbox" id="tConnections" checked><label for="tConnections">Show all</label></div>
         </div>
         
       </div>

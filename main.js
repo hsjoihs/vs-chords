@@ -462,7 +462,13 @@ function build() {
         }
     }
     renderAnalysis();
-    document.body.classList.toggle("fifths-mode", circleOfFifths); // legend follows arrangement
+    
+    // legend follows arrangement
+    if (circleOfFifths) {
+        document.getElementById("conn-single-step").innerHTML = `<td><u style="border-color:var(--p4p5);border-left-style:dotted"></u></td><td>fifth</td>`;
+    } else {
+        document.getElementById("conn-single-step").innerHTML = `<td><u style="border-color:var(--semitone);border-left-style:dotted"></u></td><td>semitone</td>`;
+    }
     updateButtons();
     scheduleUrlUpdate();
 }
