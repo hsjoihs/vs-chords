@@ -692,10 +692,10 @@ function renderAnalysis() {
             txt = "held";
         } else if (s === 1) {
             tag = circleOfFifths ? "fifth" : "semi";
-            txt = circleOfFifths ? "5th" : "semitone";
+            txt = circleOfFifths ? (mv.step === 1 ? "P5" : "P4") : "H" + (mv.step === 1 ? "↑" : "↓");
         } else {
             tag = "whole";
-            txt = "whole tone";
+            txt = "W"+ (mv.step === 2 ? "↑" : "↓");
         }
         const arrow = `${noteName(A, mv.from)}→${noteName(B, mv.to)}`;
         html += `<div class="mv"><b>${arrow}</b><span class="tag ${tag}">${txt}</span></div>`;
