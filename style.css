@@ -7,11 +7,11 @@
     --line:             oklab(30% 0.015 -0.03);
     --txt:              oklab(95% 0.005 -0.01);
     --muted:            oklab(70% 0.015 -0.03);
-    --accent:           oklab(70% 0.065 -0.13);
+    --main:           oklab(70% 0.065 -0.13);
 
     /* UI: special colors */
     --danger: oklab(70% 0.2 0.06);
-    --chordroot: oklab(70% -0.12 0.08);
+    --accent: oklab(70% -0.12 0.08);
 
     /* musical interval */
     --semitone: #5ad17a;
@@ -20,6 +20,10 @@
     --major3rd: #d8fe4c;
     --p4p5: #c792ea;
     --tritone: #ff5d6c;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--main);
 }
 
 * {
@@ -120,7 +124,7 @@ input[type=text] {
 
 input[type=text]:focus {
     outline: none;
-    border: 1px solid var(--accent);
+    border: 1px solid var(--main);
     border-radius: 2px;
 }
 
@@ -143,12 +147,12 @@ button {
 }
 
 button:hover {
-    border-color: var(--accent);
+    border-color: var(--main);
 }
 
 button.primary {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--main);
+    border-color: var(--main);
     color: var(--lit-button-txt);
     font-weight: 600
 }
@@ -158,8 +162,14 @@ button.primary:hover {
 }
 
 .preset {
-    font-size: 11.5px;
-    padding: 6px 9px
+    font-size: 10.5px;
+    padding: 6px 6px
+}
+
+.preset:hover {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--lit-button-txt);
 }
 
 .err {
@@ -235,15 +245,17 @@ button.primary:hover {
 }
 
 .pc.on {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--main);
+    border-color: var(--main);
     color: var(--lit-button-txt);
 }
 
 .pc.root {
-    background: var(--chordroot);
-    border-color: var(--chordroot);
+    background: var(--accent);
+    border-color: var(--accent);
     color: var(--lit-button-txt);
+    text-decoration: underline 2px;
+    text-underline-offset: 0.2em;
 }
 
 .spec {
@@ -257,13 +269,13 @@ button.primary:hover {
 
 .spec .slider {
     flex: 1;
-    accent-color: var(--accent);
+    accent-color: var(--main);
     cursor: pointer
 }
 
 .vslider {
     width: 100%;
-    accent-color: var(--accent);
+    accent-color: var(--main);
     cursor: pointer;
     margin-bottom: 4px
 }
@@ -412,7 +424,7 @@ button.primary:hover {
 
 .anaSel:focus {
     outline: none;
-    border-color: var(--accent)
+    border-color: var(--main)
 }
 
 #analysis .mv {
@@ -460,7 +472,7 @@ button.primary:hover {
 
 .tag.leap {
     background: rgba(78, 161, 255, .18);
-    color: var(--accent)
+    color: var(--main)
 }
 
 .toggle {
