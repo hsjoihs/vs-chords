@@ -57,12 +57,13 @@ Each chord chip has twelve pitch-class buttons and a spelling slider:
 | `theory-roman.js`      | Roman-numeral (relative) → absolute conversion, including the "curly-brace relative" progression syntax. Builds on `theory-chordname.js`. |
 | `main.js`    | Rendering and UI (THREE.js scene, orbit controls, the chord chip).   |
 | `style.css`  | Styling.                                                              |
-| `index.html` | Wires it together (loads `theory-pitchclass.js` + `theory-chordname.js` before `main.js`). |
+| `index.html` | Wires it together (loads the three `theory-*.js` modules before `main.js`). |
 | `test/`      | Parser tests for Node's built‑in runner (one file per theory module). |
 
 The theory modules are independent except that `theory-roman.js` depends on
-`theory-chordname.js`; the app uses pitch-class and chord-name, while the Roman
-layer is currently exercised only by its tests.
+`theory-chordname.js`. The app uses all three: the progression input box accepts
+"curly-brace relative" notation (e.g. `C {V7 → i=} Am`), which `theory-roman.js`
+expands into absolute chords before the rest of the pipeline runs.
 
 
 ## The parser

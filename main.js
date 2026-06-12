@@ -1,10 +1,11 @@
 /* =====================================================================
  * main.js — rendering + UI for the chord cylinder.
  *
- * All music theory lives in two modules that must be loaded BEFORE this file:
+ * All music theory lives in three modules that must be loaded BEFORE this file:
  *   theory-pitchclass.js
  *   theory-chordname.js
- * Both attach their functions to the global scope.
+ *   theory-roman.js   (expands "{V7 → i=} Am"-style curly-brace relative input)
+ * They attach their functions to the global scope.
  * ===================================================================== */
 
 /* ====================== state ====================== */
@@ -20,6 +21,9 @@ const PRESETS = [
     "C → Am → F → G",
     "Abdim7 → C6", "F6 C°7 C6",
     "Fm7 → B♭7 → C6",
+    "{II7→V7→I=}E♭",
+    "D{=I V vi iii IV I IV V}",
+    "F→{V7→i=}Dm→{V7→I=}B♭{=I→V}→{II7→V7→I=}F",
     "G - F#@ - F",
     "G7sus4→G7→C",
     "Dm → E7/D → C/D → D7",
@@ -718,7 +722,10 @@ function doRender() {
     const err = document.getElementById("err");
     err.textContent = "";
     try {
-        const parsed = parseProgression(document.getElementById("prog").value);
+        const raw = document.getElementById("prog").value;
+        // resolve "curly-brace relative" notation (e.g. "{V7 → i=} Am") to absolute chords
+        const text = raw.includes("{") ? progression.parseAndResolveCurlyBraceRelative(raw).join(" → ") : raw;
+        const parsed = parseProgression(text);
         if (parsed.length === 0) {
             err.textContent = "Enter at least one chord.";
             return;
