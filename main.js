@@ -597,7 +597,7 @@ function renderChips() {
         const chip = document.createElement("div");
         chip.className = "chip";
         chip.innerHTML = `
-      <div class="hd"><div class="nm"></div><button class="del">✕</button></div>
+      <div class="hd"><div class="nm"></div><button class="del"><img src="close.svg" width="20" height="20" /></button></div>
       <details>
       <summary>Edit</summary>
       <div class="ring"></div>

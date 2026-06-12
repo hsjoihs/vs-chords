@@ -4,7 +4,7 @@
     --panel:            oklab(20% 0.01  -0.02);
     --lit-button-txt:   oklab(20% 0.015 -0.03);
     --panel2:           oklab(25% 0.015 -0.03);
-    --line:             oklab(30% 0.015 -0.03);
+    --line:             oklab(35% 0.015 -0.03);
     --txt:              oklab(95% 0.005 -0.01);
     --muted:            oklab(70% 0.015 -0.03);
     --main:           oklab(70% 0.065 -0.13);
@@ -187,9 +187,8 @@ button.primary:hover {
 }
 
 .chip {
-    background: var(--panel2);
+    background: var(--line);
     border: 1px solid var(--line);
-    border-radius: 10px;
     padding: 10px
 }
 
@@ -212,13 +211,22 @@ button.primary:hover {
 }
 
 .chip .del {
-    font-size: 11px;
-    padding: 3px 7px
+    background-color: var(--line);
+    border-radius: 10px;
+    width: 20px;
+    height: 20px;
+    justify-content: center;
+    padding: 0;
+    border: 0;
 }
 
 .chip .del:hover {
     border-color: var(--danger);
     background-color: var(--danger);
+}
+
+.chip summary {
+    cursor: pointer;
 }
 
 .ring {
