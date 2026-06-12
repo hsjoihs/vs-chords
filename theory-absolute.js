@@ -427,52 +427,28 @@
         return i >= 0 ? i : 1000 + token.length;
     };
 
-    // the richest quality (most notes) whose intervals are all contained in T;
-    // ties broken toward the most canonical name. Returns { token, degs, set } | null.
-    function bestSubsetQuality(T) {
-        let best = null;
-        for (const [token, formula] of QUALITIES) {
-            if (token.includes("/")) continue; // "6/9" would look like a slash chord
-            const ivs = formulaIntervals(formula);
-            if (ivs.size < 2) continue;
-            let ok = true;
-            for (const iv of ivs)
-                if (!T.has(iv)) {
-                    ok = false;
-                    break;
-                }
-            if (!ok) continue;
-            if (
-                !best ||
-                ivs.size > best.set.size ||
-                (ivs.size === best.set.size && nameRank(token) < nameRank(best.token))
-            ) {
-                best = { token, degs: new Set(Object.keys(formula).map(Number)), set: ivs };
-            }
-        }
-        return best;
-    }
-
     // Assign each interval (a pitch class above the root, never 0) to a distinct
     // chord degree with an accidental in [-2,+2], avoiding `forbidden` degrees.
-    // Uses backtracking so it always finds an assignment when one exists (greedy
-    // can dead-end by spending a degree a later note needed). Returns a
-    // Map(interval -> [deg, acc]) or null if the notes cannot all be placed.
-    function assignDegrees(intervals, forbidden) {
+    // `noDeg7` keeps 7ths (♭7 / maj7) out of the tensions — they belong in the
+    // base quality. (6,+2) = "x6" is never produced. Uses backtracking so it
+    // always finds an assignment when one exists. Returns Map(interval -> [deg,
+    // acc]) or null if the notes cannot all be placed.
+    function assignDegrees(intervals, forbidden, noDeg7) {
+        const allow = (d, a) => !forbidden.has(d) && !(d === 6 && a === 2) && !(noDeg7 && d === 7);
         const cand = intervals.map((v) => {
             const list = [];
             const seen = new Set();
             for (const [d, a] of ADD_CAND[v] || []) {
-                if (!forbidden.has(d)) {
+                if (allow(d, a)) {
                     list.push([d, a]);
                     seen.add(d);
                 }
             }
             for (const d of ADD_DEGS) {
-                if (forbidden.has(d) || seen.has(d)) continue;
+                if (seen.has(d)) continue;
                 let a = mod12(v - DEG_PC[d]);
                 if (a > 6) a -= 12;
-                if (a >= -2 && a <= 2) list.push([d, a]);
+                if (a >= -2 && a <= 2 && allow(d, a)) list.push([d, a]);
             }
             return { v, list };
         });
@@ -502,36 +478,52 @@
                 return ADD_ACC[a] + d;
             });
 
+    const QUARTAL = new Set(["q", "q7", "q10", "q13"]);
+    // the degree in a quality's formula that produces pitch class `v`
+    function degreeOfInterval(formula, v) {
+        for (const d of Object.keys(formula)) if (mod12(formula[d]) === v) return Number(d);
+        return null;
+    }
+
     // Build a chord symbol for `pcs` using `r` as the root, or null if the set
-    // cannot be spelled from that root (every degree slot exhausted).
+    // cannot be spelled from that root. Considers every quality as a base: notes
+    // it has but the chord lacks become "omitN", notes the chord has but it lacks
+    // become parenthesised tensions. The best name uses the fewest such edits,
+    // then the most canonical base. Three rules shape the result:
+    //   [1] quartal names (q / q7 / q10 / q13) are reserved for purely quartal
+    //       chords — never "Gq(#9)";
+    //   [2] a 7th (♭7 or maj7) is spelled through the base, never as a tension —
+    //       so {C,G,B♭} is "C7(omit3)", not "C5(b7)";
+    //   [exception] when BOTH 7ths are present there is no convention, so one is
+    //       unavoidably a tension; we just never write "x6".
     function buildFromRoot(pcs, r, rootName) {
         const T = new Set(pcs.map((p) => mod12(p - r)));
-        const base = bestSubsetQuality(T);
-        if (base) {
-            const leftover = [...T].filter((v) => !base.set.has(v));
-            const asn = assignDegrees(leftover, base.degs);
-            if (asn) {
-                const toks = tokensFor(asn);
-                return rootName + base.token + (toks.length ? "(" + toks.join(",") + ")" : "");
+        const bothSevenths = T.has(10) && T.has(11);
+        let best = null;
+        for (const [token, formula] of QUALITIES) {
+            if (token.includes("/")) continue; // "6/9" would look like a slash chord
+            const Qset = formulaIntervals(formula);
+            const Qdegs = new Set(Object.keys(formula).map(Number));
+            const adds = [...T].filter((v) => !Qset.has(v));
+            const omits = [...Qset].filter((v) => !T.has(v));
+            if (QUARTAL.has(token) && (adds.length || omits.length)) continue; // [1]
+            if (!bothSevenths && (adds.includes(10) || adds.includes(11))) continue; // [2]
+            const asn = assignDegrees(adds, Qdegs, !bothSevenths);
+            if (!asn) continue;
+            const omitToks = omits.map((v) => "omit" + degreeOfInterval(formula, v)).sort();
+            const inner = [...omitToks, ...tokensFor(asn)].join(",");
+            const str = rootName + token + (inner ? "(" + inner + ")" : "");
+            const cur = { str, mods: adds.length + omits.length, rank: nameRank(token), len: str.length };
+            if (
+                !best ||
+                cur.mods < best.mods ||
+                (cur.mods === best.mods && cur.rank < best.rank) ||
+                (cur.mods === best.mods && cur.rank === best.rank && cur.len < best.len)
+            ) {
+                best = cur;
             }
         }
-        // no quality fits (or its degrees boxed us in): start from a major triad
-        // and reconcile it with the notes we actually have. Only omit the 3rd or
-        // 5th the assignment doesn't use, and don't re-add a plain 3rd/5th the
-        // triad already supplies — so e.g. {C,E,B♭} is "C(omit5,b7)", never the
-        // self-contradicting "C(omit3,omit5,3,b7)".
-        const asn = assignDegrees([...T].filter((v) => v !== 0), new Set([1]));
-        if (!asn) return null;
-        const usedDegs = new Set([...asn.values()].map(([d]) => d));
-        const toks = [];
-        if (!usedDegs.has(3)) toks.push("omit3");
-        if (!usedDegs.has(5)) toks.push("omit5");
-        for (const v of [...asn.keys()].sort((a, b) => a - b)) {
-            const [d, a] = asn.get(v);
-            if (a === 0 && (d === 3 || d === 5)) continue; // already in the major triad
-            toks.push(ADD_ACC[a] + d);
-        }
-        return rootName + "(" + toks.join(",") + ")";
+        return best ? best.str : null;
     }
 
     function describe(pcs, rootPc, fifthStart) {
@@ -554,7 +546,8 @@
             const adjust = 
                 res.includes("m7") ? -0.6 : /* promote */
                 res.includes("6") ? 0.6 : /* demote */
-                res.includes("q") ? 0.6 : /* demote */
+                res.includes("sus4") ? -0.6 : /* promote sus4 over sus2 */
+                res.includes("q") ? 2 : /* demote; especially suppress q10 stronger than 7sus4 */
                 0;
             const score = [res.includes("omit3,omit5") ? 1 : 0, res.length + adjust];
             if (!best || score[0] < best.score[0] || (score[0] === best.score[0] && score[1] < best.score[1])) {

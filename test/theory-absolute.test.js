@@ -344,8 +344,32 @@ test("toggling a note keeps the chip a real, re-parseable symbol", () => {
 // C7omit5 must not degrade into an ugly C(omit3,omit5,3,b7) 
 // omit3 and 3 must not coexist
 test("toggling a note does not cause omit3 and 3 to appear simultaneously", () => {
-    const c = T.parseChord("C7omit5"); 
+    const c = T.parseChord("C7omit5");
     const name = T.describe(c.pcs, c.rootPc, -3);
     assert.ok(!(name.includes("omit3") && name.includes(",3,")), `expected omit3 and 3 to NOT coexist, got "${name}"`);
     assert.deepEqual(sortSet(T.parseChord(name).pcs), sortSet(c.pcs), `"${name}"`);
+});
+
+// [2] a 7th is spelled through the base quality, never as a parenthesised tension
+test("describe spells a 7th through the base, not as a tension", () => {
+    assert.equal(T.describe([0, 7, 10], 0, -3), "C7(omit3)"); // C G B♭
+    assert.equal(T.describe([0, 7, 11], 0, -3), "CΔ7(omit3)"); // C G B
+    assert.equal(T.describe([0, 4, 10], 0, -3), "C7(omit5)"); // C E B♭
+});
+
+// [1] quartal symbols (q/q7/q10/q13) are reserved for purely quartal chords
+test("describe never writes a quartal chord with a tension", () => {
+    assert.equal(T.describe([7, 0, 5], 7, -3), "Gq7"); // a pure quartal chord still uses q7
+    for (const pcs of [[0, 5, 10, 2], [0, 4, 5, 10], [0, 5, 10, 1], [0, 5, 11]]) {
+        const name = T.describe(pcs, pcs[0], -3);
+        assert.ok(!/q/.test(name), `quartal+tension leaked "q": ${JSON.stringify(pcs)} -> "${name}"`);
+        assert.deepEqual(sortSet(T.parseChord(name).pcs), sortSet(pcs), `"${name}"`);
+    }
+});
+
+// exception: with BOTH 7ths there is no convention, so just never write x6
+test("describe avoids x6 when both 7ths are present, and round-trips", () => {
+    const name = T.describe([0, 7, 10, 11], 0, -3); // C G B♭ B
+    assert.ok(!name.includes("x6"), `expected no x6, got "${name}"`);
+    assert.deepEqual(sortSet(T.parseChord(name).pcs), sortSet([0, 7, 10, 11]), `"${name}"`);
 });
