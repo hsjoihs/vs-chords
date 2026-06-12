@@ -22,6 +22,7 @@ const PRESETS = [
     "Abdim7 → C6", "F6 C°7 C6",
     "Fm7 → B♭7 → C6",
     "{II7→V7→I=}E♭",
+    "{V7 ♭III=} A♭",
     "D{=I V vi iii IV I IV V}",
     "F→{V7→i=}Dm→{V7→I=}B♭{=I→V}→{II7→V7→I=}F",
     "G - F#@ - F",
@@ -392,12 +393,11 @@ function build() {
         for (let i = 0; i < pcs.length; i++)
             for (let j = i + 1; j < pcs.length; j++) {
                 const semi = absDistance(pcs[i], pcs[j]); // interval class 1..6
-                const isTri = semi === 6;
                 // consonant = m3 / M3 / P4 (3,4,5); dissonant = H / W / TT (1,2,6)
                 const consonant = semi === 3 || semi === 4 || semi === 5;
                 if (consonant ? !showConsonant : !showDissonant) continue;
                 const col = intervalColor(semi);
-                const rad = isTri ? 0.075 : 0.038;
+                const rad = consonant ? 0.038 : 0.075;
                 const a = pcPos(pcs[i], y),
                     b = pcPos(pcs[j], y);
                 group.add(tube(a, b, col, rad));
