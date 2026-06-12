@@ -1,19 +1,25 @@
 :root {
-    --bg: #0e1116;
-    --panel: #161b22;
-    --panel2: #1c2330;
-    --line: #2b3444;
-    --txt: #e6edf3;
-    --muted: #9aa7b6;
-    --accent: #4ea1ff;
-    --accent2: #ffd166;
+    /* UI: base colors and main colors; always b = -2a in oklab */
+    --bg:               oklab(15% 0.005 -0.01);
+    --panel:            oklab(20% 0.01  -0.02);
+    --lit-button-txt:   oklab(20% 0.015 -0.03);
+    --panel2:           oklab(25% 0.015 -0.03);
+    --line:             oklab(30% 0.015 -0.03);
+    --txt:              oklab(95% 0.005 -0.01);
+    --muted:            oklab(70% 0.015 -0.03);
+    --accent:           oklab(70% 0.065 -0.13);
+
+    /* UI: special colors */
+    --danger: oklab(70% 0.2 0.06);
+    --chordroot: oklab(70% -0.12 0.08);
+
+    /* musical interval */
     --semitone: #5ad17a;
     --whole: #ffb454;
     --minor3rd: #7fc8ff;
     --major3rd: #d8fe4c;
     --p4p5: #c792ea;
     --tritone: #ff5d6c;
-    --danger: #ff5d6c;
 }
 
 * {
@@ -32,8 +38,6 @@ body {
 table.intervals td {
     padding: 0 5px;
 }
-
-code { background-color: #06121f; padding: 2px; border: 1px solid #2b3444; border-radius: 1px; }
 
 #app {
     display: flex;
@@ -140,13 +144,12 @@ button {
 
 button:hover {
     border-color: var(--accent);
-    color: #fff
 }
 
 button.primary {
     background: var(--accent);
     border-color: var(--accent);
-    color: #06121f;
+    color: var(--lit-button-txt);
     font-weight: 600
 }
 
@@ -219,12 +222,12 @@ button.primary:hover {
 }
 
 .pc {
-    font-size: 11px;
+    font-size: 12px;
     text-align: center;
     padding: 6px 0;
     border-radius: 6px;
     border: 1px solid var(--line);
-    background: #11161f;
+    background: var(--panel);
     color: var(--muted);
     cursor: pointer;
     user-select: none;
@@ -234,15 +237,13 @@ button.primary:hover {
 .pc.on {
     background: var(--accent);
     border-color: var(--accent);
-    color: #06121f;
-    font-weight: 700
+    color: var(--lit-button-txt);
 }
 
 .pc.root {
-    background: var(--semitone);
-    border-color: var(--semitone);
-    color: #06210f;
-    font-weight: 700
+    background: var(--chordroot);
+    border-color: var(--chordroot);
+    color: var(--lit-button-txt);
 }
 
 .spec {
