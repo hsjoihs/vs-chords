@@ -114,9 +114,103 @@
         return out;
     }
 
+    /* ---- "curly-brace relative" progression -------------------------
+     * A progression of absolute chords, where a brace group splices in chords
+     * written relative to one of the absolute chords. The "=" marks where the
+     * absolute chord sits in the relative run:
+     *   {V7 → i=} Am   the anchor i = Am fixes the key (A minor), so V7 → E7 is
+     *                  emitted *before* Am.
+     *   F {=I V}       the anchor I = F fixes the key (F major), so V → C is
+     *                  emitted *after* F.
+     * Grammar (W3C-EBNF) is given in the test file. "=" at the end of a group is
+     * a prefix (renders before the chord); "=" at the start is a suffix (after).
+     */
+    const mod7 = (n) => ((n % 7) + 7) % 7;
+
+    // the key whose `relToken` degree lands on `absoluteChord`'s root
+    function keyFromAnchor(relToken, absoluteChord) {
+        const { acc, roman } = parseRelative(relToken);
+        const d = degreeOf(roman);
+        const rootName = ABS.parseChord(absoluteChord).root; // e.g. "Am" -> "A"
+        const ar = parseNote(rootName);
+        const keyLetter = LETTERS[mod7(LETTER_IDX[ar.letter] - (d - 1))];
+        const keyPc = mod12(ar.pc - MAJOR[d - 1] - accValue(acc));
+        let keyAcc = mod12(keyPc - LETTER_PC[keyLetter]);
+        if (keyAcc > 6) keyAcc -= 12;
+        return formatNote(keyLetter, keyAcc);
+    }
+
+    function tokenizeCurly(input) {
+        return String(input)
+            .replace(/\{/g, " { ")
+            .replace(/\}/g, " } ")
+            .replace(/=/g, " = ")
+            .split(/\s*(?:->|[-→])\s*|\s+/) // separators: -> , - , → , or whitespace
+            .filter(Boolean);
+    }
+
+    // group tokens into brace groups ({kind:"prefix"|"suffix", rels}) and bare
+    // absolute chords ({kind:"chord", value})
+    function groupCurly(tokens) {
+        const items = [];
+        let i = 0;
+        while (i < tokens.length) {
+            const t = tokens[i];
+            if (t === "{") {
+                const inner = [];
+                i++;
+                while (i < tokens.length && tokens[i] !== "}") inner.push(tokens[i++]);
+                if (tokens[i] !== "}") throw new Error("Unbalanced '{' in progression");
+                i++;
+                const eq = inner.indexOf("=");
+                if (eq === -1) throw new Error("Brace group needs '=': {" + inner.join(" ") + "}");
+                if (eq === inner.length - 1) items.push({ kind: "prefix", rels: inner.slice(0, eq) });
+                else if (eq === 0) items.push({ kind: "suffix", rels: inner.slice(1) });
+                else throw new Error("'=' must be at the start or end of a brace group");
+            } else if (t === "}" || t === "=") {
+                throw new Error("Unexpected '" + t + "' in progression");
+            } else {
+                items.push({ kind: "chord", value: t });
+                i++;
+            }
+        }
+        return items;
+    }
+
+    // resolve "C {V7 → i=} Am …" to ["C","E7","Am", …]
+    function parseAndResolveCurlyBraceRelative(input) {
+        const items = groupCurly(tokenizeCurly(input));
+        const out = [];
+        let i = 0;
+        while (i < items.length) {
+            let prefix = null;
+            let suffix = null;
+            if (items[i] && items[i].kind === "prefix") prefix = items[i++];
+            if (!items[i] || items[i].kind !== "chord") {
+                throw new Error("Expected an absolute chord" + (prefix ? " after a {…=} group" : ""));
+            }
+            const absolute = items[i++].value;
+            if (items[i] && items[i].kind === "suffix") suffix = items[i++];
+
+            if (prefix) {
+                const rels = prefix.rels; // [r1 … rN], rN is the anchor (= absolute)
+                const key = keyFromAnchor(rels[rels.length - 1], absolute);
+                for (const r of rels.slice(0, -1)) out.push(chordToAbsolute(r, key));
+            }
+            out.push(absolute);
+            if (suffix) {
+                const rels = suffix.rels; // [r1 … rN], r1 is the anchor (= absolute)
+                const key = keyFromAnchor(rels[0], absolute);
+                for (const r of rels.slice(1)) out.push(chordToAbsolute(r, key));
+            }
+        }
+        return out;
+    }
+
     return {
         single: { toAbsolute: singleToAbsolute },
         chord: { toAbsolute: chordToAbsolute },
+        progression: { parseAndResolveCurlyBraceRelative },
         degreeNote,
         accValue,
     };

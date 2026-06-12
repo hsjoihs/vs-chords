@@ -55,3 +55,58 @@ test("convert degrees into chord name", () => {
     );
 
 });
+
+test("parse and resolve 'curly brace relative'", () => {
+
+/* grammar: the formal grammar is notated using the EBNF convention based on https://www.w3.org/TR/xml/
+preprocess: replace all "{" by " { " and replace all "}" by " } "
+
+```
+progression ::= whitespace* chords (separator chords)* whitespace* 
+separator ::= whitespace* ("->"|[-→]) whitespace* | whitespace+
+chords ::= relative_prefix? whitespace* absolute_chord whitespace* relative_suffix?
+relative_prefix ::= "{" whitespace* relative_chord (separator relative_chord)* whitespace* "=" whitespace* "}"
+relative_suffix ::= "{" whitespace* "=" whitespace* relative_chord (separator relative_chord)* whitespace* "}"
+```
+*/
+
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("C {V7 → i=} Am {V7 → I=} F {=I V} {II7 V7 I=} C"),
+        "C E7 Am C7 F C D7 G7 C".split(" ")
+    );
+
+    assert.deepEqual(
+         T.progression.parseAndResolveCurlyBraceRelative("C→{V7→i=}Am→{V7→I=}F{=I→V}→{II7→V7→I=}C"),
+        "C E7 Am C7 F C D7 G7 C".split(" ")
+    );
+
+    // plain absolute chords with no braces pass straight through
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("Dm7 → G7 → C"),
+        "Dm7 G7 C".split(" ")
+    );
+
+    // a suffix renders relatives AFTER the anchor chord
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("C {=I ii7 V7} G"),
+        "C Dm7 G7 G".split(" ")
+    );
+
+    // prefix + suffix on the SAME absolute chord, anchored independently
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("{ii7 V7 I=} C {=I IV} F"),
+        "Dm7 G7 C F F".split(" ")
+    );
+
+    // the anchor's degree need not be I; here V = G fixes the key to C
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("{ii7 V=} G"),
+        "Dm7 G".split(" ")
+    );
+
+    // a flat-side key from the anchor (♭III = E♭ ⇒ key C), spelled correctly
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("{V7 ♭III=} E♭"),
+        "G7 E♭".split(" ")
+    );
+});
