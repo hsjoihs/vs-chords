@@ -546,6 +546,7 @@
             const adjust = 
                 res.includes("m7") ? -0.6 : /* promote */
                 res.includes("6") ? 0.6 : /* demote */
+                res.includes("@(") ? 3.6 : /* demote blackadder with a tension; preferable to spell with aug7 */
                 res.includes("sus4") ? -0.6 : /* promote sus4 over sus2 */
                 res.includes("q") ? 2 : /* demote; especially suppress q10 stronger than 7sus4 */
                 0;

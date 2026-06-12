@@ -628,10 +628,11 @@ function renderChips() {
             const b = document.createElement("div");
             buttons[pc] = b;
             // left-click: toggle membership
+            // this untags the root, so that a sane name is picked rather than trying to keep the root
             b.onclick = () => {
                 if (ch.pcs.includes(pc)) {
                     ch.pcs = ch.pcs.filter((x) => x !== pc);
-                    if (ch.rootPc === pc) ch.rootPc = null; // root must be a member
+                    ch.rootPc = null;
                 } else {
                     ch.pcs = [...ch.pcs, pc].sort((a, b) => a - b);
                 }
