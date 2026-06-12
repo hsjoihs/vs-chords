@@ -1,7 +1,7 @@
 /* =====================================================================
- * theory-relative.js — Roman-numeral (relative) ⟶ absolute conversion.
+ * theory-roman.js — Roman-numeral (relative) ⟶ absolute conversion.
  *
- * Builds on theory-absolute.js for correct enharmonic note spelling.
+ * Builds on theory-chordname.js for correct enharmonic note spelling.
  *
  *   single.toAbsolute("IV", "D")     === "G"
  *   single.toAbsolute("♭III", "D♭")  === "F♭"
@@ -27,7 +27,7 @@
     "use strict";
 
     // note-spelling primitives from the absolute layer
-    const ABS = typeof require !== "undefined" ? require("./theory-absolute.js") : self;
+    const ABS = typeof require !== "undefined" ? require("./theory-chordname.js") : self;
     const parseNote = ABS.parseNote;
     const formatNote = ABS.formatNote;
 
@@ -119,11 +119,19 @@
      * written relative to one of the absolute chords. The "=" marks where the
      * absolute chord sits in the relative run:
      *   {V7 → i=} Am   the anchor i = Am fixes the key (A minor), so V7 → E7 is
-     *                  emitted *before* Am.
+     *                  emitted before Am.
      *   F {=I V}       the anchor I = F fixes the key (F major), so V → C is
-     *                  emitted *after* F.
-     * Grammar (W3C-EBNF) is given in the test file. "=" at the end of a group is
-     * a prefix (renders before the chord); "=" at the start is a suffix (after).
+     *                  emitted*after F.
+     * Grammar (EBNF convention: https://www.w3.org/TR/xml/ ) is given as follows.
+     * Note that "{", "}" and "=" must be replaced with " { ", " } " and " = " beforehand.
+     *
+     * ```
+     * progression ::= whitespace* chords (separator chords)* whitespace* 
+     * separator ::= whitespace* ("->"|[-→]) whitespace* | whitespace+
+     * chords ::= relative_prefix? whitespace* absolute_chord whitespace* relative_suffix?
+     * relative_prefix ::= "{" whitespace* relative_chord (separator relative_chord)* whitespace* "=" whitespace* "}"
+     * relative_suffix ::= "{" whitespace* "=" whitespace* relative_chord (separator relative_chord)* whitespace* "}"
+     * ```
      */
     const mod7 = (n) => ((n % 7) + 7) % 7;
 

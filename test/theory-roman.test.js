@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const T = require("../theory-relative.js");
+const T = require("../theory-roman.js");
 
 test("convert degrees into chord name", () => {
     assert.deepEqual(
@@ -57,19 +57,6 @@ test("convert degrees into chord name", () => {
 });
 
 test("parse and resolve 'curly brace relative'", () => {
-
-/* grammar: the formal grammar is notated using the EBNF convention based on https://www.w3.org/TR/xml/
-preprocess: replace all "{" by " { " and replace all "}" by " } "
-
-```
-progression ::= whitespace* chords (separator chords)* whitespace* 
-separator ::= whitespace* ("->"|[-→]) whitespace* | whitespace+
-chords ::= relative_prefix? whitespace* absolute_chord whitespace* relative_suffix?
-relative_prefix ::= "{" whitespace* relative_chord (separator relative_chord)* whitespace* "=" whitespace* "}"
-relative_suffix ::= "{" whitespace* "=" whitespace* relative_chord (separator relative_chord)* whitespace* "}"
-```
-*/
-
     assert.deepEqual(
         T.progression.parseAndResolveCurlyBraceRelative("C {V7 → i=} Am {V7 → I=} F {=I V} {II7 V7 I=} C"),
         "C E7 Am C7 F C D7 G7 C".split(" ")

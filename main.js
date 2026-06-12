@@ -1,16 +1,16 @@
 /* =====================================================================
  * main.js — rendering + UI for the chord cylinder.
  *
- * All music theory (parsing, spelling, intervals, voice leading) lives in
- * theory-absolute.js, which must be loaded BEFORE this file. It exposes these as
- * globals: parseChord, parseProgression, voiceLeading, absDistance,
- * hasTritone, describe, NOTE_NAMES.
+ * All music theory lives in two modules that must be loaded BEFORE this file:
+ *   theory-pitchclass.js
+ *   theory-chordname.js
+ * Both attach their functions to the global scope.
  * ===================================================================== */
 
 /* ====================== state ====================== */
 // each chord: { symbol, pcs:[...], rootPc:Number|null, fifthStart:Number }
 // fifthStart is the chord's spelling: which length-12 segment of the spiral of
-// fifths is adopted as the circle of fifths (see theory-absolute.js).
+// fifths is adopted as the circle of fifths (see theory-chordname.js).
 let chords = [];
 
 const PRESETS = [

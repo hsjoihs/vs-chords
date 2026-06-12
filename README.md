@@ -52,16 +52,22 @@ Each chord chip has twelve pitch-class buttons and a spelling slider:
 
 | File         | Responsibility                                                        |
 | ------------ | --------------------------------------------------------------------- |
-| `theory-absolute.js`  | Pure music theory. Parsing, **spelling**, intervals, voice leading. Loadable as a browser global _and_ a Node module. |
+| `theory-pitchclass.js` | Pure pitch-class (0–11) arithmetic: intervals, the chromatic/circle-of-fifths ring, voice-leading connections. |
+| `theory-chordname.js`  | Chord symbols & note spelling: `parseChord`, `describe`, the line-of-fifths window. Builds on nothing else. |
+| `theory-roman.js`      | Roman-numeral (relative) → absolute conversion, including the "curly-brace relative" progression syntax. Builds on `theory-chordname.js`. |
 | `main.js`    | Rendering and UI (THREE.js scene, orbit controls, the chord chip).   |
 | `style.css`  | Styling.                                                              |
-| `index.html` | Wires the three together (loads `theory-absolute.js` before `main.js`).        |
-| `test/`      | Parser tests for Node's built‑in runner.                              |
+| `index.html` | Wires it together (loads `theory-pitchclass.js` + `theory-chordname.js` before `main.js`). |
+| `test/`      | Parser tests for Node's built‑in runner (one file per theory module). |
+
+The theory modules are independent except that `theory-roman.js` depends on
+`theory-chordname.js`; the app uses pitch-class and chord-name, while the Roman
+layer is currently exercised only by its tests.
 
 
 ## The parser
 
-`theory-absolute.js` spells chords by interval quality, not by pitch class, so
+`theory-chordname.js` spells chords by interval quality, not by pitch class, so
 enharmonics come out right:
 
 - `Fm` → `F A♭ C` (never `F G♯ C`)
@@ -84,7 +90,7 @@ omissions (`omit3`, `no5`, `drop9`), and slash chords (`B♭/F`).
 node --test          # or: npm test
 ```
 
-Tests live in `test/theory.test.js` and are written as plain tables so anyone
+Tests live in `test/theory-*.test.js` and are written as plain tables so anyone
 who knows music theory can verify them at a glance:
 
 ```js
