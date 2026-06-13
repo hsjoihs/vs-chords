@@ -1,0 +1,496 @@
+<style>
+    :root {
+        /* UI: base colors and main colors; always b = -2a in oklab */
+        --bg: oklab(15% 0.005 -0.01);
+        --panel: oklab(20% 0.01 -0.02);
+        --lit-button-txt: oklab(20% 0.015 -0.03);
+        --panel2: oklab(25% 0.015 -0.03);
+        --line: oklab(35% 0.015 -0.03);
+        --txt: oklab(95% 0.005 -0.01);
+        --muted: oklab(70% 0.015 -0.03);
+        --main: oklab(70% 0.065 -0.13);
+    }
+
+    .parent-container {
+        display: flex;
+        gap: 25px
+    }
+
+    .child-box {
+        flex: 1;
+        background-color: var(--panel2);
+        border: 1px solid var(--line);
+        padding: 6px;
+        text-align: center
+    }
+
+    .chord-name {
+        font-size: 200%;
+    }
+
+    .chord-name.subdominant {
+        background-color: var(--subdominant-color);
+        color: #fff
+    }
+
+    .chord-name.pseudotonic {
+        background-color: var(--pseudotonic-color);
+        color: #fff
+    }
+
+    .chord-name.subdominant-plus-tonic {
+        background: linear-gradient(0deg, var(--subdominant-color) 50%, var(--tonic-color) 50%);
+    }
+
+    .chord-name.pseudotonic-or-subdominant {
+        background: linear-gradient(140deg, var(--pseudotonic-color) 50%, var(--subdominant-color) 50%);
+    }
+
+    .chord-name.dominant {
+        background-color: var(--dominant-color);
+        color: #fff
+    }
+
+    .chord-name.tonic {
+        background-color: var(--tonic-color);
+        color: #fff
+    }
+
+    :root {
+        --pseudotonic-color: #2CB28C;
+        --tonic-color: #49b656;
+        --subdominant-color: #f1ab31;
+        --dominant-color: #f15031;
+    }
+
+    .grid-cell {
+        aspect-ratio: 1;
+        border: 1px solid rgba(from white r g b / .3);
+        touch-action: none;
+        border-radius: 0;
+        padding: 0;
+        transition: background-color 50ms ease-out, box-shadow 50ms ease-out
+    }
+
+    .grid-cell.tonic {
+        --cell-color: var(--tonic-color);
+        background-color: rgba(from var(--cell-color) r g b / .15);
+    }
+
+    .grid-cell.subdominant {
+        --cell-color: var(--subdominant-color);
+        background-color: rgba(from var(--cell-color) r g b / .15);
+    }
+
+    .grid-cell.dominant {
+        --cell-color: var(--dominant-color);
+        background-color: rgba(from var(--cell-color) r g b / .15);
+    }
+
+    .grid-cell.tonic.belongs {
+        --cell-color: var(--tonic-color);
+        background-color: var(--cell-color);
+    }
+
+    .grid-cell.subdominant.belongs {
+        --cell-color: var(--subdominant-color);
+        background-color: var(--cell-color);
+    }
+
+    .grid-cell.dominant.belongs {
+        --cell-color: var(--dominant-color);
+        background-color: var(--cell-color);
+    }
+
+    .grid.show-net1 .grid-cell.net2 {
+        visibility: hidden;
+    }
+
+    .grid.show-net2 .grid-cell.net1 {
+        visibility: hidden;
+    }
+
+    .grid-cell__label {
+        opacity: .7;
+        pointer-events: none;
+        -webkit-user-select: none;
+        user-select: none;
+        color: white
+    }
+
+    .grid {
+        touch-action: none;
+        gap: 4px;
+        width: 100%;
+        display: grid
+    }
+
+    :after,
+    :before {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0
+    }
+
+    body {
+        background: var(--bg);
+        color: var(--txt);
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, sans-serif
+    }
+</style>
+<h1>Sample #1</h1>
+
+<div class="parent-container">
+    <div class="child-box">
+        <span class="chord-name subdominant-plus-tonic">FM7</span><br>
+        <div class="grid show-net1" style="grid-template-columns: repeat(6, 1fr); max-width: 420px; margin-top: 10px;">
+            <button class="grid-cell net1 tonic"><span class="grid-cell__label">D#</span></button><button
+                class="grid-cell subdominant belongs net2"><span class="grid-cell__label">F</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">G</span></button><button
+                class="grid-cell tonic belongs net2"><span class="grid-cell__label">A</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">B</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">C#</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">A#</span></button><button
+                class="grid-cell net1 tonic belongs"><span class="grid-cell__label">C</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">D</span></button><button
+                class="grid-cell net1 dominant belongs"><span class="grid-cell__label">E</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">F#</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">G#</span></button><button
+                class="grid-cell net1 subdominant belongs"><span class="grid-cell__label">F</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">G</span></button><button
+                class="grid-cell net1 tonic belongs"><span class="grid-cell__label">A</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">B</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">C#</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">D#</span></button><button
+                class="grid-cell tonic belongs net2"><span class="grid-cell__label">C</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">D</span></button><button
+                class="grid-cell dominant belongs net2"><span class="grid-cell__label">E</span></button><button
+                class="grid-cell net1 tonic"><span class="grid-cell__label">F#</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">G#</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">A#</span></button>
+        </div>
+    </div>
+    <div class="child-box">
+        <span class="chord-name dominant">G7</span><br>
+        <div class="grid show-net2" style="grid-template-columns: repeat(6, 1fr); max-width: 420px; margin-top: 10px;">
+            <button class="grid-cell net1 tonic"><span class="grid-cell__label">D#</span></button><button
+                class="grid-cell subdominant belongs net2"><span class="grid-cell__label">F</span></button><button
+                class="grid-cell net1 dominant belongs"><span class="grid-cell__label">G</span></button><button
+                class="grid-cell tonic  net2"><span class="grid-cell__label">A</span></button><button
+                class="grid-cell net1 subdominant belongs"><span class="grid-cell__label">B</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">C#</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">A#</span></button><button
+                class="grid-cell net1 tonic "><span class="grid-cell__label">C</span></button><button
+                class="grid-cell subdominant belongs net2"><span class="grid-cell__label">D</span></button><button
+                class="grid-cell net1 dominant "><span class="grid-cell__label">E</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">F#</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">G#</span></button><button
+                class="grid-cell net1 subdominant belongs"><span class="grid-cell__label">F</span></button><button
+                class="grid-cell dominant belongs net2"><span class="grid-cell__label">G</span></button><button
+                class="grid-cell net1 tonic "><span class="grid-cell__label">A</span></button><button
+                class="grid-cell subdominant belongs net2"><span class="grid-cell__label">B</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">C#</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">D#</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">C</span></button><button
+                class="grid-cell net1 subdominant belongs"><span class="grid-cell__label">D</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">E</span></button><button
+                class="grid-cell net1 tonic"><span class="grid-cell__label">F#</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">G#</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">A#</span></button>
+        </div>
+    </div>
+    <div class="child-box">
+        <span class="chord-name dominant">Em7</span><br>
+        <div class="grid show-net2" style="grid-template-columns: repeat(6, 1fr); max-width: 420px; margin-top: 10px;">
+            <button class="grid-cell net1 tonic"><span class="grid-cell__label">D#</span></button><button
+                class="grid-cell subdominant  net2"><span class="grid-cell__label">F</span></button><button
+                class="grid-cell net1 dominant belongs"><span class="grid-cell__label">G</span></button><button
+                class="grid-cell tonic  net2"><span class="grid-cell__label">A</span></button><button
+                class="grid-cell net1 subdominant belongs"><span class="grid-cell__label">B</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">C#</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">A#</span></button><button
+                class="grid-cell net1 tonic "><span class="grid-cell__label">C</span></button><button
+                class="grid-cell subdominant belongs net2"><span class="grid-cell__label">D</span></button><button
+                class="grid-cell net1 dominant belongs"><span class="grid-cell__label">E</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">F#</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">G#</span></button><button
+                class="grid-cell net1 subdominant "><span class="grid-cell__label">F</span></button><button
+                class="grid-cell dominant belongs net2"><span class="grid-cell__label">G</span></button><button
+                class="grid-cell net1 tonic "><span class="grid-cell__label">A</span></button><button
+                class="grid-cell subdominant belongs net2"><span class="grid-cell__label">B</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">C#</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">D#</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">C</span></button><button
+                class="grid-cell net1 subdominant belongs"><span class="grid-cell__label">D</span></button><button
+                class="grid-cell dominant belongs net2"><span class="grid-cell__label">E</span></button><button
+                class="grid-cell net1 tonic"><span class="grid-cell__label">F#</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">G#</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">A#</span></button>
+        </div>
+    </div>
+    <div class="child-box">
+        <span class="chord-name tonic">Am7</span><br>
+        <div class="grid show-net1" style="grid-template-columns: repeat(6, 1fr); max-width: 420px; margin-top: 10px;">
+            <button class="grid-cell net1 tonic"><span class="grid-cell__label">D#</span></button><button
+                class="grid-cell subdominant  net2"><span class="grid-cell__label">F</span></button><button
+                class="grid-cell net1 dominant belongs"><span class="grid-cell__label">G</span></button><button
+                class="grid-cell tonic belongs net2"><span class="grid-cell__label">A</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">B</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">C#</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">A#</span></button><button
+                class="grid-cell net1 tonic belongs"><span class="grid-cell__label">C</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">D</span></button><button
+                class="grid-cell net1 dominant belongs "><span class="grid-cell__label">E</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">F#</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">G#</span></button><button
+                class="grid-cell net1 subdominant "><span class="grid-cell__label">F</span></button><button
+                class="grid-cell dominant belongs net2"><span class="grid-cell__label">G</span></button><button
+                class="grid-cell net1 tonic belongs"><span class="grid-cell__label">A</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">B</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">C#</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">D#</span></button><button
+                class="grid-cell tonic belongs net2"><span class="grid-cell__label">C</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">D</span></button><button
+                class="grid-cell dominant belongs net2"><span class="grid-cell__label">E</span></button><button
+                class="grid-cell net1 tonic"><span class="grid-cell__label">F#</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">G#</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">A#</span></button>
+        </div>
+    </div>
+</div>
+
+
+
+<h1>Explanatory diagrams</h1>
+
+<img src="https://raw.githubusercontent.com/sozysozbot/tonnetz-dim/refs/heads/main/tonnetz-dim.png" width="300" />
+<img src="./boundaries.png" width="300" />
+
+<h1>Sample #2</h1>
+<div class="parent-container">
+    <div class="child-box">
+        <span class="chord-name subdominant-plus-tonic">IVΔ7</span><br>
+        <div class="grid show-net1" style="grid-template-columns: repeat(6, 1fr); max-width: 420px; margin-top: 10px;">
+            <button class="grid-cell net1 tonic"><span class="grid-cell__label">bIII</span></button><button
+                class="grid-cell subdominant belongs net2"><span class="grid-cell__label">IV</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">V</span></button><button
+                class="grid-cell tonic belongs net2"><span class="grid-cell__label">VI</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">VII</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">#I</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">bVII</span></button><button
+                class="grid-cell net1 tonic belongs"><span class="grid-cell__label">I</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">II</span></button><button
+                class="grid-cell net1 dominant belongs"><span class="grid-cell__label">III</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">#IV</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">#V</span></button><button
+                class="grid-cell net1 subdominant belongs"><span class="grid-cell__label">IV</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">V</span></button><button
+                class="grid-cell net1 tonic belongs"><span class="grid-cell__label">VI</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">VII</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">#I</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">#II</span></button><button
+                class="grid-cell tonic belongs net2"><span class="grid-cell__label">I</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">II</span></button><button
+                class="grid-cell dominant belongs net2"><span class="grid-cell__label">III</span></button><button
+                class="grid-cell net1 tonic"><span class="grid-cell__label">#IV</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">#V</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">#VI</span></button>
+        </div>
+    </div>
+    <div class="child-box">
+        <span class="chord-name dominant">III7</span><br>
+        <div class="grid show-net2" style="grid-template-columns: repeat(6, 1fr); max-width: 420px; margin-top: 10px;">
+            <button class="grid-cell net1 tonic"><span class="grid-cell__label">bIII</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">IV</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">V</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">VI</span></button><button
+                class="grid-cell net1 subdominant belongs"><span class="grid-cell__label">VII</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">#I</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">bVII</span></button><button
+                class="grid-cell net1 tonic"><span class="grid-cell__label">I</span></button><button
+                class="grid-cell subdominant belongs net2"><span class="grid-cell__label">II</span></button><button
+                class="grid-cell net1 dominant belongs"><span class="grid-cell__label">III</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">#IV</span></button><button
+                class="grid-cell net1 subdominant belongs"><span class="grid-cell__label">#V</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">IV</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">V</span></button><button
+                class="grid-cell net1 tonic"><span class="grid-cell__label">VI</span></button><button
+                class="grid-cell subdominant belongs net2"><span class="grid-cell__label">VII</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">#I</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">#II</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">I</span></button><button
+                class="grid-cell net1 subdominant belongs"><span class="grid-cell__label">II</span></button><button
+                class="grid-cell dominant belongs net2"><span class="grid-cell__label">III</span></button><button
+                class="grid-cell net1 tonic"><span class="grid-cell__label">#IV</span></button><button
+                class="grid-cell subdominant belongs net2"><span class="grid-cell__label">#V</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">#VI</span></button>
+        </div>
+    </div>
+    <div class="child-box">
+        <span class="chord-name tonic">VIm7</span><br>
+        <div class="grid show-net1" style="grid-template-columns: repeat(6, 1fr); max-width: 420px; margin-top: 10px;">
+            <button class="grid-cell net1 tonic"><span class="grid-cell__label">bIII</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">IV</span></button><button
+                class="grid-cell net1 belongs dominant"><span class="grid-cell__label">V</span></button><button
+                class="grid-cell tonic belongs net2"><span class="grid-cell__label">VI</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">VII</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">#I</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">bVII</span></button><button
+                class="grid-cell net1 belongs tonic"><span class="grid-cell__label">I</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">II</span></button><button
+                class="grid-cell net1 belongs dominant"><span class="grid-cell__label">III</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">#IV</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">#V</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">IV</span></button><button
+                class="grid-cell dominant belongs net2"><span class="grid-cell__label">V</span></button><button
+                class="grid-cell net1 tonic belongs"><span class="grid-cell__label">VI</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">VII</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">#I</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">#II</span></button><button
+                class="grid-cell tonic belongs net2"><span class="grid-cell__label">I</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">II</span></button><button
+                class="grid-cell dominant belongs net2"><span class="grid-cell__label">III</span></button><button
+                class="grid-cell net1 tonic"><span class="grid-cell__label">#IV</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">#V</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">#VI</span></button>
+        </div>
+    </div>
+    <div class="child-box">
+        <span class="chord-name pseudotonic-or-subdominant">♯IVø7</span><br>
+        <div class="grid show-net1" style="grid-template-columns: repeat(6, 1fr); max-width: 420px; margin-top: 10px;">
+            <button class="grid-cell net1 tonic"><span class="grid-cell__label">bIII</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">IV</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">V</span></button><button
+                class="grid-cell tonic belongs net2"><span class="grid-cell__label">VI</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">VII</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">#I</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">bVII</span></button><button
+                class="grid-cell net1 tonic belongs"><span class="grid-cell__label">I</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">II</span></button><button
+                class="grid-cell net1 dominant belongs"><span class="grid-cell__label">III</span></button><button
+                class="grid-cell tonic belongs net2"><span class="grid-cell__label">#IV</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">#V</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">IV</span></button><button
+                class="grid-cell dominant net2"><span class="grid-cell__label">V</span></button><button
+                class="grid-cell net1 tonic belongs"><span class="grid-cell__label">VI</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">VII</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">#I</span></button><button
+                class="grid-cell tonic net2"><span class="grid-cell__label">#II</span></button><button
+                class="grid-cell tonic belongs net2"><span class="grid-cell__label">I</span></button><button
+                class="grid-cell net1 subdominant"><span class="grid-cell__label">II</span></button><button
+                class="grid-cell dominant belongs net2"><span class="grid-cell__label">III</span></button><button
+                class="grid-cell net1 tonic belongs"><span class="grid-cell__label">#IV</span></button><button
+                class="grid-cell subdominant net2"><span class="grid-cell__label">#V</span></button><button
+                class="grid-cell net1 dominant"><span class="grid-cell__label">#VI</span></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function approximateChordFunction({ t_count, d_count, s_count }) {
+        // chord's function cannot be judged when there are only two notes
+        if (t_count + d_count + s_count <= 2) return [];
+
+        if (t_count > 0 && d_count > 0 && s_count > 0) {
+            // take each pair, judge, and then combine the results
+            return [
+                ...approximateChordFunction({ t_count, d_count, s_count: 0 }),
+                ...approximateChordFunction({ t_count, d_count: 0, s_count }),
+                ...approximateChordFunction({ t_count: 0, d_count, s_count }),
+            ];
+        }
+
+        if (s_count === 0) {
+            if (t_count + d_count === 3) {
+                switch (t_count) {
+                    case 3: /* a diminished triad built from the tonic-colored note */
+                        return ["subdominant", "pseudotonic"];
+                    case 2: /* probably a minor chord built from the tonic-colored note */
+                        return ["tonic"];
+                    case 1: /* probably a Major chord built from the tonic-colored note */
+                        return ["tonic"];
+                    case 0: /* a diminished triad built from the dominant-colored note */
+                        return ["pseudotonic", "dominant"];
+                }
+            } else if (t_count + d_count === 4) {
+                switch (t_count) {
+                    case 4: /* a diminshed seventh chord built from the tonic-colored note */
+                        return ["subdominant"];
+                    case 3: /* probably a half-diminished chord built from the tonic-colored note */
+                        return ["subdominant", "pseudotonic"];
+                    case 2: /* probably a minor seventh chord built from the tonic-colored note */
+                        return ["tonic"];
+                    case 1: /* probably a dominant seventh chord built from the tonic-colored note */
+                        return ["pseudotonic"];
+                    case 0: /* a diminished seventh chord built from the dominant-colored note */
+                        return ["pseudotonic"];
+                }
+            } else {
+                // such a chord's function are too sensitive to the choice of roots & tensions that
+                // we lack enough information to judge it
+                return ["unjudgeable"];
+            }
+        }
+
+        else /* use symmetry */ {
+            if (t_count === 0) {
+                /* working on d and s: 
+                   rotate [d_count maps to t_count; s_count maps to d_count], approximate, and then transform back
+                 */
+                const rotated = approximateChordFunction({ t_count: d_count, d_count: s_count, s_count: 0 });
+                return rotated.map(a => ({
+                    "unjudgeable": "unjudgeable",
+                    "pseudotonic": "dominant",
+                    "tonic": "dominant",
+                    "subdominant": "pseudotonic",
+                    "dominant": "subdominant"
+                }[a]));
+            } else if (d_count === 0) {
+                /* working on t and s:
+                   rotate [t_count maps to d_count; s_count maps to t_count], approximate, and then transform back
+                 */
+                const rotated = approximateChordFunction({ d_count: t_count, t_count: s_count, s_count: 0 });
+                return rotated.map(a => ({
+                    "unjudgeable": "unjudgeable",
+                    "pseudotonic": "subdominant",
+                    "tonic": "subdominant",
+                    "subdominant": "dominant",
+                    "dominant": "pseudotonic"
+
+                }[a]))
+            }
+        }
+    }
+
+    function deepEqual(arr1, arr2) {
+        const a1 = [...arr1];
+        const a2 = [...arr2];
+        a1.sort();
+        a2.sort();
+        return (JSON.stringify(a1) === JSON.stringify(a2));
+    }
+
+    function test(input, expected) {
+        if (!deepEqual(
+            approximateChordFunction(input),
+            expected
+        )) {
+            console.error("Mismatch:", approximateChordFunction(input), expected)
+        }
+    }
+
+    // first example
+    test({ t_count: 2, d_count: 1, s_count: 1 }, ['tonic', 'subdominant']);
+    test({ t_count: 0, d_count: 1, s_count: 3 }, ['dominant']);
+    test({ t_count: 0, d_count: 2, s_count: 2 }, ['dominant']);
+    test({ t_count: 2, d_count: 2, s_count: 0 }, ['tonic']);
+
+    // second example
+    test({ t_count: 2, d_count: 1, s_count: 1 }, ['tonic', 'subdominant']);
+    test({ t_count: 0, d_count: 1, s_count: 3 }, ['dominant']);
+    test({ t_count: 2, d_count: 2, s_count: 0 }, ['tonic']);
+    test({ t_count: 3, d_count: 1, s_count: 0 }, ['pseudotonic', 'subdominant'])
+
+
+</script>

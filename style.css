@@ -404,6 +404,12 @@ button.primary:hover {
     top: 12px;
 }
 
+#axis-system {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+}
+
 #analysis {
     position: absolute;
     right: 12px;
