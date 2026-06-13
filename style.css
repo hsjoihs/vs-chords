@@ -425,6 +425,22 @@ button.primary:hover {
     color: var(--muted);
 }
 
+#axis-system .axis-controls {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+#axis-system .axis-controls select {
+    background: var(--panel2);
+    color: var(--txt);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
 #axis-system .axis-row {
     display: flex;
     gap: 8px;

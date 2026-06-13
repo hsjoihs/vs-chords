@@ -81,20 +81,25 @@
     }
 
     /* ---- crude harmonic-function approximation ------------------------
-     * The 12 pitch classes split into three diminished-7th groups by pc % 3:
-     *   tonic       = {0,3,6,9}   (pc % 3 === 0)
-     *   dominant    = {1,4,7,10}  (pc % 3 === 1)
-     *   subdominant = {2,5,8,11}  (pc % 3 === 2)
-     * A chord is judged purely by how many of its notes fall in each group.
+     * The 12 pitch classes split into three diminished-7th groups by pc % 3.
+     * `tonicResidue` chooses which residue is the tonic (default 0); the other
+     * two follow the cyclic order tonic → dominant → subdominant. With the
+     * default:
+     *   tonic       = {0,3,6,9}   dominant = {1,4,7,10}   subdominant = {2,5,8,11}
+     * The whole axis system is rotationally symmetric, so any choice "works".
      */
-    function pcFunctionCounts(pcs) {
+    const PC_FUNCTIONS = ["tonic", "dominant", "subdominant"];
+    function pcFunction(pc, tonicResidue = 0) {
+        return PC_FUNCTIONS[((((pc - tonicResidue) % 3) + 3) % 3)];
+    }
+    function pcFunctionCounts(pcs, tonicResidue = 0) {
         let t_count = 0,
             d_count = 0,
             s_count = 0;
         for (const p of pcs) {
-            const m = (((p % 3) + 3) % 3);
-            if (m === 0) t_count++;
-            else if (m === 1) d_count++;
+            const f = pcFunction(p, tonicResidue);
+            if (f === "tonic") t_count++;
+            else if (f === "dominant") d_count++;
             else s_count++;
         }
         return { t_count, d_count, s_count };
@@ -112,11 +117,14 @@
 
         if (t_count > 0 && d_count > 0 && s_count > 0) {
             // take each pair, judge, and then combine the results
-            return [
+            const merged = [
                 ...approximateChordFunction({ t_count, d_count, s_count: 0 }),
                 ...approximateChordFunction({ t_count, d_count: 0, s_count }),
                 ...approximateChordFunction({ t_count: 0, d_count, s_count }),
             ];
+            if (merged.includes("unjudgeable")) {
+                return ["unjudgeable"];
+            } else return merged;
         }
 
         if (s_count === 0) {
@@ -187,6 +195,7 @@
         MAX_VOICE_STEP,
         voiceLeading,
         hasTritone,
+        pcFunction,
         pcFunctionCounts,
         approximateChordFunction,
     };

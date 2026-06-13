@@ -345,7 +345,7 @@ function hexCss(n) {
  * marks the chord tones. The grid has two interleaved sub-lattices (net1/net2);
  * we show whichever one keeps the chord tones connected.
  */
-const AXIS_FUNC = ["tonic", "dominant", "subdominant"]; // by pc % 3
+let tonicResidue = 0; // which pc % 3 residue is treated as the tonic (axis-system rotation)
 // the fixed 24-cell tonnetz layout (6 columns × 4 rows): { pc, net } per cell,
 // matching axis-test.html. Horizontal neighbours are +4 (major third), the two
 // nets form a checkerboard.
@@ -430,7 +430,7 @@ let lastAxisSig = null;
 function refreshAxisSystem() {
     const el = document.getElementById("axis-system");
     if (!el) return;
-    const sig = JSON.stringify(chords.map((c) => [c.symbol, c.pcs]));
+    const sig = JSON.stringify([tonicResidue, chords.map((c) => [c.symbol, c.pcs])]);
     if (sig === lastAxisSig) return;
     lastAxisSig = sig;
 
@@ -438,20 +438,33 @@ function refreshAxisSystem() {
         el.innerHTML = "";
         return;
     }
-    let html = '<h3>hsjoihs\'s interpretation of Ernő Lendvai and Barry Harris</h3><div class="axis-row">';
+    // selector: which pc % 3 group is the tonic (rotates every colour & label)
+    let opts = "";
+    for (let r = 0; r < 3; r++) {
+        const notes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter((p) => p % 3 === r).map((p) => NOTE_NAMES[p]).join(" ");
+        opts += `<option value="${r}"${r === tonicResidue ? " selected" : ""}>${notes}</option>`;
+    }
+    let html = "<h3>hsjoihs's interpretation of Ernő Lendvai and Barry Harris</h3>";
+    html += `<div class="axis-controls">tonic group: <select id="tonicSel">${opts}</select></div>`;
+    html += '<div class="axis-row">';
     for (const ch of chords) {
-        const funcs = approximateChordFunction(pcFunctionCounts(ch.pcs));
+        const funcs = approximateChordFunction(pcFunctionCounts(ch.pcs, tonicResidue));
         const { cls, style } = axisNameAttrs(funcs);
         const net = chooseNet(ch.pcs);
         let cells = "";
         for (const { pc, net: cellNet } of TONNETZ) {
             const belongs = ch.pcs.includes(pc) ? " belongs" : "";
-            cells += `<button class="grid-cell net${cellNet} ${AXIS_FUNC[pc % 3]}${belongs}"><span class="grid-cell__label">${NOTE_NAMES[pc]}</span></button>`;
+            cells += `<button class="grid-cell net${cellNet} ${pcFunction(pc, tonicResidue)}${belongs}"><span class="grid-cell__label">${NOTE_NAMES[pc]}</span></button>`;
         }
         html += `<div class="child-box"><span class="chord-name ${cls}"${style}>${escapeHtml(ch.symbol)}</span>` + `<div class="grid show-net${net}">${cells}</div></div>`;
     }
     html += "</div>";
     el.innerHTML = html;
+    document.getElementById("tonicSel").onchange = (e) => {
+        tonicResidue = Number(e.target.value);
+        refreshAxisSystem();
+        scheduleUrlUpdate();
+    };
 }
 
 function build() {
@@ -648,6 +661,7 @@ function encodeState() {
         L: round(LAYER, 2),
         na: Math.round(nameAzDeg),
         nd: round(nameDist, 2),
+        tr: tonicResidue,
     };
 }
 function scheduleUrlUpdate() {
@@ -687,6 +701,7 @@ function restoreState() {
         if (st.L != null) LAYER = st.L;
         if (st.na != null) nameAzDeg = st.na;
         if (st.nd != null) nameDist = st.nd;
+        if (st.tr != null) tonicResidue = st.tr;
         document.getElementById("layerSlider").value = LAYER;
         document.getElementById("nameAzimuth").value = nameAzDeg;
         document.getElementById("nameDistance").value = nameDist;

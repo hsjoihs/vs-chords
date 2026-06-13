@@ -87,6 +87,21 @@ test("voiceLeading connects fifths (not semitones) in circle-of-fifths mode", ()
 
 /* ---- crude harmonic-function approximation ------------------------- */
 
+test("the tonic group can be rotated to any pc % 3 residue", () => {
+    // default: residue 0 is tonic
+    assert.equal(T.pcFunction(0, 0), "tonic");
+    assert.equal(T.pcFunction(1, 0), "dominant");
+    assert.equal(T.pcFunction(2, 0), "subdominant");
+    // choose residue 1 as tonic: the cycle tonic→dominant→subdominant follows
+    assert.equal(T.pcFunction(1, 1), "tonic");
+    assert.equal(T.pcFunction(2, 1), "dominant");
+    assert.equal(T.pcFunction(0, 1), "subdominant");
+    // counts shift accordingly: {0,3,6,9} are all tonic by default…
+    assert.deepEqual(T.pcFunctionCounts([0, 3, 6, 9], 0), { t_count: 4, d_count: 0, s_count: 0 });
+    // …but become all subdominant when residue 1 is the tonic
+    assert.deepEqual(T.pcFunctionCounts([0, 3, 6, 9], 1), { t_count: 0, d_count: 0, s_count: 4 });
+});
+
 test("pitch classes split into three dim-7 function groups by pc % 3", () => {
     // tonic {0,3,6,9}, dominant {1,4,7,10}, subdominant {2,5,8,11}
     assert.deepEqual(T.pcFunctionCounts([0, 3, 6, 9]), { t_count: 4, d_count: 0, s_count: 0 });
