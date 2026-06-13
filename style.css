@@ -454,14 +454,6 @@ button.primary:hover {
 #axis-system .chord-name.pseudotonic { background-color: var(--pseudotonic-color); color: #fff }
 #axis-system .chord-name.subdominant { background-color: var(--subdominant-color); color: #fff }
 #axis-system .chord-name.dominant { background-color: var(--dominant-color); color: #fff }
-#axis-system .chord-name.subdominant-plus-tonic {
-    background: linear-gradient(0deg, var(--subdominant-color) 50%, var(--tonic-color) 50%);
-    color: #fff;
-}
-#axis-system .chord-name.pseudotonic-or-subdominant {
-    background: linear-gradient(140deg, var(--pseudotonic-color) 50%, var(--subdominant-color) 50%);
-    color: #fff;
-}
 
 #axis-system .grid {
     display: grid;

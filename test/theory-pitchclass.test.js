@@ -107,8 +107,9 @@ test("approximateChordFunction matches the reference cases", () => {
         [{ t_count: 0, d_count: 1, s_count: 3 }, ["dominant"]], // G7
         [{ t_count: 0, d_count: 2, s_count: 2 }, ["dominant"]], // Em7
         [{ t_count: 2, d_count: 2, s_count: 0 }, ["tonic"]], // Am7
-        [{ t_count: 3, d_count: 1, s_count: 0 }, ["pseudotonic", "subdominant"]],
-        [{ t_count: 0, d_count: 3, s_count: 0 }, ["pseudotonic", "dominant"]],
+        // an *ambiguous* single judgment is one element, written "a|b"
+        [{ t_count: 3, d_count: 1, s_count: 0 }, ["subdominant|pseudotonic"]],
+        [{ t_count: 0, d_count: 3, s_count: 0 }, ["pseudotonic|dominant"]],
         [{ t_count: 4, d_count: 0, s_count: 0 }, ["subdominant"]], // tonic-rooted dim7
         [{ t_count: 0, d_count: 0, s_count: 1 }, []], // ≤2 notes
     ];
@@ -118,4 +119,16 @@ test("approximateChordFunction matches the reference cases", () => {
             `${JSON.stringify(input)} → ${JSON.stringify(T.approximateChordFunction(input))}, expected ${JSON.stringify(expected)}`,
         );
     }
+});
+
+test("approximateChordFunction distinguishes 'plus' (overlap) from 'or' (ambiguous)", () => {
+    // FM7-like: three colors decompose into two SEPARATE judgments → two elements
+    const plus = T.approximateChordFunction({ t_count: 2, d_count: 1, s_count: 1 });
+    assert.equal(plus.length, 2, `expected a 'plus' of two judgments, got ${JSON.stringify(plus)}`);
+    assert.ok(!plus.some((j) => j.includes("|")));
+
+    // ♯IVø7-like: one ambiguous judgment → a single "a|b" element
+    const or = T.approximateChordFunction({ t_count: 3, d_count: 1, s_count: 0 });
+    assert.equal(or.length, 1, `expected one ambiguous judgment, got ${JSON.stringify(or)}`);
+    assert.ok(or[0].includes("|"), `expected an 'or' element, got ${JSON.stringify(or)}`);
 });

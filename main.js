@@ -397,24 +397,28 @@ const AXIS_COLOR = {
     dominant: "var(--dominant-color)",
     unjudgeable: "var(--muted)",
 };
-// map the function-label set to a chord-name class (named ones match the sample)
-// or, for any other combination, an inline hard-stop gradient
+// Map the judgments to a chord-name style. Each judgment is one element; an
+// element "a|b" is a single *ambiguous* judgment ("or"), whereas several
+// elements are an overlap of distinct judgments ("plus"). A single function is a
+// solid colour; an "or" draws a 140° slash (suggesting the "/" glyph); a "plus"
+// (or any other mix) splits horizontally (0°, suggesting stacked layers).
 function axisNameAttrs(funcs) {
-    const uniq = [...new Set(funcs)];
-    if (uniq.length === 0) return { cls: "", style: "" };
-    const named = {
-        tonic: "tonic",
-        dominant: "dominant",
-        subdominant: "subdominant",
-        pseudotonic: "pseudotonic"
-    };
+    if (funcs.length === 0) return { cls: "", style: "" };
+    const isOr = funcs.length === 1 && funcs[0].includes("|");
+    const isPlus = funcs.length > 1;
+    const uniq = [...new Set(funcs.flatMap((f) => f.split("|")))];
     const key = [...uniq].sort().join("+");
-    if (named[key]) return { cls: named[key], style: "" };
+
+    if (!isOr && !isPlus && AXIS_COLOR[funcs[0]] && funcs[0] !== "unjudgeable") {
+        return { cls: funcs[0], style: "" }; // a single, unambiguous function → solid
+    }
+
     const order = ["tonic", "pseudotonic", "subdominant", "dominant", "unjudgeable"];
     const cols = order.filter((f) => uniq.includes(f)).map((f) => AXIS_COLOR[f]);
     const n = cols.length;
     const stops = cols.map((c, i) => `${c} ${(i / n) * 100}% ${((i + 1) / n) * 100}%`).join(", ");
-    return { cls: "generic", style: ` style="background:linear-gradient(135deg,${stops});color:#fff"` };
+    const angle = isOr ? 140 : 0; // "or" slashes, "plus" splits horizontally
+    return { cls: "generic", style: ` style="background:linear-gradient(${angle}deg,${stops});color:#fff"` };
 }
 
 function escapeHtml(s) {
@@ -434,7 +438,7 @@ function refreshAxisSystem() {
         el.innerHTML = "";
         return;
     }
-    let html = '<h3>Harmonic function</h3><div class="axis-row">';
+    let html = '<h3>hsjoihs\'s interpretation of Ernő Lendvai and Barry Harris</h3><div class="axis-row">';
     for (const ch of chords) {
         const funcs = approximateChordFunction(pcFunctionCounts(ch.pcs));
         const { cls, style } = axisNameAttrs(funcs);

@@ -100,8 +100,12 @@
         return { t_count, d_count, s_count };
     }
 
-    // Returns the approximate harmonic function(s) as an array of labels drawn
-    // from "tonic", "pseudotonic", "subdominant", "dominant", "unjudgeable".
+    // Returns the approximate harmonic function(s) as an array of *judgments*.
+    // Each element is one judgment; an ambiguous judgment (a single decomposition
+    // that could be one of two functions) is written "a|b". So separate array
+    // elements are an overlap of distinct judgments ("plus"), while one "a|b"
+    // element is a single ambiguous judgment ("or"). The labels are drawn from
+    // "tonic", "pseudotonic", "subdominant", "dominant", "unjudgeable".
     function approximateChordFunction({ t_count, d_count, s_count }) {
         // chord's function cannot be judged when there are only two notes
         if (t_count + d_count + s_count <= 2) return [];
@@ -119,20 +123,20 @@
             if (t_count + d_count === 3) {
                 switch (t_count) {
                     case 3: /* a diminished triad built from the tonic-colored note */
-                        return ["subdominant", "pseudotonic"];
+                        return ["subdominant|pseudotonic"];
                     case 2: /* probably a minor chord built from the tonic-colored note */
                         return ["tonic"];
                     case 1: /* probably a Major chord built from the tonic-colored note */
                         return ["tonic"];
                     case 0: /* a diminished triad built from the dominant-colored note */
-                        return ["pseudotonic", "dominant"];
+                        return ["pseudotonic|dominant"];
                 }
             } else if (t_count + d_count === 4) {
                 switch (t_count) {
                     case 4: /* a diminished seventh chord built from the tonic-colored note */
                         return ["subdominant"];
                     case 3: /* probably a half-diminished chord built from the tonic-colored note */
-                        return ["subdominant", "pseudotonic"];
+                        return ["subdominant|pseudotonic"];
                     case 2: /* probably a minor seventh chord built from the tonic-colored note */
                         return ["tonic"];
                     case 1: /* probably a dominant seventh chord built from the tonic-colored note */
@@ -147,29 +151,29 @@
             }
         } else {
             /* use symmetry */
+            // map a whole judgment, preserving "|" (an ambiguous judgment stays one)
+            const mapJudgment = (a, m) => a.split("|").map((x) => m[x]).join("|");
             if (t_count === 0) {
                 const rotated = approximateChordFunction({ t_count: d_count, d_count: s_count, s_count: 0 });
-                return rotated.map(
-                    (a) =>
-                        ({
-                            unjudgeable: "unjudgeable",
-                            pseudotonic: "dominant",
-                            tonic: "dominant",
-                            subdominant: "pseudotonic",
-                            dominant: "subdominant",
-                        })[a],
+                return rotated.map((a) =>
+                    mapJudgment(a, {
+                        unjudgeable: "unjudgeable",
+                        pseudotonic: "dominant",
+                        tonic: "dominant",
+                        subdominant: "pseudotonic",
+                        dominant: "subdominant",
+                    }),
                 );
             } else if (d_count === 0) {
                 const rotated = approximateChordFunction({ d_count: t_count, t_count: s_count, s_count: 0 });
-                return rotated.map(
-                    (a) =>
-                        ({
-                            unjudgeable: "unjudgeable",
-                            pseudotonic: "subdominant",
-                            tonic: "subdominant",
-                            subdominant: "dominant",
-                            dominant: "pseudotonic",
-                        })[a],
+                return rotated.map((a) =>
+                    mapJudgment(a, {
+                        unjudgeable: "unjudgeable",
+                        pseudotonic: "subdominant",
+                        tonic: "subdominant",
+                        subdominant: "dominant",
+                        dominant: "pseudotonic",
+                    }),
                 );
             }
         }
