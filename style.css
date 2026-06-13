@@ -426,19 +426,34 @@ button.primary:hover {
 }
 
 #axis-system .axis-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 11px;
     color: var(--muted);
     margin-bottom: 6px;
 }
 
-#axis-system .axis-controls select {
+#axis-system .tonic-shift {
     background: var(--panel2);
     color: var(--txt);
     border: 1px solid var(--line);
     border-radius: 6px;
-    padding: 3px 6px;
+    padding: 2px 8px;
     font-size: 12px;
+    line-height: 1;
     cursor: pointer;
+}
+
+#axis-system .tonic-shift:hover {
+    border-color: var(--accent);
+}
+
+#axis-system .tonic-group {
+    color: var(--txt);
+    font-size: 12px;
+    min-width: 84px;
+    text-align: center;
 }
 
 #axis-system .axis-row {

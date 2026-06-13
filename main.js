@@ -474,14 +474,14 @@ function refreshAxisSystem() {
         el.innerHTML = "";
         return;
     }
-    // selector: which pc % 3 group is the tonic (rotates every colour & label)
-    let opts = "";
-    for (let r = 0; r < 3; r++) {
-        const notes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter((p) => p % 3 === r).map((p) => NOTE_NAMES[p]).join(" ");
-        opts += `<option value="${r}"${r === tonicResidue ? " selected" : ""}>${notes}</option>`;
-    }
+    // shifter: which pc % 3 group is the tonic (rotates every colour & label)
+    const tonicNotes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter((p) => p % 3 === tonicResidue).map((p) => NOTE_NAMES[p]).join(" ");
     let html = "";
-    html += `<div class="axis-controls">tonic group: <select id="tonicSel">${opts}</select></div>`;
+    html +=
+        `<div class="axis-controls">tonic group: ` +
+        `<button class="tonic-shift" id="tonicPrev" title="shift tonic group">◀</button>` +
+        `<span class="tonic-group">${tonicNotes}</span>` +
+        `<button class="tonic-shift" id="tonicNext" title="shift tonic group">▶</button></div>`;
     html += '<div class="axis-row">';
     for (const ch of chords) {
         const funcs = approximateChordFunction(pcFunctionCounts(ch.pcs, tonicResidue));
@@ -496,11 +496,12 @@ function refreshAxisSystem() {
     }
     html += "</div>";
     el.innerHTML = html;
-    document.getElementById("tonicSel").onchange = (e) => {
-        tonicResidue = Number(e.target.value);
-        refreshAxisSystem();
-        scheduleUrlUpdate();
+    const shiftTonic = (delta) => {
+        tonicResidue = (tonicResidue + delta + 3) % 3;
+        build(); // re-render the cylinder too (vertex / name colours follow the tonic group)
     };
+    document.getElementById("tonicPrev").onclick = () => shiftTonic(-1);
+    document.getElementById("tonicNext").onclick = () => shiftTonic(1);
 }
 
 function build() {
