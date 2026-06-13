@@ -20,6 +20,12 @@
     --major3rd: #d8fe4c;
     --p4p5: #c792ea;
     --tritone: #ff5d6c;
+
+    /* harmonic-function colors (axis system) */
+    --tonic-color: #49b656;
+    --pseudotonic-color: #2cb28c;
+    --subdominant-color: #f1ab31;
+    --dominant-color: #f15031;
 }
 
 input[type="checkbox"] {
@@ -408,6 +414,91 @@ button.primary:hover {
     position: absolute;
     left: 12px;
     bottom: 12px;
+    max-width: 56vw;
+}
+
+#axis-system h3 {
+    margin: 2px 0 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    color: var(--muted);
+}
+
+#axis-system .axis-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+#axis-system .child-box {
+    flex: 0 0 auto;
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    padding: 5px;
+    text-align: center;
+}
+
+#axis-system .chord-name {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--txt);
+}
+
+#axis-system .chord-name.tonic { background-color: var(--tonic-color); color: #fff }
+#axis-system .chord-name.pseudotonic { background-color: var(--pseudotonic-color); color: #fff }
+#axis-system .chord-name.subdominant { background-color: var(--subdominant-color); color: #fff }
+#axis-system .chord-name.dominant { background-color: var(--dominant-color); color: #fff }
+#axis-system .chord-name.subdominant-plus-tonic {
+    background: linear-gradient(0deg, var(--subdominant-color) 50%, var(--tonic-color) 50%);
+    color: #fff;
+}
+#axis-system .chord-name.pseudotonic-or-subdominant {
+    background: linear-gradient(140deg, var(--pseudotonic-color) 50%, var(--subdominant-color) 50%);
+    color: #fff;
+}
+
+#axis-system .grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2px;
+    width: 126px;
+    margin-top: 5px;
+}
+
+#axis-system .grid-cell {
+    aspect-ratio: 1;
+    border: 1px solid rgba(255, 255, 255, .3);
+    border-radius: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+}
+
+#axis-system .grid-cell.tonic { background-color: rgba(73, 182, 86, .15) }
+#axis-system .grid-cell.subdominant { background-color: rgba(241, 171, 49, .15) }
+#axis-system .grid-cell.dominant { background-color: rgba(241, 80, 49, .15) }
+#axis-system .grid-cell.tonic.belongs { background-color: var(--tonic-color) }
+#axis-system .grid-cell.subdominant.belongs { background-color: var(--subdominant-color) }
+#axis-system .grid-cell.dominant.belongs { background-color: var(--dominant-color) }
+
+#axis-system .grid.show-net1 .grid-cell.net2 { visibility: hidden }
+#axis-system .grid.show-net2 .grid-cell.net1 { visibility: hidden }
+
+#axis-system .grid-cell__label {
+    font-size: 8px;
+    line-height: 1;
+    opacity: .75;
+    color: #fff;
+    pointer-events: none;
+    user-select: none;
 }
 
 #analysis {

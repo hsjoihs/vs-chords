@@ -84,3 +84,38 @@ test("voiceLeading connects fifths (not semitones) in circle-of-fifths mode", ()
     assert.ok(chrom.has("0-2"), "a whole tone → connected");
     assert.ok(!chrom.has("0-7"), "a fifth is five steps chromatically → not connected");
 });
+
+/* ---- crude harmonic-function approximation ------------------------- */
+
+test("pitch classes split into three dim-7 function groups by pc % 3", () => {
+    // tonic {0,3,6,9}, dominant {1,4,7,10}, subdominant {2,5,8,11}
+    assert.deepEqual(T.pcFunctionCounts([0, 3, 6, 9]), { t_count: 4, d_count: 0, s_count: 0 });
+    assert.deepEqual(T.pcFunctionCounts([1, 4, 7, 10]), { t_count: 0, d_count: 4, s_count: 0 });
+    assert.deepEqual(T.pcFunctionCounts([2, 5, 8, 11]), { t_count: 0, d_count: 0, s_count: 4 });
+    // FM7 = F A C E = {5,9,0,4}: A,C tonic; E dominant; F subdominant
+    assert.deepEqual(T.pcFunctionCounts([5, 9, 0, 4]), { t_count: 2, d_count: 1, s_count: 1 });
+});
+
+// the count → function map, exactly as in axis-test.html
+function deepEqualSet(a, b) {
+    return JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+}
+test("approximateChordFunction matches the reference cases", () => {
+    const cases = [
+        [{ t_count: 1, d_count: 1, s_count: 1 }, []], // 3 different colors, one each → unjudged here? combine of pairs (all ≤2) → []
+        [{ t_count: 2, d_count: 1, s_count: 1 }, ["tonic", "subdominant"]], // FM7
+        [{ t_count: 0, d_count: 1, s_count: 3 }, ["dominant"]], // G7
+        [{ t_count: 0, d_count: 2, s_count: 2 }, ["dominant"]], // Em7
+        [{ t_count: 2, d_count: 2, s_count: 0 }, ["tonic"]], // Am7
+        [{ t_count: 3, d_count: 1, s_count: 0 }, ["pseudotonic", "subdominant"]],
+        [{ t_count: 0, d_count: 3, s_count: 0 }, ["pseudotonic", "dominant"]],
+        [{ t_count: 4, d_count: 0, s_count: 0 }, ["subdominant"]], // tonic-rooted dim7
+        [{ t_count: 0, d_count: 0, s_count: 1 }, []], // ≤2 notes
+    ];
+    for (const [input, expected] of cases) {
+        assert.ok(
+            deepEqualSet(new Set(T.approximateChordFunction(input)), new Set(expected)),
+            `${JSON.stringify(input)} → ${JSON.stringify(T.approximateChordFunction(input))}, expected ${JSON.stringify(expected)}`,
+        );
+    }
+});

@@ -339,8 +339,120 @@ function hexCss(n) {
     return "#" + n.toString(16).padStart(6, "0");
 }
 
+/* ====================== axis-system panel (harmonic function + tonnetz) ======================
+ * A crude harmonic-function approximation (see theory-pitchclass.js): the chord
+ * name is coloured by approximateChordFunction, and a small "dim tonnetz" grid
+ * marks the chord tones. The grid has two interleaved sub-lattices (net1/net2);
+ * we show whichever one keeps the chord tones connected.
+ */
+const AXIS_FUNC = ["tonic", "dominant", "subdominant"]; // by pc % 3
+// the fixed 24-cell tonnetz layout (6 columns × 4 rows): { pc, net } per cell,
+// matching axis-test.html. Horizontal neighbours are +4 (major third), the two
+// nets form a checkerboard.
+const TONNETZ = [
+    { pc: 3, net: 1 }, { pc: 5, net: 2 }, { pc: 7, net: 1 }, { pc: 9, net: 2 }, { pc: 11, net: 1 }, { pc: 1, net: 2 },
+    { pc: 10, net: 2 }, { pc: 0, net: 1 }, { pc: 2, net: 2 }, { pc: 4, net: 1 }, { pc: 6, net: 2 }, { pc: 8, net: 1 },
+    { pc: 5, net: 1 }, { pc: 7, net: 2 }, { pc: 9, net: 1 }, { pc: 11, net: 2 }, { pc: 1, net: 1 }, { pc: 3, net: 2 },
+    { pc: 0, net: 2 }, { pc: 2, net: 1 }, { pc: 4, net: 2 }, { pc: 6, net: 1 }, { pc: 8, net: 2 }, { pc: 10, net: 1 },
+];
+
+// number of connected components among a chord's cells within one net. Two cells
+// are adjacent on this triangular lattice when they share a row two columns apart
+// or sit one row and one column apart.
+function netComponents(pcs, net) {
+    const cells = [];
+    TONNETZ.forEach((c, i) => {
+        if (c.net === net && pcs.includes(c.pc)) cells.push({ row: (i / 6) | 0, col: i % 6 });
+    });
+    const adj = (a, b) => {
+        const dr = Math.abs(a.row - b.row),
+            dc = Math.abs(a.col - b.col);
+        return (dr === 0 && dc === 2) || (dr === 1 && dc === 1);
+    };
+    const seen = new Array(cells.length).fill(false);
+    let comps = 0;
+    for (let i = 0; i < cells.length; i++) {
+        if (seen[i]) continue;
+        comps++;
+        const stack = [i];
+        seen[i] = true;
+        while (stack.length) {
+            const k = stack.pop();
+            for (let j = 0; j < cells.length; j++) if (!seen[j] && adj(cells[k], cells[j])) (seen[j] = true), stack.push(j);
+        }
+    }
+    return comps;
+}
+
+// pick the net that keeps the chord tones most connected (fewest components);
+// ties go to net 1.
+function chooseNet(pcs) {
+    return netComponents(pcs, 1) <= netComponents(pcs, 2) ? 1 : 2;
+}
+
+const AXIS_COLOR = {
+    tonic: "var(--tonic-color)",
+    pseudotonic: "var(--pseudotonic-color)",
+    subdominant: "var(--subdominant-color)",
+    dominant: "var(--dominant-color)",
+    unjudgeable: "var(--muted)",
+};
+// map the function-label set to a chord-name class (named ones match the sample)
+// or, for any other combination, an inline hard-stop gradient
+function axisNameAttrs(funcs) {
+    const uniq = [...new Set(funcs)];
+    if (uniq.length === 0) return { cls: "", style: "" };
+    const named = {
+        tonic: "tonic",
+        dominant: "dominant",
+        subdominant: "subdominant",
+        pseudotonic: "pseudotonic"
+    };
+    const key = [...uniq].sort().join("+");
+    if (named[key]) return { cls: named[key], style: "" };
+    const order = ["tonic", "pseudotonic", "subdominant", "dominant", "unjudgeable"];
+    const cols = order.filter((f) => uniq.includes(f)).map((f) => AXIS_COLOR[f]);
+    const n = cols.length;
+    const stops = cols.map((c, i) => `${c} ${(i / n) * 100}% ${((i + 1) / n) * 100}%`).join(", ");
+    return { cls: "generic", style: ` style="background:linear-gradient(135deg,${stops});color:#fff"` };
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+let lastAxisSig = null;
+// re-render the axis-system panel only when the chord set actually changed
+function refreshAxisSystem() {
+    const el = document.getElementById("axis-system");
+    if (!el) return;
+    const sig = JSON.stringify(chords.map((c) => [c.symbol, c.pcs]));
+    if (sig === lastAxisSig) return;
+    lastAxisSig = sig;
+
+    if (chords.length === 0) {
+        el.innerHTML = "";
+        return;
+    }
+    let html = '<h3>Harmonic function</h3><div class="axis-row">';
+    for (const ch of chords) {
+        const funcs = approximateChordFunction(pcFunctionCounts(ch.pcs));
+        const { cls, style } = axisNameAttrs(funcs);
+        const net = chooseNet(ch.pcs);
+        let cells = "";
+        for (const { pc, net: cellNet } of TONNETZ) {
+            const belongs = ch.pcs.includes(pc) ? " belongs" : "";
+            cells += `<button class="grid-cell net${cellNet} ${AXIS_FUNC[pc % 3]}${belongs}"><span class="grid-cell__label">${NOTE_NAMES[pc]}</span></button>`;
+        }
+        html += `<div class="child-box"><span class="chord-name ${cls}"${style}>${escapeHtml(ch.symbol)}</span>` + `<div class="grid show-net${net}">${cells}</div></div>`;
+    }
+    html += "</div>";
+    el.innerHTML = html;
+}
+
 function build() {
     clearGroup();
+    refreshAxisSystem();
     if (chords.length === 0) return;
     const totalH = (chords.length - 1) * LAYER;
     camTarget.set(0, totalH / 2, 0);
