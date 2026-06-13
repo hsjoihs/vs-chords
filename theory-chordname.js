@@ -348,7 +348,7 @@
         3: [[9, 1], [3, -1], [2, 1]],
         4: [[3, 0], [11, -1], [4, -1]],
         5: [[11, 0], [4, 0]],
-        6: [[11, 1], [5, -1], [4, 1]],
+        6: [[5, -1], [11, 1], [4, 1]], // prefer ♭5 (when the 5th's slot is free) over #11
         7: [[5, 0]],
         8: [[13, -1], [5, 1], [6, -1]],
         9: [[13, 0], [6, 0]],
@@ -451,14 +451,23 @@
             const Qdegs = new Set(Object.keys(formula).map(Number));
             const adds = [...T].filter((v) => !Qset.has(v));
             const omits = [...Qset].filter((v) => !T.has(v));
+            const omitDegs = omits.map((v) => degreeOfInterval(formula, v));
             if (QUARTAL.has(token) && (adds.length || omits.length)) continue; // [1]
             if (!bothSevenths && (adds.includes(10) || adds.includes(11))) continue; // [2]
-            const asn = assignDegrees(adds, Qdegs, !bothSevenths);
+            // An add may reuse a degree the base is omitting, turning omit+tension
+            // into a single *alter*: a missing 5th hosting a ♭5 gives "7(b5)", instead of
+            // "7(omit5,#11)".
+            const forbidden = new Set([...Qdegs].filter((d) => !omitDegs.includes(d)));
+            const asn = assignDegrees(adds, forbidden, !bothSevenths);
             if (!asn) continue;
-            const omitToks = omits.map((v) => "omit" + degreeOfInterval(formula, v)).sort();
+            const usedDegs = new Set([...asn.values()].map(([d]) => d));
+            const omitToks = omitDegs
+                .filter((d) => !usedDegs.has(d)) // a reused degree is altered, not omitted
+                .map((d) => "omit" + d)
+                .sort();
             const inner = [...omitToks, ...tokensFor(asn)].join(",");
             const str = rootName + token + (inner ? "(" + inner + ")" : "");
-            const cur = { str, mods: adds.length + omits.length, rank: nameRank(token), len: str.length };
+            const cur = { str, mods: omitToks.length + asn.size, rank: nameRank(token), len: str.length };
             if (
                 !best ||
                 cur.mods < best.mods ||

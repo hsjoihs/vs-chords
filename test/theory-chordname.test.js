@@ -297,3 +297,16 @@ test("describe avoids x6 when both 7ths are present, and round-trips", () => {
     assert.ok(!name.includes("x6"), `expected no x6, got "${name}"`);
     assert.deepEqual(sortSet(T.parseChord(name).pcs), sortSet([0, 7, 10, 11]), `"${name}"`);
 });
+
+// a flatted 5th is an altered 5th, avoiding "omit5" + "#11" for the sake of simplicity
+test("describe alters the 5th instead of omit5 + #11", () => {
+    assert.equal(T.describe([5, 9, 11, 3], 5, -3), "F7(b5)"); // F A B E♭
+    assert.equal(T.describe([0, 4, 6], 0, -3), "C(b5)"); // C E G♭
+    for (const pcs of [[5, 9, 11, 3], [0, 4, 6], [0, 4, 6, 11], [9, 1, 3, 7]]) {
+        const name = T.describe(pcs, pcs[0], -3);
+        assert.ok(!(name.includes("omit5") && name.includes("#11")), `omit5 + #11 in "${name}"`);
+        assert.deepEqual(sortSet(T.parseChord(name).pcs), sortSet(pcs), `"${name}"`);
+    }
+    // …but a genuine #11 over a present perfect 5th stays a #11
+    assert.equal(T.describe([0, 4, 6, 7, 11], 0, -3), "CΔ7(#11)"); // C E G♭ G B
+});
