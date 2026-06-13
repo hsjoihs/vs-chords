@@ -214,9 +214,22 @@ function pcPos(pc, y) {
     return new THREE.Vector3(R * Math.cos(a), y, R * Math.sin(a));
 }
 
+// hard-stop canvas gradient for a multi-function chord-name fill ("plus" splits
+// vertically, "or" slashes diagonally — mirroring the axis-system panel)
+function labelGradient(g, w, h, { colors, kind }) {
+    const grad = kind === "or" ? g.createLinearGradient(0, 0, w, h) : g.createLinearGradient(0, h, 0, 0);
+    const n = colors.length;
+    colors.forEach((col, i) => {
+        grad.addColorStop(i / n, col);
+        grad.addColorStop((i + 1) / n, col);
+    });
+    return grad;
+}
+
 // Build a text sprite. The canvas is sized to the text so long chord symbols
 // (e.g. "Dø(9,13)omit3") are not cropped; worldHeight sets the on-screen size
 // and the sprite's width is derived from the measured text so it never squishes.
+// `color` is a CSS color string, or a { colors, kind } gradient descriptor.
 function makeLabel(text, color = COLORS.label.default, worldHeight = 1.6) {
     const fontPx = 60;
     const pad = 14;
@@ -230,7 +243,7 @@ function makeLabel(text, color = COLORS.label.default, worldHeight = 1.6) {
     g.font = `bold ${fontPx}px -apple-system,Arial`; // ...so set the font again
     g.textAlign = "center";
     g.textBaseline = "middle";
-    g.fillStyle = color;
+    g.fillStyle = typeof color === "string" ? color : labelGradient(g, c.width, c.height, color);
     g.fillText(text, c.width / 2, c.height / 2);
     const tex = new THREE.CanvasTexture(c);
     tex.minFilter = THREE.LinearFilter;
@@ -346,6 +359,8 @@ function hexCss(n) {
  * we show whichever one keeps the chord tones connected.
  */
 let tonicResidue = 0; // which pc % 3 residue is treated as the tonic (axis-system rotation)
+let colorChordNames = false, // tint the 3D chord names by harmonic function
+    colorVertices = false; // tint the 3D vertices by harmonic function
 // the fixed 24-cell tonnetz layout (6 columns × 4 rows): { pc, net } per cell,
 // matching axis-test.html. Horizontal neighbours are +4 (major third), the two
 // nets form a checkerboard.
@@ -397,6 +412,27 @@ const AXIS_COLOR = {
     dominant: "var(--dominant-color)",
     unjudgeable: "var(--muted)",
 };
+// concrete hex equivalents (canvas / THREE can't read CSS vars)
+const AXIS_HEX = {
+    tonic: "#49b656",
+    pseudotonic: "#2cb28c",
+    subdominant: "#f1ab31",
+    dominant: "#f15031",
+    unjudgeable: "#9aa7b6",
+};
+
+// the fill for a chord's name, by its harmonic function: a solid color for a
+// single function, or a { colors, kind } gradient for an "or"/"plus" — matching
+// the axis-system panel. Falls back to the default chord color when unjudged.
+function chordFunctionFill(ch) {
+    const funcs = approximateChordFunction(pcFunctionCounts(ch.pcs, tonicResidue));
+    if (funcs.length === 0) return "#ffffff";
+    const isOr = funcs.length === 1 && funcs[0].includes("|");
+    const uniq = [...new Set(funcs.flatMap((f) => f.split("|")))];
+    if (uniq.length === 1) return AXIS_HEX[uniq[0]] || "#ffffff";
+    const order = ["tonic", "pseudotonic", "subdominant", "dominant", "unjudgeable"];
+    return { colors: order.filter((f) => uniq.includes(f)).map((f) => AXIS_HEX[f]), kind: isOr ? "or" : "plus" };
+}
 // Map the judgments to a chord-name style. Each judgment is one element; an
 // element "a|b" is a single *ambiguous* judgment ("or"), whereas several
 // elements are an overlap of distinct judgments ("plus"). A single function is a
@@ -444,7 +480,7 @@ function refreshAxisSystem() {
         const notes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter((p) => p % 3 === r).map((p) => NOTE_NAMES[p]).join(" ");
         opts += `<option value="${r}"${r === tonicResidue ? " selected" : ""}>${notes}</option>`;
     }
-    let html = "<h3>hsjoihs's interpretation of Ernő Lendvai and Barry Harris</h3>";
+    let html = "";
     html += `<div class="axis-controls">tonic group: <select id="tonicSel">${opts}</select></div>`;
     html += '<div class="axis-row">';
     for (const ch of chords) {
@@ -540,9 +576,15 @@ function build() {
         // vertices, labelled with the chord's own spelling
         pcs.forEach((pc) => {
             const p = pcPos(pc, y);
+            let vColor = COLORS.vertex,
+                vEmissive = COLORS.vertexEmissive;
+            if (colorVertices) {
+                vColor = new THREE.Color(AXIS_HEX[pcFunction(pc, tonicResidue)]);
+                vEmissive = vColor.clone().multiplyScalar(0.25);
+            }
             const dot = new THREE.Mesh(
                 new THREE.SphereGeometry(0.22, 16, 16),
-                new THREE.MeshStandardMaterial({ color: COLORS.vertex, emissive: COLORS.vertexEmissive, roughness: 0.4 }),
+                new THREE.MeshStandardMaterial({ color: vColor, emissive: vEmissive, roughness: 0.4 }),
             );
             dot.position.copy(p);
             group.add(dot);
@@ -553,7 +595,7 @@ function build() {
         // chord name label, at the adjustable azimuth/distance (in nameGroup so
         // it can be counter-spun); sized to its text, never cropped
         const az = (nameAzDeg * Math.PI) / 180;
-        const cname = makeLabel(ch.symbol, COLORS.label.chord, 2.4);
+        const cname = makeLabel(ch.symbol, colorChordNames ? chordFunctionFill(ch) : COLORS.label.chord, 2.4);
         cname.position.set(nameDist * Math.cos(az), y, nameDist * Math.sin(az));
         nameGroup.add(cname);
     });
@@ -656,7 +698,7 @@ function encodeState() {
     return {
         v: 1,
         c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol]),
-        t: [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths].map((b) => (b ? 1 : 0)),
+        t: [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChordNames, colorVertices].map((b) => (b ? 1 : 0)),
         k: [round(camTheta, 3), round(camPhi, 3), round(camRad, 2), round(camTarget.x, 2), round(camTarget.y, 2), round(camTarget.z, 2)],
         L: round(LAYER, 2),
         na: Math.round(nameAzDeg),
@@ -690,13 +732,16 @@ function restoreState() {
             symbol,
         }));
         if (Array.isArray(st.t)) {
-            [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths] = st.t.map(Boolean);
+            [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChordNames, colorVertices] =
+                st.t.map(Boolean);
             document.getElementById("tConsonant").checked = showConsonant;
             document.getElementById("tDissonant").checked = showDissonant;
             document.getElementById("tIntervalLabels").checked = showIntervalLabels;
             document.getElementById("tConnections").checked = showConnections;
             document.getElementById("tSpin").checked = spin;
             document.getElementById("tFifths").checked = circleOfFifths;
+            document.getElementById("tColorNames").checked = colorChordNames;
+            document.getElementById("tColorVertices").checked = colorVertices;
         }
         if (st.L != null) LAYER = st.L;
         if (st.na != null) nameAzDeg = st.na;
@@ -913,6 +958,14 @@ function setupUI() {
     };
     document.getElementById("tFifths").onchange = (e) => {
         circleOfFifths = e.target.checked;
+        build();
+    };
+    document.getElementById("tColorNames").onchange = (e) => {
+        colorChordNames = e.target.checked;
+        build();
+    };
+    document.getElementById("tColorVertices").onchange = (e) => {
+        colorVertices = e.target.checked;
         build();
     };
     document.getElementById("tIntervalLabels").onchange = (e) => {

@@ -391,8 +391,8 @@ button.primary:hover {
 
 #edit-view {
     position: absolute;
-    right: 12px;
-    bottom: 12px;
+    right: 8px;
+    bottom: 8px;
 }
 
 .overlay-box {
@@ -406,18 +406,18 @@ button.primary:hover {
 
 #legends {
     position: absolute;
-    left: 12px;
-    top: 12px;
+    left: 8px;
+    top: 8px;
 }
 
-#axis-system {
+#axis-system-box {
     position: absolute;
-    left: 12px;
-    bottom: 12px;
+    left: 8px;
+    bottom: 8px;
     max-width: 56vw;
 }
 
-#axis-system h3 {
+#axis-system-box h3 {
     margin: 2px 0 6px;
     font-size: 11px;
     text-transform: uppercase;
