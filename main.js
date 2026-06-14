@@ -105,14 +105,15 @@ let nameAzDeg = 270, // 270° = the F♯ side, the original fixed position
     nameSpinOffset = 0; // accumulated counter-spin so names appear to hold still
 
 function initThree() {
-    const stage = document.getElementById("stage");
+    const viewport = document.getElementById("viewport");
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    renderer.setSize(stage.clientWidth, stage.clientHeight);
-    stage.appendChild(renderer.domElement);
+    layoutViewport(); // size the render rectangle before the renderer reads it
+    renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    viewport.appendChild(renderer.domElement);
     scene = new THREE.Scene();
     scene.background = new THREE.Color(COLORS.scene.background);
-    camera = new THREE.PerspectiveCamera(45, stage.clientWidth / stage.clientHeight, 0.1, 200);
+    camera = new THREE.PerspectiveCamera(45, viewport.clientWidth / viewport.clientHeight, 0.1, 200);
     scene.add(new THREE.AmbientLight(COLORS.scene.light, 0.85));
     const dl = new THREE.DirectionalLight(COLORS.scene.light, 0.6);
     dl.position.set(6, 10, 8);
@@ -124,11 +125,71 @@ function initThree() {
     scene.add(group);
     setupControls();
     animate();
-    addEventListener("resize", () => {
-        renderer.setSize(stage.clientWidth, stage.clientHeight);
-        camera.aspect = stage.clientWidth / stage.clientHeight;
-        camera.updateProjectionMatrix();
+    addEventListener("resize", layoutViewport);
+    // The overlay boxes grow/shrink with their content (e.g. the tonnetz gains a
+    // column per chord), so re-fit the render rectangle whenever any of them — or
+    // the stage — changes size.
+    if (typeof ResizeObserver !== "undefined") {
+        const ro = new ResizeObserver(() => layoutViewport());
+        ro.observe(document.getElementById("stage"));
+        document.querySelectorAll("#stage .overlay-box").forEach((b) => ro.observe(b));
+    }
+}
+
+// Fit the #viewport to the largest central rectangle of #stage that the overlay
+// boxes don't cover. Each box is anchored to one or more stage edges; we carve a
+// strip off the side it's pinned to (choosing the thinnest strip for corner
+// boxes, so e.g. the wide-but-short tonnetz eats the bottom, not half the width).
+function layoutViewport() {
+    const stage = document.getElementById("stage");
+    const viewport = document.getElementById("viewport");
+    if (!stage || !viewport) return;
+    const sr = stage.getBoundingClientRect();
+    const M = 8; // breathing room between the render area and the boxes
+    const EDGE = 24; // a box within this many px of an edge counts as anchored there
+    let left = 0,
+        top = 0,
+        right = sr.width,
+        bottom = sr.height;
+    stage.querySelectorAll(".overlay-box").forEach((box) => {
+        if (box.offsetParent === null) return; // skip hidden boxes
+        const r = box.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) return;
+        const x0 = r.left - sr.left,
+            x1 = r.right - sr.left,
+            y0 = r.top - sr.top,
+            y1 = r.bottom - sr.top;
+        // candidate strips for whichever edges this box hugs, with their thickness
+        const cands = [];
+        if (x0 <= EDGE) cands.push({ side: "left", t: x1 });
+        if (sr.width - x1 <= EDGE) cands.push({ side: "right", t: sr.width - x0 });
+        if (y0 <= EDGE) cands.push({ side: "top", t: y1 });
+        if (sr.height - y1 <= EDGE) cands.push({ side: "bottom", t: sr.height - y0 });
+        if (!cands.length) return;
+        const pick = cands.reduce((a, b) => (b.t < a.t ? b : a));
+        if (pick.side === "left") left = Math.max(left, x1);
+        else if (pick.side === "right") right = Math.min(right, x0);
+        else if (pick.side === "top") top = Math.max(top, y1);
+        else bottom = Math.min(bottom, y0);
     });
+    left += M;
+    top += M;
+    right -= M;
+    bottom -= M;
+    // never collapse to nothing if the boxes are huge on a small window
+    const w = Math.max(120, right - left);
+    const h = Math.max(120, bottom - top);
+    viewport.style.left = left + "px";
+    viewport.style.top = top + "px";
+    viewport.style.right = "auto";
+    viewport.style.bottom = "auto";
+    viewport.style.width = w + "px";
+    viewport.style.height = h + "px";
+    if (renderer && camera) {
+        renderer.setSize(w, h);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+    }
 }
 
 // ---- custom orbit controls (no external dep) ----

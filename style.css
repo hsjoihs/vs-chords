@@ -80,6 +80,18 @@ table.intervals td {
     min-width: 0
 }
 
+/* The 3D scene renders only inside this rectangle, inset so the overlay boxes
+   (anchored to the stage edges) never sit on top of the cylinder. Its inset is
+   computed in JS from the live positions of the .overlay-box elements. */
+#viewport {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
 canvas {
     display: block
 }
