@@ -7,25 +7,34 @@
     --line:             oklab(35% 0.015 -0.03);
     --txt:              oklab(95% 0.005 -0.01);
     --muted:            oklab(70% 0.015 -0.03);
-    --main:           oklab(70% 0.065 -0.13);
+    --main:             oklab(70% 0.065 -0.13);
+
+    --link:             oklab(74% 0.065 -0.13);
+    --link-hover:       oklab(78% 0.055 -0.11);
+    /* slightly change the hue */
+    --link-visited:     oklab(70% 0.1   -0.1 );
+    --link-active:      oklab(68% 0.120 -0.04);
 
     /* UI: special colors */
     --danger: oklab(70% 0.2 0.06);
     --accent: oklab(70% -0.12 0.08);
+}
 
-    /* musical interval */
-    --semitone: #5ad17a;
-    --whole: #ffb454;
-    --minor3rd: #7fc8ff;
-    --major3rd: #d8fe4c;
-    --p4p5: #c792ea;
-    --tritone: #ff5d6c;
 
-    /* harmonic-function colors (axis system) */
-    --tonic-color: #49b656;
-    --pseudotonic-color: #2cb28c;
-    --subdominant-color: #f1ab31;
-    --dominant-color: #f15031;
+a:link {
+  color: var(--link);
+}
+
+a:visited {
+  color: var(--link-visited);
+}
+
+a:hover {
+  color: var(--link-hover);
+}
+
+a:active {
+  color: var(--link-active);
 }
 
 input[type="checkbox"] {

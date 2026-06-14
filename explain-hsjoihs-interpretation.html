@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="musical-colors.css" />
+
+</head>
+
+<body style="font-family: 'Times New Roman', Times, serif;">
+    <style>
+        span.t{ background-color: var(--tonic-color);color: white; padding: 2px; }
+        span.d{ background-color: var(--dominant-color);color: white; padding: 2px; }
+        span.s{ background-color: var(--subdominant-color);color: white; padding: 2px; }
+        td {
+            padding: 2px 5px;
+            text-align: center;
+        }
+    </style>
+
+    <h1>hsjoihs's weird interpretation of Ernő Lendvai and Barry Harris</h1>
+
+    <h2>TL;DR</h2>
+    <p>I propose <b>method of color-counting</b>, a <i>very crude</i> yet mildly useful method of assigning “tonic” /
+        “subdominant” / “dominant” function to chords.</p>
+    <ol>
+        <li><p>Using the following color scheme (three sets of diminished-7th chords), color all the notes in the chord.</p>
+
+             <table>
+        <tr>
+            <td style="color: white; background-color: var(--tonic-color);">t</td>
+            <td> ♯IV, VI, I, ♭III</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--subdominant-color);">s</td>
+            <td>VII, II, IV, ♭VI</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--dominant-color);">d</td>
+            <td>♯I, III, V, ♭VII</td>
+        </tr>
+    </table>
+
+        <p>For instance, A7 in the key of C <small>(either major or minor: the coloring is agnostic to changes in minor third)</small> has <span class="t">A (VI)</span>, <span class="d">C♯ (♯I)</span>, <span class="d">E (III)</span> and <span class="d">G (V)</span> as its chord notes. Hence (<span class="t">t</span>, <span class="d">d</span>, <span class="s">s</span>) = (<span class="t">1</span>, <span class="d">3</span>, <span class="s">0</span>).</p>
+
+        </li>
+        <li><p>Pick all the pairs of two colors, and judge by the following table:</p>
+            <table border="1">
+                <tr><td><span class="t">t</span> + <span class="s">s</span></td><td><span class="s">s</span> + <span class="d">d</span></td><td><span class="d">d</span> + <span class="t">t</span></td></tr>
+                <tr><td>
+<table border="1" cellpadding="3" cellspacing="0">
+
+    <tr><td></td><td><b>0t</b></td><td><b>1t</b></td><td><b>2t</b></td><td><b>3t</b></td><td><b>4t</b></td></tr>
+    <tr><td><b>0s</b></td><td></td><td></td><td></td><td>S|T</td><td>S</td></tr>
+    <tr><td><b>1s</b></td><td></td><td></td><td>S</td><td>S</td><td>X</td></tr>
+    <tr><td><b>2s</b></td><td></td><td>S</td><td>S</td><td>X</td><td>X</td></tr>
+    <tr><td><b>3s</b></td><td>D|S</td><td>D|S</td><td>X</td><td>X</td><td>X</td></tr>
+    <tr><td><b>4s</b></td><td>D</td><td>X</td><td>X</td><td>X</td><td>X</td></tr>
+
+</table>
+                </td><td>
+            <table border="1" cellpadding="3" cellspacing="0">
+
+    <tr><td></td><td><b>0s</b></td><td><b>1s</b></td><td><b>2s</b></td><td><b>3s</b></td><td><b>4s</b></td></tr>
+    <tr><td><b>0d</b></td><td></td><td></td><td></td><td>D|S</td><td>D</td></tr>
+    <tr><td><b>1d</b></td><td></td><td></td><td>D</td><td>D</td><td>X</td></tr>
+    <tr><td><b>2d</b></td><td></td><td>D</td><td>D</td><td>X</td><td>X</td></tr>
+    <tr><td><b>3d</b></td><td>T|D</td><td>T|D</td><td>X</td><td>X</td><td>X</td></tr>
+    <tr><td><b>4d</b></td><td>T</td><td>X</td><td>X</td><td>X</td><td>X</td></tr>
+
+</table>    
+                </td><td>
+ <table border="1" cellpadding="3" cellspacing="0">
+
+    <tr><td></td><td><b>0d</b></td><td><b>1d</b></td><td><b>2d</b></td><td><b>3d</b></td><td><b>4d</b></td></tr>
+    <tr><td><b>0t</b></td><td></td><td></td><td></td><td>T|D</td><td>T</td></tr>
+    <tr><td><b>1t</b></td><td></td><td></td><td>T</td><td>T</td><td>X</td></tr>
+    <tr><td><b>2t</b></td><td></td><td>T</td><td>T</td><td>X</td><td>X</td></tr>
+    <tr><td><b>3t</b></td><td>S|T</td><td>S|T</td><td>X</td><td>X</td><td>X</td></tr>
+    <tr><td><b>4t</b></td><td>S</td><td>X</td><td>X</td><td>X</td><td>X</td></tr>
+
+</table>  
+                </td></tr>
+            </table>
+            <small>(X = unjudgeable)</small>
+            
+            <p>Alternatively, look at the following diagram.</p>
+            <img src="image/boundaries-count.png" width="600" /> </li>
+        <li>That's all.</li>
+    </ol>
+    <h2>Design</h2>
+
+    <p>I wanted a way of <i>very crudely</i> assigning <a href="https://en.wikipedia.org/wiki/Function_(music)">harmonic
+            functions</a> to chords. I looked into Ernő Lendvai's axis system, where the twelve tones of the chromatic
+        scale are grouped into three sets.</p>
+   
+   
+
+    <p>The structure is three-fold symmetric over the twelve-tone equal temperament: </p>
+
+    <table>
+        <tr>
+            <td style="color: white; background-color: var(--tonic-color);">T</td>
+            <td>I</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--dominant-color);">D</td>
+            <td>♯I</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--subdominant-color);">S</td>
+            <td>II</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--tonic-color);">T</td>
+            <td>♭III</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--dominant-color);">D</td>
+            <td>III</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--subdominant-color);">S</td>
+            <td>IV</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--tonic-color);">T</td>
+            <td>♯IV</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--dominant-color);">D</td>
+            <td>V</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--subdominant-color);">S</td>
+            <td>♭VI</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--tonic-color);">T</td>
+            <td>VI</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--dominant-color);">D</td>
+            <td>♭VII</td>
+        </tr>
+        <tr>
+            <td style="color: white; background-color: var(--subdominant-color);">S</td>
+            <td>VII</td>
+        </tr>
+    </table>
+
+    <p>When you draw a <a href="https://en.wikipedia.org/wiki/Tonnetz">tonnetz</a> (here written in a square grid such
+        that it becomes a subset of <a href="https://github.com/sozysozbot/WHiSq">WHiSq: Wicki–Hayden in Squares</a> /
+        <a href="https://github.com/flipcoder/midimech">Midimech</a>) and map out some commonly employed triads and
+        tetrads, we get the following structure:</p>
+
+        <p>TODO</p>
+
+
+    <p>By arranging this into a triangle, we arrive at the following symmetry.</p>
+
+    <a href="https://github.com/sozysozbot/tonnetz-dim" target="_blank"><img
+            src="https://raw.githubusercontent.com/sozysozbot/tonnetz-dim/refs/heads/main/tonnetz-dim.png"
+            width="900" /></a>
+
+    <p>This arrangement is quite reminiscent of the diagram displayed in <a href="https://www.youtube.com/watch?app=desktop&v=rCpJYOj_a9M">The Pop Descriptivist's “A Unified Theory of Diminished Chords”</a>:</p>
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/rCpJYOj_a9M?si=SDno8Xo30Yco17hL" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+    <p>Also, consider a cubic lattice.</p>
+
+    <img src="./image/tetrahedron.png" width="600" />
+
+    <p>Then, starting from the origin (at the center) and moving along each <i>axis</i> (pun intended), we can plot familiar chords on this grid:</p>
+
+
+    <img src="./image/boundaries.png" width="900" />
+
+    <h2>Flaws</h2>
+
+    <p>This method is a massive overgeneralization; for instance, it ignores the difference between C-E-G and E-F#-G.</p>
+
+    
+</body>

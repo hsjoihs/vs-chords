@@ -1,0 +1,15 @@
+:root {
+    /* musical interval */
+    --semitone: #5ad17a;
+    --whole: #ffb454;
+    --minor3rd: #7fc8ff;
+    --major3rd: #d8fe4c;
+    --p4p5: #c792ea;
+    --tritone: #ff5d6c;
+
+    /* harmonic-function colors (axis system) */
+    --tonic-color: #49b656;
+    --pseudotonic-color: #2cb28c;
+    --subdominant-color: #f1ab31;
+    --dominant-color: #f15031;
+}
