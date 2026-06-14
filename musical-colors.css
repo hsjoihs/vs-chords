@@ -9,7 +9,6 @@
 
     /* harmonic-function colors */
     --tonic-color: #49b656;
-    --pseudotonic-color: #2cb28c;
     --subdominant-color: #f1ab31;
     --dominant-color: #f15031;
 
@@ -17,4 +16,11 @@
     --accessible-tonic-color: #4096ff;
     --accessible-subdominant-color: #F1AB31;
     --accessible-dominant-color: #5701e1;
+}
+
+/* opt-in accessible mode: remap the function colors everywhere CSS uses them */
+body.accessible {
+    --tonic-color: var(--accessible-tonic-color);
+    --subdominant-color: var(--accessible-subdominant-color);
+    --dominant-color: var(--accessible-dominant-color);
 }

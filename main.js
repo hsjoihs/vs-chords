@@ -359,8 +359,9 @@ function hexCss(n) {
  * we show whichever one keeps the chord tones connected.
  */
 let tonicResidue = 0; // which pc % 3 residue is treated as the tonic (axis-system rotation)
-let colorChordNames = false, // tint the 3D chord names by harmonic function
-    colorVertices = false; // tint the 3D vertices by harmonic function
+let colorChords = false, // opt-in: tint chord names (panel + cylinder) by harmonic function
+    colorVertices = false, // tint the 3D vertices by harmonic function
+    accessibleColors = false; // use the red-green-avoiding --accessible-* palette
 // the fixed 24-cell tonnetz layout (6 columns × 4 rows): { pc, net } per cell,
 // matching axis-test.html. Horizontal neighbours are +4 (major third), the two
 // nets form a checkerboard.
@@ -405,33 +406,31 @@ function chooseNet(pcs) {
     return netComponents(pcs, 1) <= netComponents(pcs, 2) ? 1 : 2;
 }
 
+const FUNC_ORDER = ["tonic", "subdominant", "dominant", "unjudgeable"];
+// CSS-variable colors (auto-switch under body.accessible — see style.css)
 const AXIS_COLOR = {
     tonic: "var(--tonic-color)",
-    pseudotonic: "var(--pseudotonic-color)",
     subdominant: "var(--subdominant-color)",
     dominant: "var(--dominant-color)",
     unjudgeable: "var(--muted)",
 };
-// concrete hex equivalents (canvas / THREE can't read CSS vars)
-const AXIS_HEX = {
-    tonic: "#49b656",
-    pseudotonic: "#2cb28c",
-    subdominant: "#f1ab31",
-    dominant: "#f15031",
-    unjudgeable: "#9aa7b6",
-};
+// concrete hex equivalents (canvas / THREE can't read CSS vars), normal + accessible
+const AXIS_HEX_NORMAL = { tonic: "#49b656", subdominant: "#f1ab31", dominant: "#f15031", unjudgeable: "#9aa7b6" };
+const AXIS_HEX_ACCESSIBLE = { tonic: "#4096ff", subdominant: "#f1ab31", dominant: "#5701e1", unjudgeable: "#9aa7b6" };
+function axisHex(func) {
+    return (accessibleColors ? AXIS_HEX_ACCESSIBLE : AXIS_HEX_NORMAL)[(func)];
+}
 
 // the fill for a chord's name, by its harmonic function: a solid color for a
 // single function, or a { colors, kind } gradient for an "or"/"plus" — matching
-// the axis-system panel. Falls back to the default chord color when unjudged.
+// the axis-system panel. Falls back to white when unjudged.
 function chordFunctionFill(ch) {
     const funcs = approximateChordFunction(pcFunctionCounts(ch.pcs, tonicResidue));
     if (funcs.length === 0) return "#ffffff";
     const isOr = funcs.length === 1 && funcs[0].includes("|");
     const uniq = [...new Set(funcs.flatMap((f) => f.split("|")))];
-    if (uniq.length === 1) return AXIS_HEX[uniq[0]] || "#ffffff";
-    const order = ["tonic", "pseudotonic", "subdominant", "dominant", "unjudgeable"];
-    return { colors: order.filter((f) => uniq.includes(f)).map((f) => AXIS_HEX[f]), kind: isOr ? "or" : "plus" };
+    if (uniq.length === 1) return axisHex(uniq[0]) || "#ffffff";
+    return { colors: FUNC_ORDER.filter((f) => uniq.includes(f)).map((f) => axisHex(f)), kind: isOr ? "or" : "plus" };
 }
 // Map the judgments to a chord-name style. Each judgment is one element; an
 // element "a|b" is a single *ambiguous* judgment ("or"), whereas several
@@ -443,14 +442,13 @@ function axisNameAttrs(funcs) {
     const isOr = funcs.length === 1 && funcs[0].includes("|");
     const isPlus = funcs.length > 1;
     const uniq = [...new Set(funcs.flatMap((f) => f.split("|")))];
-    const key = [...uniq].sort().join("+");
 
-    if (!isOr && !isPlus && AXIS_COLOR[funcs[0]] && funcs[0] !== "unjudgeable") {
-        return { cls: funcs[0], style: "" }; // a single, unambiguous function → solid
+    if (!isOr && !isPlus) {
+        const f = (funcs[0]);
+        if (AXIS_COLOR[f] && f !== "unjudgeable") return { cls: f, style: "" }; // single → solid
     }
 
-    const order = ["tonic", "pseudotonic", "subdominant", "dominant", "unjudgeable"];
-    const cols = order.filter((f) => uniq.includes(f)).map((f) => AXIS_COLOR[f]);
+    const cols = FUNC_ORDER.filter((f) => uniq.includes(f)).map((f) => AXIS_COLOR[f]);
     const n = cols.length;
     const stops = cols.map((c, i) => `${c} ${(i / n) * 100}% ${((i + 1) / n) * 100}%`).join(", ");
     const angle = isOr ? 140 : 0; // "or" slashes, "plus" splits horizontally
@@ -466,7 +464,7 @@ let lastAxisSig = null;
 function refreshAxisSystem() {
     const el = document.getElementById("axis-system");
     if (!el) return;
-    const sig = JSON.stringify([tonicResidue, chords.map((c) => [c.symbol, c.pcs])]);
+    const sig = JSON.stringify([tonicResidue, colorChords, chords.map((c) => [c.symbol, c.pcs])]);
     if (sig === lastAxisSig) return;
     lastAxisSig = sig;
 
@@ -484,8 +482,10 @@ function refreshAxisSystem() {
         `<button class="tonic-shift" id="tonicNext" title="shift tonic group">▶</button></div>`;
     html += '<div class="axis-row">';
     for (const ch of chords) {
+        // chord-name coloring (panel + cylinder) is opt-in — the nonstandard
+        // interpretation; note/tonnetz coloring always stays on
         const funcs = approximateChordFunction(pcFunctionCounts(ch.pcs, tonicResidue));
-        const { cls, style } = axisNameAttrs(funcs);
+        const { cls, style } = colorChords ? axisNameAttrs(funcs) : { cls: "", style: "" };
         const net = chooseNet(ch.pcs);
         let cells = "";
         for (const { pc, net: cellNet } of TONNETZ) {
@@ -580,7 +580,7 @@ function build() {
             let vColor = COLORS.vertex,
                 vEmissive = COLORS.vertexEmissive;
             if (colorVertices) {
-                vColor = new THREE.Color(AXIS_HEX[pcFunction(pc, tonicResidue)]);
+                vColor = new THREE.Color(axisHex(pcFunction(pc, tonicResidue)));
                 vEmissive = vColor.clone().multiplyScalar(0.25);
             }
             const dot = new THREE.Mesh(
@@ -596,7 +596,7 @@ function build() {
         // chord name label, at the adjustable azimuth/distance (in nameGroup so
         // it can be counter-spun); sized to its text, never cropped
         const az = (nameAzDeg * Math.PI) / 180;
-        const cname = makeLabel(ch.symbol, colorChordNames ? chordFunctionFill(ch) : COLORS.label.chord, 2.4);
+        const cname = makeLabel(ch.symbol, colorChords ? chordFunctionFill(ch) : COLORS.label.chord, 2.4);
         cname.position.set(nameDist * Math.cos(az), y, nameDist * Math.sin(az));
         nameGroup.add(cname);
     });
@@ -699,7 +699,7 @@ function encodeState() {
     return {
         v: 1,
         c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol]),
-        t: [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChordNames, colorVertices].map((b) => (b ? 1 : 0)),
+        t: [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChords, colorVertices, accessibleColors].map((b) => (b ? 1 : 0)),
         k: [round(camTheta, 3), round(camPhi, 3), round(camRad, 2), round(camTarget.x, 2), round(camTarget.y, 2), round(camTarget.z, 2)],
         L: round(LAYER, 2),
         na: Math.round(nameAzDeg),
@@ -733,7 +733,7 @@ function restoreState() {
             symbol,
         }));
         if (Array.isArray(st.t)) {
-            [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChordNames, colorVertices] =
+            [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChords, colorVertices, accessibleColors] =
                 st.t.map(Boolean);
             document.getElementById("tConsonant").checked = showConsonant;
             document.getElementById("tDissonant").checked = showDissonant;
@@ -741,8 +741,10 @@ function restoreState() {
             document.getElementById("tConnections").checked = showConnections;
             document.getElementById("tSpin").checked = spin;
             document.getElementById("tFifths").checked = circleOfFifths;
-            document.getElementById("tColorNames").checked = colorChordNames;
+            document.getElementById("tColorNames").checked = colorChords;
             document.getElementById("tColorVertices").checked = colorVertices;
+            document.getElementById("tAccessible").checked = accessibleColors;
+            document.body.classList.toggle("accessible", accessibleColors);
         }
         if (st.L != null) LAYER = st.L;
         if (st.na != null) nameAzDeg = st.na;
@@ -962,11 +964,16 @@ function setupUI() {
         build();
     };
     document.getElementById("tColorNames").onchange = (e) => {
-        colorChordNames = e.target.checked;
+        colorChords = e.target.checked;
         build();
     };
     document.getElementById("tColorVertices").onchange = (e) => {
         colorVertices = e.target.checked;
+        build();
+    };
+    document.getElementById("tAccessible").onchange = (e) => {
+        accessibleColors = e.target.checked;
+        document.body.classList.toggle("accessible", accessibleColors);
         build();
     };
     document.getElementById("tIntervalLabels").onchange = (e) => {

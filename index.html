@@ -50,11 +50,17 @@
 
   <div id="stage">
     <div id="analysis" class="overlay-box"></div>
+    <div id="weird-interpretation-box" class="overlay-box">
+      <div class="block">
+
+        <div class="toggle"><input type="checkbox" id="tColorNames"><label for="tColorNames">Use <a href="explain-hsjoihs-interpretation.html" target="_blank">hsjoihs's weird chord coloring system</a></label></div>
+      </div>
+    </div>
     <div id="axis-system-box" class="overlay-box">
       <div class="block">
-        <div><h3 style="display: inline">hsjoihs's interpretation of Ernő Lendvai and Barry Harris</h3> <a href="explain-hsjoihs-interpretation.html">(See details)</a></div>
-        <div class="toggle"><input type="checkbox" id="tColorNames"><label for="tColorNames">Color the cylinder's chord names by hsjoihs's interpretation of the harmonic function</label></div>
+        <h3>Tonnetz / Axis system</h3>
         <div class="toggle"><input type="checkbox" id="tColorVertices"><label for="tColorVertices">Color the cylinder's vertices by the axis system</label></div>
+        <div class="toggle"><input type="checkbox" id="tAccessible"><label for="tAccessible">Reduce red–green distinction (accessible colors)</label></div>
       </div>
       <div id="axis-system"></div>
     </div>

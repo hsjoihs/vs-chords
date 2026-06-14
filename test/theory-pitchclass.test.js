@@ -123,8 +123,8 @@ test("approximateChordFunction matches the reference cases", () => {
         [{ t_count: 0, d_count: 2, s_count: 2 }, ["dominant"]], // Em7
         [{ t_count: 2, d_count: 2, s_count: 0 }, ["tonic"]], // Am7
         // an *ambiguous* single judgment is one element, written "a|b"
-        [{ t_count: 3, d_count: 1, s_count: 0 }, ["subdominant|pseudotonic"]],
-        [{ t_count: 0, d_count: 3, s_count: 0 }, ["pseudotonic|dominant"]],
+        [{ t_count: 3, d_count: 1, s_count: 0 }, ["subdominant|tonic"]],
+        [{ t_count: 0, d_count: 3, s_count: 0 }, ["tonic|dominant"]],
         [{ t_count: 4, d_count: 0, s_count: 0 }, ["subdominant"]], // tonic-rooted dim7
         [{ t_count: 0, d_count: 0, s_count: 1 }, []], // ≤2 notes
     ];
