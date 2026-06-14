@@ -4,44 +4,67 @@
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="musical-colors.css" />
-
+    <title>Crudely approximating the functional harmony by simply counting axis colors</title>
 </head>
 
-<body style="font-family: 'Times New Roman', Times, serif;">
+<body style="font-family: 'Times New Roman', Times, serif; margin: 0 auto; max-width: 80vw;">
     <style>
         span.t{ background-color: var(--tonic-color);color: white; padding: 2px; }
         span.d{ background-color: var(--dominant-color);color: white; padding: 2px; }
         span.s{ background-color: var(--subdominant-color);color: white; padding: 2px; }
+
+        .accessible span.t{ background-color: var(--accessible-tonic-color);color: white; padding: 2px; }
+        .accessible span.d{ background-color: var(--accessible-dominant-color);color: white; padding: 2px; }
+        .accessible span.s{ background-color: var(--accessible-subdominant-color);color: white; padding: 2px; }
+
+       td.t{color: white; background-color: var(--tonic-color);}
+       td.d{color: white; background-color: var(--dominant-color);}
+       td.s{color: white; background-color: var(--subdominant-color);}
+       
+       .accessible td.t{color: white; background-color: var(--accessible-tonic-color);}
+       .accessible td.d{color: white; background-color: var(--accessible-dominant-color);}
+       .accessible td.s{color: white; background-color: var(--accessible-subdominant-color);}
+
+        .accessible .has-r-vs-g {display: none;}
+       .avoids-r-vs-g {display: none;}
+       .accessible .avoids-r-vs-g {
+        display: block;
+       }
+
         td {
             padding: 2px 5px;
             text-align: center;
         }
     </style>
 
-    <h1>hsjoihs's weird interpretation of Ernő Lendvai and Barry Harris</h1>
+
+    <h1>Crudely approximating the functional harmony by simply counting axis colors</h1>
+    <p style="text-align: right">hsjoihs<br>2026-06-14</p>
+
+    <input type="checkbox" id="accessibility" onclick="document.getElementsByTagName('body')[0].classList.toggle('accessible', this.checked)"><label for="accessibility">Click here to reduce the use of red-green distinction</label>
 
     <h2>TL;DR</h2>
-    <p>I propose <b>method of color-counting</b>, a <i>very crude</i> yet mildly useful method of assigning “tonic” /
-        “subdominant” / “dominant” function to chords.</p>
+    <p>I propose <b>method of color-counting</b>, a <i>very crude</i> yet mildly useful method of assigning labels “T” /
+        “S” / “D” to chords. It seeks to somewhat approximate the traditional tonic/subdominant/dominant terminology used in the functional harmony, but prioritizes symmetry over practicality.</p>
     <ol>
         <li><p>Using the following color scheme (three sets of diminished-7th chords), color all the notes in the chord.</p>
 
              <table>
         <tr>
-            <td style="color: white; background-color: var(--tonic-color);">t</td>
+            <td class="t">t</td>
             <td> ♯IV, VI, I, ♭III</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--subdominant-color);">s</td>
+            <td class="s">s</td>
             <td>VII, II, IV, ♭VI</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--dominant-color);">d</td>
+            <td class="d">d</td>
             <td>♯I, III, V, ♭VII</td>
         </tr>
     </table>
 
-        <p>For instance, A7 in the key of C <small>(either major or minor: the coloring is agnostic to changes in minor third)</small> has <span class="t">A (VI)</span>, <span class="d">C♯ (♯I)</span>, <span class="d">E (III)</span> and <span class="d">G (V)</span> as its chord notes. Hence (<span class="t">t</span>, <span class="d">d</span>, <span class="s">s</span>) = (<span class="t">1</span>, <span class="d">3</span>, <span class="s">0</span>).</p>
+        <p>For instance, A7 in the key of C <small>(either major or minor: the coloring is agnostic to changes in minor third)</small> has <span class="t">A (VI)</span>, <span class="d">C♯ (♯I)</span>, <span class="d">E (III)</span> and <span class="d">G (V)</span> as its chord notes. Hence this chord has 1 small <span class="t">t</span> and 3 small <span class="d">d</span>s.</p>
 
         </li>
         <li><p>Pick all the pairs of two colors, and judge by the following table:</p>
@@ -83,12 +106,16 @@
                 </td></tr>
             </table>
             <small>(X = unjudgeable)</small>
+
+            <p>For instance, 3 small <span class="d">d</span>s plus 1 small <span class="t">t</span> is a <span class="t">Big T</span>, so we can see that A7 in the key of C is a <span class="t">Big T</span>.</p>
             
             <p>Alternatively, look at the following diagram.</p>
-            <img src="image/boundaries-count.png" width="600" /> </li>
-        <li>That's all.</li>
+            <img class="has-r-vs-g" src="./image/boundaries-count.png" width="600" />
+    <img class="avoids-r-vs-g" src="./image/boundaries-count-accessible.png" width="600" />
+        <li>That's it!</li>
     </ol>
-    <h2>Design</h2>
+
+    <h2 style="margin-top: 250px;">Design</h2>
 
     <p>I wanted a way of <i>very crudely</i> assigning <a href="https://en.wikipedia.org/wiki/Function_(music)">harmonic
             functions</a> to chords. I looked into Ernő Lendvai's axis system, where the twelve tones of the chromatic
@@ -100,70 +127,74 @@
 
     <table>
         <tr>
-            <td style="color: white; background-color: var(--tonic-color);">T</td>
+            <td class="t">T</td>
             <td>I</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--dominant-color);">D</td>
+            <td class="d">D</td>
             <td>♯I</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--subdominant-color);">S</td>
+            <td class="s">S</td>
             <td>II</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--tonic-color);">T</td>
+            <td class="t">T</td>
             <td>♭III</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--dominant-color);">D</td>
+            <td class="d">D</td>
             <td>III</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--subdominant-color);">S</td>
+            <td class="s">S</td>
             <td>IV</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--tonic-color);">T</td>
+            <td class="t">T</td>
             <td>♯IV</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--dominant-color);">D</td>
+            <td class="d">D</td>
             <td>V</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--subdominant-color);">S</td>
+            <td class="s">S</td>
             <td>♭VI</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--tonic-color);">T</td>
+            <td class="t">T</td>
             <td>VI</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--dominant-color);">D</td>
+            <td class="d">D</td>
             <td>♭VII</td>
         </tr>
         <tr>
-            <td style="color: white; background-color: var(--subdominant-color);">S</td>
+            <td class="s">S</td>
             <td>VII</td>
         </tr>
     </table>
 
-    <p>When you draw a <a href="https://en.wikipedia.org/wiki/Tonnetz">tonnetz</a> (here written in a square grid such
+    <p>This can be mapped to a nice <a href="https://en.wikipedia.org/wiki/Tonnetz">tonnetz</a> (here written in a square grid such
         that it becomes a subset of <a href="https://github.com/sozysozbot/WHiSq">WHiSq: Wicki–Hayden in Squares</a> /
-        <a href="https://github.com/flipcoder/midimech">Midimech</a>) and map out some commonly employed triads and
-        tetrads, we get the following structure:</p>
+        <a href="https://github.com/flipcoder/midimech">Midimech</a>):</p>
 
-        <p>TODO</p>
-
+    <a href="https://github.com/sozysozbot/tonnetz-dim" target="_blank"><img class="has-r-vs-g" 
+            src="https://raw.githubusercontent.com/sozysozbot/tonnetz-dim/refs/heads/main/tonnetz.png"
+            width="300" /><img class="avoids-r-vs-g" 
+            src="https://raw.githubusercontent.com/sozysozbot/tonnetz-dim/refs/heads/main/tonnetz-accessible.png"
+            width="300" /></a>
 
     <p>By arranging this into a triangle, we arrive at the following symmetry.</p>
 
-    <a href="https://github.com/sozysozbot/tonnetz-dim" target="_blank"><img
+    <a href="https://github.com/sozysozbot/tonnetz-dim" target="_blank"><img class="has-r-vs-g" 
             src="https://raw.githubusercontent.com/sozysozbot/tonnetz-dim/refs/heads/main/tonnetz-dim.png"
+            width="900" /><img class="avoids-r-vs-g" 
+            src="https://raw.githubusercontent.com/sozysozbot/tonnetz-dim/refs/heads/main/tonnetz-dim-accessible.png"
             width="900" /></a>
 
-    <p>This arrangement is quite reminiscent of the diagram displayed in <a href="https://www.youtube.com/watch?app=desktop&v=rCpJYOj_a9M">The Pop Descriptivist's “A Unified Theory of Diminished Chords”</a>:</p>
+    <p>This arrangement is quite reminiscent of the diagram displayed in <a href="https://www.youtube.com/watch?app=desktop&v=rCpJYOj_a9M">The Pop Descriptivist's “A Unified Theory of Diminished Chords”</a> which is partly based on the ideas of Barry Harris:</p>
 
     <iframe width="560" height="315" src="https://www.youtube.com/embed/rCpJYOj_a9M?si=SDno8Xo30Yco17hL" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
@@ -171,14 +202,15 @@
 
     <img src="./image/tetrahedron.png" width="600" />
 
-    <p>Then, starting from the origin (at the center) and moving along each <i>axis</i> (pun intended), we can plot familiar chords on this grid:</p>
+    <p>Then, starting from the origin (at the center) and moving along each <i>axis</i> (pun intended), we can plot the chords on this grid:</p>
 
 
-    <img src="./image/boundaries.png" width="900" />
+    <img class="has-r-vs-g" src="./image/boundaries.png" width="900" />
+    <img class="avoids-r-vs-g" src="./image/boundaries-accessible.png" width="900" />
 
     <h2>Flaws</h2>
 
-    <p>This method is a massive overgeneralization; for instance, it ignores the difference between C-E-G and E-F#-G.</p>
+    <p>This method is a massive overgeneralization; for instance, it ignores the difference between C-E-G and E-F#-G. Hence I did not claim that what I am talking about is “tonic”, “subdominant” or “dominant” </p>
 
     
 </body>

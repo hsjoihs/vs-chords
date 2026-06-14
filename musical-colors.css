@@ -7,9 +7,14 @@
     --p4p5: #c792ea;
     --tritone: #ff5d6c;
 
-    /* harmonic-function colors (axis system) */
+    /* harmonic-function colors */
     --tonic-color: #49b656;
     --pseudotonic-color: #2cb28c;
     --subdominant-color: #f1ab31;
     --dominant-color: #f15031;
+
+    /* accessible mode */
+    --accessible-tonic-color: #4096ff;
+    --accessible-subdominant-color: #F1AB31;
+    --accessible-dominant-color: #5701e1;
 }
