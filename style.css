@@ -418,8 +418,8 @@ button.primary:hover {
 
 #weird-interpretation-box {
     position: absolute;
-    right: 8px;
-    bottom: 300px;
+    left: 360px;
+    bottom: 180px;
 }
 
 .overlay-box {
