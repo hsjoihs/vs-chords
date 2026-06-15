@@ -52,10 +52,14 @@
     <div id="viewport"></div>
     <div id="analysis" class="overlay-box"></div>
     
-    <div id="axis-system-box" class="overlay-box">
+    <div id="tonnetz-and-coloring-box" class="overlay-box">
       <div class="block" style="border-top: 0 solid var(--line)">
-        <h3>Tonnetz / Axis system</h3>
-        <div class="toggle"><input type="checkbox" id="tColorVertices"><label for="tColorVertices">Color the cylinder's vertices by the axis system</label></div>
+        <h3>Tonnetz / Coloring</h3>
+        <div class="note-scheme">Color the notes (vertices, tonnetz &amp; connections) by:
+          <label><input type="radio" name="noteScheme" value="none" id="nsNone">nothing</label>
+          <label><input type="radio" name="noteScheme" value="axis" id="nsAxis" checked>the axis system</label>
+          <label><input type="radio" name="noteScheme" value="fifths" id="nsFifths">the circle of fifths</label>
+        </div>
         <div class="toggle"><input type="checkbox" id="tAccessible"><label for="tAccessible">Reduce red–green distinction (accessible colors)</label></div>
       </div>
       <div id="axis-system"></div>

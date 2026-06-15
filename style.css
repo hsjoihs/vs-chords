@@ -419,7 +419,7 @@ button.primary:hover {
 #weird-interpretation-box {
     position: absolute;
     left: 360px;
-    bottom: 180px;
+    bottom: 140px;
 }
 
 .overlay-box {
@@ -437,14 +437,14 @@ button.primary:hover {
     top: 8px;
 }
 
-#axis-system-box {
+#tonnetz-and-coloring-box {
     position: absolute;
     left: 8px;
     bottom: 8px;
     max-width: 56vw;
 }
 
-#axis-system-box h3 {
+#tonnetz-and-coloring-box h3 {
     margin: 2px 0 6px;
     font-size: 11px;
     text-transform: uppercase;
@@ -531,12 +531,29 @@ button.primary:hover {
     background: transparent;
 }
 
-#axis-system .grid-cell.tonic { background-color: rgb(from var(--tonic-color) r g b / .15) }
-#axis-system .grid-cell.subdominant { background-color: rgb(from var(--subdominant-color) r g b / .15) }
-#axis-system .grid-cell.dominant { background-color: rgb(from var(--dominant-color) r g b / .15) }
-#axis-system .grid-cell.tonic.belongs { background-color: var(--tonic-color) }
-#axis-system .grid-cell.subdominant.belongs { background-color: var(--subdominant-color) }
-#axis-system .grid-cell.dominant.belongs { background-color: var(--dominant-color) }
+/* tonnetz cell color depends on the chosen note scheme (set as .scheme-* on the
+   grid). non-belonging cells get a faint tint; chord tones (.belongs) get full. */
+
+/* axis system: by harmonic function (auto-switches under body.accessible) */
+#axis-system .grid.scheme-axis .grid-cell.tonic { background-color: rgb(from var(--tonic-color) r g b / .15) }
+#axis-system .grid.scheme-axis .grid-cell.subdominant { background-color: rgb(from var(--subdominant-color) r g b / .15) }
+#axis-system .grid.scheme-axis .grid-cell.dominant { background-color: rgb(from var(--dominant-color) r g b / .15) }
+#axis-system .grid.scheme-axis .grid-cell.tonic.belongs { background-color: var(--tonic-color) }
+#axis-system .grid.scheme-axis .grid-cell.subdominant.belongs { background-color: var(--subdominant-color) }
+#axis-system .grid.scheme-axis .grid-cell.dominant.belongs { background-color: var(--dominant-color) }
+
+/* circle of fifths: a chroma wheel keyed by --n (0=C, 1=G, 2=D, …) */
+#axis-system .grid.scheme-fifths .grid-cell { --theta: calc(var(--n) * 30deg); background-color: oklch(70% 0.12 var(--theta) / .15) }
+#axis-system .grid.scheme-fifths .grid-cell.belongs { background-color: oklch(70% 0.12 var(--theta)) }
+:root:has(#tAccessible:checked) #axis-system .grid.scheme-fifths .grid-cell {
+    background-color: oklab(calc(67.5% + 18% * cos(var(--theta))) 0 calc(0.13 * sin(var(--theta))) / .15);
+}
+:root:has(#tAccessible:checked) #axis-system .grid.scheme-fifths .grid-cell.belongs {
+    background-color: oklab(calc(67.5% + 18% * cos(var(--theta))) 0 calc(0.13 * sin(var(--theta))));
+}
+
+/* no coloring: still mark the chord tones, but neutrally */
+#axis-system .grid.scheme-none .grid-cell.belongs { background-color: var(--muted) }
 
 #axis-system .grid.show-net1 .grid-cell.net2 { visibility: hidden }
 #axis-system .grid.show-net2 .grid-cell.net1 { visibility: hidden }
@@ -594,6 +611,34 @@ button.primary:hover {
 
 #analysis .mv b {
     font-weight: 600
+}
+
+/* colored note names in the connections box, matching the chosen note scheme.
+   .note-chip.note (circle of fifths) gets its background from .note in
+   musical-colors.css; the .fn-* variants use the harmonic-function colors. */
+.note-chip {
+    display: inline-block;
+    padding: 0 5px;
+    border-radius: 3px;
+    color: #fff;
+}
+.note-chip.fn-tonic { background-color: var(--tonic-color) }
+.note-chip.fn-subdominant { background-color: var(--subdominant-color) }
+.note-chip.fn-dominant { background-color: var(--dominant-color) }
+
+/* the None / Axis / Fifths note-scheme selector */
+.note-scheme {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.9;
+}
+.note-scheme label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 8px;
+    cursor: pointer;
 }
 
 .tag {

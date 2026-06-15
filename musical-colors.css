@@ -24,3 +24,21 @@ body.accessible {
     --subdominant-color: var(--accessible-subdominant-color);
     --dominant-color: var(--accessible-dominant-color);
 }
+
+.note {
+  --theta: calc(var(--n) * 30deg);
+
+  /* normal mode */
+  background: oklch(70% 0.12 var(--theta));
+}
+
+:root:has(#tAccessible:checked) .note {
+  --theta: calc(var(--n) * 30deg);
+
+  /* red-green-safe cyclic loop */
+  background: oklab(
+    calc(67.5% + 18% * cos(var(--theta)))
+    0
+    calc(0.13 * sin(var(--theta)))
+  );
+}

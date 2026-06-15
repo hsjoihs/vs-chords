@@ -421,7 +421,11 @@ function hexCss(n) {
  */
 let tonicResidue = 0; // which pc % 3 residue is treated as the tonic (axis-system rotation)
 let colorChords = false, // opt-in: tint chord names (panel + cylinder) by harmonic function
-    colorVertices = false, // tint the 3D vertices by harmonic function
+    // how to color the notes (cylinder vertices, tonnetz cells, connections box):
+    //   "none"   — no function/chroma tint
+    //   "axis"   — by harmonic function (tonic / subdominant / dominant)
+    //   "fifths" — by a circle-of-fifths chroma wheel (independent of #tFifths)
+    noteScheme = "axis",
     accessibleColors = false; // use the red-green-avoiding --accessible-* palette
 // the fixed 24-cell tonnetz layout (6 columns × 4 rows): { pc, net } per cell,
 // matching axis-test.html. Horizontal neighbours are +4 (major third), the two
@@ -482,6 +486,51 @@ function axisHex(func) {
     return (accessibleColors ? AXIS_HEX_ACCESSIBLE : AXIS_HEX_NORMAL)[(func)];
 }
 
+/* ---- circle-of-fifths chroma wheel ----
+ * Mirrors the `.note` rules in musical-colors.css so the canvas/THREE vertices
+ * match the CSS-painted tonnetz cells and connection chips exactly. The hue index
+ * n advances by a fifth (so C=0, G=1, D=2, …), giving 30° hue steps, and is
+ * deliberately independent of the #tFifths ring arrangement.
+ */
+function fifthsIndex(pc) {
+    return ((7 * (((pc % 12) + 12) % 12)) % 12 + 12) % 12; // (7·pc) mod 12
+}
+// oklab → "#rrggbb" (sRGB). THREE r128 can't parse oklab/oklch, so convert here.
+function oklabToHex(L, a, b) {
+    const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+    const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+    const s_ = L - 0.0894841775 * a - 1.291485548 * b;
+    const l = l_ ** 3, m = m_ ** 3, s = s_ ** 3;
+    const lin2srgb = (c) => {
+        c = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+        return Math.max(0, Math.min(255, Math.round(c * 255)));
+    };
+    const r = lin2srgb(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s);
+    const g = lin2srgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s);
+    const bb = lin2srgb(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s);
+    return "#" + [r, g, bb].map((v) => v.toString(16).padStart(2, "0")).join("");
+}
+// the chroma-wheel color for a pitch class, honoring the accessible variant
+function fifthsHex(pc) {
+    const theta = (fifthsIndex(pc) * 30 * Math.PI) / 180;
+    return accessibleColors
+        ? oklabToHex(0.675 + 0.18 * Math.cos(theta), 0, 0.13 * Math.sin(theta)) // red-green-safe loop
+        : oklabToHex(0.7, 0.12 * Math.cos(theta), 0.12 * Math.sin(theta)); // oklch(70% 0.12 θ)
+}
+// the color (CSS "#rrggbb") for a single note under the active scheme, or null for "none"
+function noteHex(pc) {
+    if (noteScheme === "fifths") return fifthsHex(pc);
+    if (noteScheme === "axis") return axisHex(pcFunction(pc, tonicResidue));
+    return null;
+}
+// HTML for a colored note name in the connections box, matching the active scheme
+function noteChip(name, pc) {
+    const esc = escapeHtml(name);
+    if (noteScheme === "axis") return `<span class="note-chip fn-${pcFunction(pc, tonicResidue)}">${esc}</span>`;
+    if (noteScheme === "fifths") return `<span class="note-chip note" style="--n:${fifthsIndex(pc)}">${esc}</span>`;
+    return esc; // "none" → plain text
+}
+
 // the fill for a chord's name, by its harmonic function: a solid color for a
 // single function, or a { colors, kind } gradient for an "or"/"plus" — matching
 // the axis-system panel. Falls back to white when unjudged.
@@ -525,7 +574,7 @@ let lastAxisSig = null;
 function refreshAxisSystem() {
     const el = document.getElementById("axis-system");
     if (!el) return;
-    const sig = JSON.stringify([tonicResidue, colorChords, chords.map((c) => [c.symbol, c.pcs])]);
+    const sig = JSON.stringify([tonicResidue, colorChords, noteScheme, chords.map((c) => [c.symbol, c.pcs])]);
     if (sig === lastAxisSig) return;
     lastAxisSig = sig;
 
@@ -551,9 +600,10 @@ function refreshAxisSystem() {
         let cells = "";
         for (const { pc, net: cellNet } of TONNETZ) {
             const belongs = ch.pcs.includes(pc) ? " belongs" : "";
-            cells += `<button class="grid-cell net${cellNet} ${pcFunction(pc, tonicResidue)}${belongs}"><span class="grid-cell__label">${NOTE_NAMES[pc]}</span></button>`;
+            // both scheme classes are present; CSS picks one via the grid's scheme-* class
+            cells += `<button class="grid-cell net${cellNet} ${pcFunction(pc, tonicResidue)}${belongs}" style="--n:${fifthsIndex(pc)}"><span class="grid-cell__label">${NOTE_NAMES[pc]}</span></button>`;
         }
-        html += `<div class="child-box"><span class="chord-name ${cls}"${style}>${escapeHtml(ch.symbol)}</span>` + `<div class="grid show-net${net}">${cells}</div></div>`;
+        html += `<div class="child-box"><span class="chord-name ${cls}"${style}>${escapeHtml(ch.symbol)}</span>` + `<div class="grid show-net${net} scheme-${noteScheme}">${cells}</div></div>`;
     }
     html += "</div>";
     el.innerHTML = html;
@@ -640,8 +690,9 @@ function build() {
             const p = pcPos(pc, y);
             let vColor = COLORS.vertex,
                 vEmissive = COLORS.vertexEmissive;
-            if (colorVertices) {
-                vColor = new THREE.Color(axisHex(pcFunction(pc, tonicResidue)));
+            const hex = noteHex(pc);
+            if (hex) {
+                vColor = new THREE.Color(hex);
                 vEmissive = vColor.clone().multiplyScalar(0.25);
             }
             const dot = new THREE.Mesh(
@@ -760,7 +811,8 @@ function encodeState() {
     return {
         v: 1,
         c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol]),
-        t: [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChords, colorVertices, accessibleColors].map((b) => (b ? 1 : 0)),
+        t: [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChords, accessibleColors].map((b) => (b ? 1 : 0)),
+        ns: noteScheme,
         k: [round(camTheta, 3), round(camPhi, 3), round(camRad, 2), round(camTarget.x, 2), round(camTarget.y, 2), round(camTarget.z, 2)],
         L: round(LAYER, 2),
         na: Math.round(nameAzDeg),
@@ -794,7 +846,7 @@ function restoreState() {
             symbol,
         }));
         if (Array.isArray(st.t)) {
-            [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChords, colorVertices, accessibleColors] =
+            [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChords, accessibleColors] =
                 st.t.map(Boolean);
             document.getElementById("tConsonant").checked = showConsonant;
             document.getElementById("tDissonant").checked = showDissonant;
@@ -803,10 +855,12 @@ function restoreState() {
             document.getElementById("tSpin").checked = spin;
             document.getElementById("tFifths").checked = circleOfFifths;
             document.getElementById("tColorNames").checked = colorChords;
-            document.getElementById("tColorVertices").checked = colorVertices;
             document.getElementById("tAccessible").checked = accessibleColors;
             document.body.classList.toggle("accessible", accessibleColors);
         }
+        if (typeof st.ns === "string") noteScheme = st.ns;
+        const nsRadio = document.querySelector(`input[name="noteScheme"][value="${noteScheme}"]`);
+        if (nsRadio) nsRadio.checked = true;
         if (st.L != null) LAYER = st.L;
         if (st.na != null) nameAzDeg = st.na;
         if (st.nd != null) nameDist = st.nd;
@@ -948,7 +1002,7 @@ function renderAnalysis() {
             tag = "whole";
             txt = "W"+ (mv.step === 2 ? "↑" : "↓");
         }
-        const arrow = `${noteName(A, mv.from)}→${noteName(B, mv.to)}`;
+        const arrow = `${noteChip(noteName(A, mv.from), mv.from)}→${noteChip(noteName(B, mv.to), mv.to)}`;
         html += `<div class="mv"><b>${arrow}</b><span class="tag ${tag}">${txt}</span></div>`;
     });
     el.innerHTML = html;
@@ -1028,10 +1082,13 @@ function setupUI() {
         colorChords = e.target.checked;
         build();
     };
-    document.getElementById("tColorVertices").onchange = (e) => {
-        colorVertices = e.target.checked;
-        build();
-    };
+    document.querySelectorAll('input[name="noteScheme"]').forEach((r) => {
+        r.onchange = (e) => {
+            if (!e.target.checked) return;
+            noteScheme = e.target.value;
+            build();
+        };
+    });
     document.getElementById("tAccessible").onchange = (e) => {
         accessibleColors = e.target.checked;
         document.body.classList.toggle("accessible", accessibleColors);
