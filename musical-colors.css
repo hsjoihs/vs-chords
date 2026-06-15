@@ -42,3 +42,21 @@ body.accessible {
     calc(0.13 * sin(var(--theta)))
   );
 }
+
+.note-text {
+  --theta: calc(var(--n) * 30deg);
+
+  /* normal mode */
+  color: oklch(70% 0.12 var(--theta));
+}
+
+:root:has(#tAccessible:checked) .note-text {
+  --theta: calc(var(--n) * 30deg);
+
+  /* red-green-safe cyclic loop */
+  color: oklab(
+    calc(67.5% + 18% * cos(var(--theta)))
+    0
+    calc(0.13 * sin(var(--theta)))
+  );
+}

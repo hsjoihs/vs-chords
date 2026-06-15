@@ -527,8 +527,8 @@ function noteHex(pc) {
 function noteChip(name, pc) {
     const esc = escapeHtml(name);
     if (noteScheme === "axis") return `<span class="note-chip fn-${pcFunction(pc, tonicResidue)}">${esc}</span>`;
-    if (noteScheme === "fifths") return `<span class="note-chip note" style="--n:${fifthsIndex(pc)}">${esc}</span>`;
-    return esc; // "none" → plain text
+    if (noteScheme === "fifths") return `<span class="note-chip note-text" style="--n:${fifthsIndex(pc)}">${esc}</span>`;
+    return `<span class="note-chip">${esc}</span>`;
 }
 
 // the fill for a chord's name, by its harmonic function: a solid color for a

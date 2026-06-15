@@ -622,9 +622,9 @@ button.primary:hover {
     border-radius: 3px;
     color: #fff;
 }
-.note-chip.fn-tonic { background-color: var(--tonic-color) }
-.note-chip.fn-subdominant { background-color: var(--subdominant-color) }
-.note-chip.fn-dominant { background-color: var(--dominant-color) }
+.note-chip.fn-tonic { color: var(--tonic-color) }
+.note-chip.fn-subdominant { color: var(--subdominant-color) }
+.note-chip.fn-dominant { color: var(--dominant-color) }
 
 /* the None / Axis / Fifths note-scheme selector */
 .note-scheme {
