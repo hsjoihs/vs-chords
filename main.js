@@ -99,7 +99,8 @@ let spin = false,
     showDissonant = true, // H, W, TT interior intervals
     showIntervalLabels = true,
     showConnections = true,
-    circleOfFifths = false; // arrange the ring by fifths instead of chromatically
+    circleOfFifths = false, // arrange the ring by fifths instead of chromatically
+    tetradShorthand = false; // false = bare Δ/°/dim/− are triads; true = bare Δ/°/dim/− are tetrads
 // chord-name sprite placement (shared by every chord): azimuth + distance from axis
 let nameAzDeg = 270, // 270° = the F♯ side, the original fixed position
     nameDist = R + 2.4,
@@ -814,6 +815,7 @@ function encodeState() {
         c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol]),
         t: [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChords, accessibleColors].map((b) => (b ? 1 : 0)),
         ns: noteScheme,
+        cv2: tetradShorthand,
         k: [round(camTheta, 3), round(camPhi, 3), round(camRad, 2), round(camTarget.x, 2), round(camTarget.y, 2), round(camTarget.z, 2)],
         L: round(LAYER, 2),
         na: Math.round(nameAzDeg),
@@ -859,6 +861,9 @@ function restoreState() {
             document.getElementById("tAccessible").checked = accessibleColors;
             document.body.classList.toggle("accessible", accessibleColors);
         }
+        tetradShorthand = !!st.cv2;
+        setTetradShorthand(tetradShorthand);
+        document.getElementById("tTetrad").checked = tetradShorthand;
         if (typeof st.ns === "string") noteScheme = st.ns;
         const nsRadio = document.querySelector(`input[name="noteScheme"][value="${noteScheme}"]`);
         if (nsRadio) nsRadio.checked = true;
@@ -1078,6 +1083,11 @@ function setupUI() {
     document.getElementById("tFifths").onchange = (e) => {
         circleOfFifths = e.target.checked;
         build();
+    };
+    document.getElementById("tTetrad").onchange = (e) => {
+        tetradShorthand = e.target.checked;
+        setTetradShorthand(tetradShorthand);
+        doRender(); // re-parse the text box under the newly selected convention
     };
     document.getElementById("tColorNames").onchange = (e) => {
         colorChords = e.target.checked;

@@ -78,6 +78,38 @@
         return n > 0 ? "♯".repeat(n) : "♭".repeat(-n);
     }
 
+    /* ---- bare-symbol convention --------------------------------------
+     * The symbols Δ △ ° o dim − are read two ways in the wild:
+     *   Convention 1 (default): on their own they are TRIADS; add "7" for the
+     *       seventh chord (Δ7, °7, dim7, −7).
+     *   Convention 2: on their own they are already SEVENTH chords, and a
+     *       trailing "7" is a no-op.
+     * (M, Maj, m, min are always triads, and ø is always a half-diminished 7th,
+     * under both conventions.) The three swappable formulas below are referenced
+     * by the bare entries in QUALITIES, and setTetradShorthand() rewrites them in
+     * place — so both parseChord and describe follow the active convention.
+     */
+    let tetradShorthand = false; // false = Convention 1, true = Convention 2
+    const BARE_MAJ = { 1: 0, 3: 4, 5: 7 }; // Δ △
+    const BARE_DIM = { 1: 0, 3: 3, 5: 6 }; // ° o dim
+    const BARE_MIN = { 1: 0, 3: 3, 5: 7 }; // −
+    function setTetradShorthand(on) {
+        tetradShorthand = !!on;
+        const reset = (obj, src) => {
+            for (const k of Object.keys(obj)) delete obj[k];
+            Object.assign(obj, src);
+        };
+        if (tetradShorthand) {
+            reset(BARE_MAJ, { 1: 0, 3: 4, 5: 7, 7: 11 }); // maj7
+            reset(BARE_DIM, { 1: 0, 3: 3, 5: 6, 7: 9 }); // dim7
+            reset(BARE_MIN, { 1: 0, 3: 3, 5: 7, 7: 10 }); // min7
+        } else {
+            reset(BARE_MAJ, { 1: 0, 3: 4, 5: 7 }); // major triad
+            reset(BARE_DIM, { 1: 0, 3: 3, 5: 6 }); // diminished triad
+            reset(BARE_MIN, { 1: 0, 3: 3, 5: 7 }); // minor triad
+        }
+    }
+
     /* ---- chord-quality dictionary ------------------------------------
      * Each quality is a map  degree -> semitones-above-root.
      * Degrees are diatonic step numbers (1,3,5,7,9,11,13...) so the speller
@@ -91,9 +123,9 @@
         ["Maj7", { 1: 0, 3: 4, 5: 7, 7: 11 }],
         ["M7", { 1: 0, 3: 4, 5: 7, 7: 11 }],
         ["Δ7", { 1: 0, 3: 4, 5: 7, 7: 11 }],
-        ["Δ", { 1: 0, 3: 4, 5: 7, 7: 11 }],
+        ["Δ", BARE_MAJ], // triad (Conv.1) or maj7 (Conv.2)
         ["△7", { 1: 0, 3: 4, 5: 7, 7: 11 }],
-        ["△", { 1: 0, 3: 4, 5: 7, 7: 11 }],
+        ["△", BARE_MAJ],
         ["maj", { 1: 0, 3: 4, 5: 7 }],
         ["Maj", { 1: 0, 3: 4, 5: 7 }],
 
@@ -115,7 +147,7 @@
 
         // diminished
         ["dim7", { 1: 0, 3: 3, 5: 6, 7: 9 }],
-        ["dim", { 1: 0, 3: 3, 5: 6 }],
+        ["dim", BARE_DIM], // triad (Conv.1) or dim7 (Conv.2)
         ["°7", { 1: 0, 3: 3, 5: 6, 7: 9 }],
         ["°M7", { 1: 0, 3: 3, 5: 6, 7: 11 }],
         ["°Δ7", { 1: 0, 3: 3, 5: 6, 7: 11 }],
@@ -134,8 +166,8 @@
         ["oMaj7", { 1: 0, 3: 3, 5: 6, 7: 11 }],
         ["omaj7", { 1: 0, 3: 3, 5: 6, 7: 11 }],
 
-        ["°", { 1: 0, 3: 3, 5: 6 }],
-        ["o", { 1: 0, 3: 3, 5: 6 }],
+        ["°", BARE_DIM],
+        ["o", BARE_DIM],
 
         ["ø7", { 1: 0, 3: 3, 5: 6, 7: 10 }],
         ["ø", { 1: 0, 3: 3, 5: 6, 7: 10 }],
@@ -174,7 +206,7 @@
         ["5", { 1: 0, 5: 7 }],
 
         ["-7", { 1: 0, 3: 3, 5: 7, 7: 10 }],
-        ["-", { 1: 0, 3: 3, 5: 7 }],
+        ["-", BARE_MIN], // minor triad (Conv.1) or minor 7th (Conv.2)
 
         // quartal
         ["q7", {1: 0, 4: 5, 7: 10 }],
@@ -713,6 +745,7 @@
         spellChord,
         parseProgression,
         describe,
+        setTetradShorthand,
         formatNote,
         fifthName,
         windowFifths,

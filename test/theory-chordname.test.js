@@ -266,6 +266,79 @@ test("the empty pitch-class set is N.C.", () => {
     for (const s of ["NC", "N.C", "n.c.", "N.C."]) assert.deepEqual(T.parseChord(s).pcs, []);
 });
 
+/* =====================================================================
+ * Bare-symbol convention: Δ △ ° o dim − as triads or 7ths 
+ * ===================================================================== */
+const pcsOf = (sym) => sortSet(T.parseChord(sym).pcs);
+// run `fn` with a convention selected, always restoring the default afterwards
+function withConvention(tetrad, fn) {
+    T.setTetradShorthand(tetrad);
+    try {
+        fn();
+    } finally {
+        T.setTetradShorthand(false); // default = read as triads
+    }
+}
+
+test("default convention: bare Δ △ ° o dim − are triads; add 7 for the seventh", () => {
+    withConvention(false, () => {
+        assert.deepEqual(pcsOf("CΔ"), [0, 4, 7]); // major triad
+        assert.deepEqual(pcsOf("C△"), [0, 4, 7]);
+        assert.deepEqual(pcsOf("CΔ7"), [0, 4, 7, 11]); // major seventh
+        assert.deepEqual(pcsOf("Cdim"), [0, 3, 6]); // diminished triad
+        assert.deepEqual(pcsOf("C°"), [0, 3, 6]);
+        assert.deepEqual(pcsOf("Co"), [0, 3, 6]);
+        assert.deepEqual(pcsOf("Cdim7"), [0, 3, 6, 9]); // diminished seventh
+        assert.deepEqual(pcsOf("C°7"), [0, 3, 6, 9]);
+        assert.deepEqual(pcsOf("C-"), [0, 3, 7]); // minor triad
+        assert.deepEqual(pcsOf("C-7"), [0, 3, 7, 10]); // minor seventh
+    });
+});
+
+test("abbreviated seventh: bare Δ △ ° o dim − are sevenths; a trailing 7 is a no-op", () => {
+    withConvention(true, () => {
+        assert.deepEqual(pcsOf("CΔ"), [0, 4, 7, 11]);
+        assert.deepEqual(pcsOf("CΔ7"), [0, 4, 7, 11]);
+        assert.deepEqual(pcsOf("C△"), [0, 4, 7, 11]);
+        assert.deepEqual(pcsOf("Cdim"), [0, 3, 6, 9]);
+        assert.deepEqual(pcsOf("Cdim7"), [0, 3, 6, 9]);
+        assert.deepEqual(pcsOf("C°"), [0, 3, 6, 9]);
+        assert.deepEqual(pcsOf("Co"), [0, 3, 6, 9]);
+        assert.deepEqual(pcsOf("C-"), [0, 3, 7, 10]);
+        assert.deepEqual(pcsOf("C-7"), [0, 3, 7, 10]);
+    });
+});
+
+test("both conventions agree on M, Maj, m, min (triads) and ø (half-diminished 7th)", () => {
+    for (const tetrad of [false, true]) {
+        withConvention(tetrad, () => {
+            assert.deepEqual(pcsOf("CMaj"), [0, 4, 7]);
+            assert.deepEqual(pcsOf("Cm"), [0, 3, 7]);
+            assert.deepEqual(pcsOf("Cmin"), [0, 3, 7]);
+            assert.deepEqual(pcsOf("CM7"), [0, 4, 7, 11]);
+            assert.deepEqual(pcsOf("Cm7"), [0, 3, 7, 10]);
+            assert.deepEqual(pcsOf("Cø"), [0, 3, 6, 10]);
+            assert.deepEqual(pcsOf("Cø7"), [0, 3, 6, 10]);
+        });
+    }
+});
+
+// describe must produce round-tripping names under whichever convention is active
+test("describe → parseChord round-trips EVERY 0..11-note set under the 'abbreviated seventh' convention too", () => {
+    withConvention(true, () => {
+        for (let mask = 0; mask < 4096; mask++) {
+            const pcs = [];
+            for (let pc = 0; pc < 12; pc++) if (mask & (1 << pc)) pcs.push(pc);
+            if (pcs.length === 12) continue;
+            for (const root of [pcs[0] ?? null, null]) {
+                const name = T.describe(pcs, root, null);
+                const got = T.parseChord(name).pcs;
+                assert.deepEqual(sortSet(got), sortSet(pcs), `set ${pcs} (root ${root}) → "${name}" → ${got}`);
+            }
+        }
+    });
+});
+
 // the reported bug: an 11-note set was named "C", colliding with the C triad
 test("a large hand-built set is not collapsed to a bare root", () => {
     const pcs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // C C♯ D E♭ E F F♯ G G♯ A B♭
@@ -322,7 +395,7 @@ test("describe never writes a quartal chord with a tension", () => {
     }
 });
 
-// exception: with BOTH 7ths there is no convention, so just never write x6
+// exception: with BOTH 7ths there is no standard way of writing it, so just never write x6
 test("describe avoids x6 when both 7ths are present, and round-trips", () => {
     const name = T.describe([0, 7, 10, 11], 0, -3); // C G B♭ B
     assert.ok(!name.includes("x6"), `expected no x6, got "${name}"`);
