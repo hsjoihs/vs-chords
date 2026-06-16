@@ -235,21 +235,52 @@ test("describe → parseChord round-trips with an auto-chosen root", () => {
     }
 });
 
-test("describe → parseChord round-trips arbitrary pitch-class sets", () => {
-    // deterministic LCG so failures are reproducible
-    let seed = 0x2545f4914f6cdd1d % 2147483647;
-    const rand = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
-    for (let iter = 0; iter < 500; iter++) {
-        const size = 1 + Math.floor(rand() * 7); // 1..7 notes
-        const set = new Set();
-        while (set.size < size) set.add(Math.floor(rand() * 12));
-        const pcs = [...set];
-        for (const root of [pcs[0], null]) {
+// describe() must be injective. The strongest possible check: EVERY pitch-class
+// set of 0..11 notes must round-trip (re-parse to the same set), for a tagged
+// root and for an auto-chosen root — 4095 cases, the empty set ("N.C.") through
+// every 11-note set. (The earlier version only built sets of 1..7 notes, so it
+// never exhausted the chord grammar — which tops out near 10 distinct degrees per
+// root — and missed sets that collapsed to a bare root.) Only the 12-note
+// chromatic aggregate is excluded; it cannot be written as a chord symbol.
+test("describe → parseChord round-trips EVERY pitch-class set of 0..11 notes", () => {
+    let covered = 0;
+    for (let mask = 0; mask < 4096; mask++) {
+        const pcs = [];
+        for (let pc = 0; pc < 12; pc++) if (mask & (1 << pc)) pcs.push(pc);
+        if (pcs.length === 12) continue; // the chromatic aggregate is not a chord
+        covered++;
+        for (const root of [pcs[0] ?? null, null]) {
             const name = T.describe(pcs, root, null);
             const got = T.parseChord(name).pcs;
             assert.deepEqual(sortSet(got), sortSet(pcs), `set ${pcs} (root ${root}) → "${name}" → ${got}`);
         }
     }
+    assert.equal(covered, 4095, "should cover 4095 sets (empty set through every 11-note set)");
+});
+
+// the empty set is "N.C." (no chord), and it round-trips
+test("the empty pitch-class set is N.C.", () => {
+    assert.equal(T.describe([], null, null), "N.C.");
+    assert.deepEqual(T.parseChord("N.C.").pcs, []);
+    // common ASCII spellings are all accepted
+    for (const s of ["NC", "N.C", "n.c.", "N.C."]) assert.deepEqual(T.parseChord(s).pcs, []);
+});
+
+// the reported bug: an 11-note set was named "C", colliding with the C triad
+test("a large hand-built set is not collapsed to a bare root", () => {
+    const pcs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // C C♯ D E♭ E F F♯ G G♯ A B♭
+    const name = T.describe(pcs, 0, -3);
+    assert.notEqual(name, "C", "an 11-note set must not be named just 'C'");
+    assert.deepEqual(sortSet(T.parseChord(name).pcs), sortSet(pcs), `"${name}"`);
+});
+
+// the only set that cannot be a chord symbol — handle it gracefully, and never
+// collapse it to a triad (which would break injectivity against that triad)
+test("the 12-note chromatic aggregate is handled without collapsing to a triad", () => {
+    const all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    const name = T.describe(all, 0, -3);
+    assert.notEqual(name, "C");
+    assert.doesNotThrow(() => T.parseChord(name), `"${name}" must still parse`);
 });
 
 // toggling a note off then on must not

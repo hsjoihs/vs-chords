@@ -259,6 +259,12 @@
         const symbol = String(sym).trim();
         if (!symbol) return null;
 
+        // "N.C." (no chord / tacet) — the empty pitch-class set. Accept the common
+        // ASCII spellings (NC, N.C, N.C.) case-insensitively.
+        if (/^n\.?c\.?$/i.test(symbol)) {
+            return { symbol, root: null, rootPc: null, bass: null, bassPc: null, notes: [], pcs: [] };
+        }
+
         // optional slash bass
         let main = symbol;
         let bass = null;
@@ -498,24 +504,106 @@
         return best ? best.str : null;
     }
 
+    // does `name` parse back to exactly the pitch-class set `wantSorted`?
+    // (the round-trip contract every describe() result must satisfy)
+    function namesPcs(name, wantSorted) {
+        if (!name) return false;
+        let c;
+        try {
+            c = parseChord(name);
+        } catch (e) {
+            return false;
+        }
+        if (!c) return false;
+        const got = [...new Set(c.pcs)].sort((a, b) => a - b);
+        if (got.length !== wantSorted.length) return false;
+        for (let i = 0; i < got.length; i++) if (got[i] !== wantSorted[i]) return false;
+        return true;
+    }
+
+    // Last-resort namer: the root plus *every* other note spelled as an explicit
+    // tension, with the major triad's 3rd/5th omitted when absent. A 7th may be a
+    // tension here — this is the fallback, so correctness outranks legibility.
+    // Returns null when the notes cannot all be placed on distinct degrees from
+    // this root (the grammar tops out near 10 distinct pitch classes per root).
+    function explicitFromRoot(pcs, r, rootName) {
+        const T = new Set(pcs.map((p) => mod12(p - r)));
+        if (!T.has(0)) return null; // the root must itself be a chord tone
+        const baseHas3 = T.has(4),
+            baseHas5 = T.has(7);
+        // the bare-major base "" already supplies 1/3/5; express the rest as tensions
+        const toAssign = [...T]
+            .filter((v) => v !== 0 && !(v === 4 && baseHas3) && !(v === 7 && baseHas5))
+            .sort((a, b) => a - b);
+        const forbidden = new Set([1]); // degree 1 is the root
+        if (baseHas3) forbidden.add(3); // keep the base's own 3rd / 5th
+        if (baseHas5) forbidden.add(5);
+        const asn = assignDegrees(toAssign, forbidden, false);
+        if (!asn) return null;
+        const omit = [];
+        if (!baseHas3) omit.push("omit3");
+        if (!baseHas5) omit.push("omit5");
+        const inner = [...omit, ...tokensFor(asn)].join(",");
+        return rootName + (inner ? "(" + inner + ")" : "");
+    }
+
+    // A guaranteed round-tripping name for sets no clean quality name fits. Try
+    // the explicit form from every root; then, for sets too large for one root
+    // (up to 11 notes), peel one note off as a slash bass. The 12-note chromatic
+    // aggregate is the only set that cannot be written as a chord symbol — there
+    // we drop a single note (documented best effort) rather than emit a bare root.
+    function fallbackName(pcs, preferredRoot, spell) {
+        const want = [...new Set(pcs)].sort((a, b) => a - b);
+        const roots = preferredRoot != null ? [preferredRoot, ...want.filter((p) => p !== preferredRoot)] : want;
+        // 1. the whole set from a single root
+        for (const r of roots) {
+            const name = explicitFromRoot(want, r, spell(r));
+            if (namesPcs(name, want)) return name;
+        }
+        // 2. one note becomes the slash bass, the remainder named from a root
+        for (const b of want) {
+            const sub = want.filter((p) => p !== b);
+            for (const r of roots) {
+                if (!sub.includes(r)) continue;
+                const main = explicitFromRoot(sub, r, spell(r));
+                const name = main && main + "/" + spell(b);
+                if (namesPcs(name, want)) return name;
+            }
+        }
+        // 3. only the full chromatic aggregate reaches here; name 11 of its 12
+        //    notes (body + slash bass) so the label stays distinctive
+        for (const drop of want) {
+            const rest = want.filter((p) => p !== drop);
+            for (const b of rest) {
+                const sub = rest.filter((p) => p !== b);
+                for (const r of sub) {
+                    const main = explicitFromRoot(sub, r, spell(r));
+                    if (main) return main + "/" + spell(b);
+                }
+            }
+        }
+        return spell(want[0]);
+    }
+
     function describe(pcs, rootPc, fifthStart) {
-        if (!pcs || pcs.length === 0) return "";
+        if (!pcs || pcs.length === 0) return "N.C."; // no chord (the empty set)
         const spell = (p) => (fifthStart != null ? nameInWindow(p, fifthStart) : NOTE_NAMES[p]);
+        const want = [...new Set(pcs)].sort((a, b) => a - b);
 
         // honour a tagged root if the set can be spelled from it
         if (rootPc != null) {
             const res = buildFromRoot(pcs, rootPc, spell(rootPc));
-            if (res) return res;
+            if (namesPcs(res, want)) return res;
         }
         // otherwise pick the root giving the nicest spellable name (prefer a
         // real quality over the omit-fallback, then the shorter string)
-        // but we want to prioritize m7 over 6: 
+        // but we want to prioritize m7 over 6:
         // to solve this in an ad-hoc way, the score is adjusted.
         let best = null;
         for (const cand of pcs) {
             const res = buildFromRoot(pcs, cand, spell(cand));
-            if (!res) continue;
-            const adjust = 
+            if (!namesPcs(res, want)) continue; // never accept a name that loses notes
+            const adjust =
                 res.includes("m7") ? -0.6 : /* promote */
                 res.includes("6") ? 0.6 : /* demote */
                 res.includes("@(") ? 3.6 : /* demote blackadder with a tension; preferable to spell with aug7 */
@@ -527,7 +615,9 @@
                 best = { res, score };
             }
         }
-        return best ? best.res : spell(pcs[0]);
+        if (best) return best.res;
+        // no clean quality name fits — fall back to a guaranteed round-tripping form
+        return fallbackName(pcs, rootPc, spell);
     }
 
     /* ---- line / spiral of fifths -------------------------------------
