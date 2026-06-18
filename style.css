@@ -558,6 +558,11 @@ button.primary:hover {
 #axis-system .grid.show-net1 .grid-cell.net2 { visibility: hidden }
 #axis-system .grid.show-net2 .grid-cell.net1 { visibility: hidden }
 
+/* when the "circle of fifths" mode is checked, show both nets to show the nice gradation */
+:root:has(#nsFifths:checked) #axis-system .grid.show-net1 .grid-cell.net2 { visibility: visible }
+:root:has(#nsFifths:checked) #axis-system .grid.show-net2 .grid-cell.net1 { visibility: visible }
+
+
 #axis-system .grid-cell__label {
     font-size: 8px;
     line-height: 1;
