@@ -603,7 +603,10 @@ function refreshAxisSystem() {
         for (const { pc, net: cellNet } of TONNETZ) {
             const belongs = ch.pcs.includes(pc) ? " belongs" : "";
             // both scheme classes are present; CSS picks one via the grid's scheme-* class
-            cells += `<button class="grid-cell net${cellNet} ${pcFunction(pc, tonicResidue)}${belongs}" style="--n:${fifthsIndex(pc)}"><span class="grid-cell__label">${NOTE_NAMES[pc]}</span></button>`;
+            // C/F/G get the brightest accessible fifths-wheel fills, so they're flagged
+            // to switch their label to black text when highlighted (see style.css)
+            const bright = pc === 0 || pc === 5 || pc === 7 ? " bright-cfg" : "";
+            cells += `<button class="grid-cell net${cellNet} ${pcFunction(pc, tonicResidue)}${belongs}${bright}" style="--n:${fifthsIndex(pc)}"><span class="grid-cell__label">${NOTE_NAMES[pc]}</span></button>`;
         }
         html += `<div class="child-box"><span class="chord-name ${cls}"${style}>${escapeHtml(ch.symbol)}</span>` + `<div class="grid show-net${net} scheme-${noteScheme}">${cells}</div></div>`;
     }

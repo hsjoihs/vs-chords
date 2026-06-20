@@ -461,6 +461,11 @@ button.primary:hover {
     margin-bottom: 6px;
 }
 
+/* when the "circle of fifths" mode is checked, hide the axis control */
+:root:has(#nsFifths:checked) #axis-system .axis-controls {
+    visibility: hidden;
+}
+
 #axis-system .tonic-shift {
     background: var(--panel2);
     color: var(--txt);
@@ -554,6 +559,12 @@ button.primary:hover {
 
 /* no coloring: still mark the chord tones, but neutrally */
 #axis-system .grid.scheme-none .grid-cell.belongs { background-color: var(--muted) }
+
+/* in accessible mode the fifths wheel's C/F/G fills are so light that white text
+   on a highlighted cell is unreadable — switch those labels to black */
+:root:has(#tAccessible:checked) #axis-system .grid.scheme-fifths .grid-cell.belongs.bright-cfg .grid-cell__label {
+    color: #000;
+}
 
 #axis-system .grid.show-net1 .grid-cell.net2 { visibility: hidden }
 #axis-system .grid.show-net2 .grid-cell.net1 { visibility: hidden }
