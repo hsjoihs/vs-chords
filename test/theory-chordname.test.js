@@ -323,6 +323,46 @@ test("both conventions agree on M, Maj, m, min (triads) and ø (half-diminished 
     }
 });
 
+/* =====================================================================
+ * Transposition (Possibility 2: a real edit to the progression)
+ * ===================================================================== */
+test("transpose by fifths respells the root and keeps the quality", () => {
+    assert.equal(T.transposeProgression(["G7"], 1)[0], "D7"); // up a fifth
+    assert.equal(T.transposeProgression(["G7"], -1)[0], "C7"); // down a fifth
+    assert.equal(T.transposeProgression(["Cmaj7"], 1)[0], "Gmaj7"); // quality preserved
+    assert.deepEqual(T.transposeProgression(["G7", "C"], 1), ["D7", "G"]);
+});
+
+test("a semitone transpose auto-minimizes accidentals", () => {
+    assert.equal(T.transposeProgression(["C"], 7)[0], "D♭"); // D♭ (2♭) over C♯ (3♯)
+    assert.equal(T.transposeProgression(["C"], -7)[0], "B"); // B (2♯) over C♭ (lots of ♭)
+});
+
+test("transpose shifts every pitch class uniformly and is invertible", () => {
+    const prog = ["A♭7", "D♭", "Gm7", "C7"];
+    const dpc = (df) => (((7 * df) % 12) + 12) % 12;
+    for (const df of [1, -1, 7, -7, 2, 5]) {
+        const out = T.transposeProgression(prog, df);
+        out.forEach((s, i) => {
+            const got = sortSet(T.parseChord(s).pcs);
+            const want = sortSet(T.parseChord(prog[i]).pcs.map((p) => (p + dpc(df)) % 12));
+            assert.deepEqual(got, want, `${prog[i]} +${df}f → ${s}`);
+        });
+    }
+});
+
+test("twelve semitone steps return to the original pitch classes", () => {
+    let syms = ["Dm7", "G7", "Cmaj7"];
+    const orig = syms.map((s) => sortSet(T.parseChord(s).pcs));
+    for (let i = 0; i < 12; i++) syms = T.transposeProgression(syms, 7);
+    syms.forEach((s, i) => assert.deepEqual(sortSet(T.parseChord(s).pcs), orig[i], s));
+});
+
+test("N.C. and slash basses transpose correctly", () => {
+    assert.deepEqual(T.transposeProgression(["N.C.", "C"], 1), ["N.C.", "G"]);
+    assert.equal(T.transposeProgression(["B♭/F"], 1)[0], "F/C"); // root and bass both move
+});
+
 // describe must produce round-tripping names under whichever convention is active
 test("describe → parseChord round-trips EVERY 0..11-note set under the 'abbreviated seventh' convention too", () => {
     withConvention(true, () => {

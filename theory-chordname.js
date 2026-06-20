@@ -738,6 +738,65 @@
         return best;
     }
 
+    /* ---- transposition ------------------------------------------------
+     * Transpose a chord SYMBOL by a signed number of steps on the line of
+     * fifths (perfect 5th up = +1; chromatic semitone up = +7). Only the root
+     * and any slash bass are respelled — the quality and modifiers are
+     * root-relative, so they ride along unchanged ("Cmaj7" → "Gmaj7").
+     */
+    // line-of-fifths index of a spelled note (inverse of fifthName)
+    function noteFifthIndex(letter, acc) {
+        return 7 * acc + FIFTH_LETTERS.indexOf(letter) - 1;
+    }
+    function transposeSpelledNote(letter, acc, df) {
+        return fifthName(noteFifthIndex(letter, acc) + df);
+    }
+    function transposeSymbolByFifths(symbol, df) {
+        const s = String(symbol).trim();
+        if (!s || /^n\.?c\.?$/i.test(s)) return s; // N.C. / empty: nothing to move
+        const slash = s.split("/");
+        const main = slash[0];
+        const rm = main.match(/^([A-Ga-g])(bb|♭♭|𝄫|##|x|𝄪|[#♯b♭])?/);
+        if (!rm) return s;
+        let out = transposeSpelledNote(rm[1].toUpperCase(), accValue(rm[2]), df) + main.slice(rm[0].length);
+        if (slash.length === 2) {
+            const bm = slash[1].trim().match(NOTE_RE);
+            out += "/" + (bm ? transposeSpelledNote(bm[1].toUpperCase(), accValue(bm[2]), df) : slash[1].trim());
+        }
+        return out;
+    }
+
+    // Transpose a whole progression by `deltaFifths`, then auto-minimize spelling:
+    // choose the global enharmonic octave (a ±12-fifth shift, applied uniformly so
+    // the progression stays internally consistent) with the fewest accidentals
+    // overall. Returns the array of transposed symbols.
+    function transposeProgression(symbols, deltaFifths) {
+        let best = null;
+        for (let m = -2; m <= 2; m++) {
+            const df = deltaFifths + 12 * m;
+            const out = symbols.map((s) => transposeSymbolByFifths(s, df));
+            let load = 0,
+                ok = true;
+            for (const s of out) {
+                let c = null;
+                try {
+                    c = parseChord(s);
+                } catch (e) {
+                    ok = false;
+                    break;
+                }
+                if (c) for (const n of c.notes) load += accidentalLoad(n.name);
+            }
+            if (!ok) continue;
+            const score = [load, Math.abs(m)];
+            if (!best || score[0] < best.score[0] || (score[0] === best.score[0] && score[1] < best.score[1])) {
+                best = { out, score };
+            }
+        }
+        // fall back to the raw shift if every normalization failed to parse
+        return best ? best.out : symbols.map((s) => transposeSymbolByFifths(s, deltaFifths));
+    }
+
     return {
         NOTE_NAMES,
         parseNote,
@@ -746,6 +805,8 @@
         parseProgression,
         describe,
         setTetradShorthand,
+        transposeSymbolByFifths,
+        transposeProgression,
         formatNote,
         fifthName,
         windowFifths,

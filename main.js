@@ -1042,6 +1042,20 @@ function doRender() {
     }
 }
 
+// Transpose the whole progression by `deltaFifths` line-of-fifths steps
+// (±1 = a perfect fifth, ±7 = a chromatic semitone). It edits the chords in
+// place — respelling, renaming, refreshing the chips/text/cylinder — and the
+// new pitch classes ride along into the shareable URL via the chord encoding.
+function transposeBy(deltaFifths) {
+    if (!chords.length) return;
+    const out = transposeProgression(chords.map((c) => c.symbol), deltaFifths);
+    chords = out.map((s) => chordFromParsed(parseChord(s)));
+    progEl.value = chipsText();
+    renderChips();
+    build();
+    syncBaselines(); // text and chips now agree → clear the Render/To-text prompts
+}
+
 function setupUI() {
     progEl = document.getElementById("prog");
     renderBtn = document.getElementById("render");
@@ -1087,6 +1101,9 @@ function setupUI() {
         circleOfFifths = e.target.checked;
         build();
     };
+    document.querySelectorAll("#transpose [data-tf]").forEach((b) => {
+        b.onclick = () => transposeBy(Number(b.dataset.tf));
+    });
     document.getElementById("tTetrad").onchange = (e) => {
         tetradShorthand = e.target.checked;
         setTetradShorthand(tetradShorthand);
