@@ -692,6 +692,15 @@
         return fifthName(mateFifthIndex(pc, start));
     }
 
+    // The note name of the major key on pitch class `pc`, spelled with the fewest
+    // accidentals (e.g. pc 1 → "D♭" not "C♯"); ties lean flat. Used to label the
+    // analysis key in Roman-numeral mode.
+    function majorKeyName(pc) {
+        const i = mod12(7 * pc); // the sharp-side line-of-fifths index for this pc
+        const alt = i - 12; // its flat-side enharmonic
+        return fifthName(Math.abs(alt) <= Math.abs(i) ? alt : i);
+    }
+
     // the unique spiral index in [start, start+11] whose pitch class is pc
     function mateFifthIndex(pc, start) {
         // 7*i ≡ pc (mod 12)  ⇒  i ≡ 7*pc (mod 12)  (7 is its own inverse mod 12)
@@ -812,6 +821,7 @@
         windowFifths,
         windowSpelling,
         nameInWindow,
+        majorKeyName,
         bestFifthStart,
         FIFTH_MIN,
         FIFTH_MAX,

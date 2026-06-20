@@ -185,9 +185,33 @@
         }
     }
 
+    /* ---- default analysis key ----------------------------------------
+     * Pick the major scale that contains the most chord tones across the whole
+     * progression (counted with multiplicity), as a sensible default tonic when
+     * entering Roman-numeral mode. Ties go to the key with fewer accidentals
+     * (closer to C on the circle of fifths). `pcsList` is an array of pc arrays.
+     */
+    function bestMajorTonic(pcsList) {
+        const MAJOR = [0, 2, 4, 5, 7, 9, 11];
+        let best = null;
+        for (let t = 0; t < 12; t++) {
+            const scale = new Set(MAJOR.map((s) => (t + s) % 12));
+            let count = 0;
+            for (const pcs of pcsList || []) for (const p of pcs) if (scale.has(((p % 12) + 12) % 12)) count++;
+            const fifth = (((7 * t) % 12) + 12) % 12;
+            const accLoad = Math.min(fifth, 12 - fifth); // 0 = C, larger = more sharps/flats
+            const score = [count, -accLoad];
+            if (!best || score[0] > best.score[0] || (score[0] === best.score[0] && score[1] > best.score[1])) {
+                best = { t, score };
+            }
+        }
+        return best.t;
+    }
+
     return {
         dirDistance,
         absDistance,
+        bestMajorTonic,
         ringIndex,
         ringStep,
         MAX_VOICE_STEP,

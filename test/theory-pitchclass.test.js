@@ -136,6 +136,15 @@ test("approximateChordFunction matches the reference cases", () => {
     }
 });
 
+test("bestMajorTonic picks the key holding the most chord tones", () => {
+    // G7 → C is squarely in C major (pc 0)
+    assert.equal(T.bestMajorTonic([T.parseChord("G7").pcs, T.parseChord("C").pcs]), 0);
+    // A♭7 → D♭ is squarely in D♭ major (pc 1) — the default the user prefers
+    assert.equal(T.bestMajorTonic([T.parseChord("A♭7").pcs, T.parseChord("D♭").pcs]), 1);
+    // empty progression defaults to C (fewest accidentals)
+    assert.equal(T.bestMajorTonic([]), 0);
+});
+
 test("approximateChordFunction distinguishes 'plus' (overlap) from 'or' (ambiguous)", () => {
     // FM7-like: three colors decompose into two SEPARATE judgments → two elements
     const plus = T.approximateChordFunction({ t_count: 2, d_count: 1, s_count: 1 });

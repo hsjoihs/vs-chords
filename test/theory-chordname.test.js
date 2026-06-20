@@ -323,6 +323,11 @@ test("both conventions agree on M, Maj, m, min (triads) and ø (half-diminished 
     }
 });
 
+test("majorKeyName spells each key with the fewest accidentals (ties lean flat)", () => {
+    const got = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((pc) => T.majorKeyName(pc));
+    assert.deepEqual(got, ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"]);
+});
+
 /* =====================================================================
  * Transposition (Possibility 2: a real edit to the progression)
  * ===================================================================== */

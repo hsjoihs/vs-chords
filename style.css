@@ -281,6 +281,39 @@ button.primary:hover {
     font-size: 11.5px;
 }
 
+/* the 4×6 tonnetz key picker (Roman-numeral mode) */
+#tonic-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 3px;
+    margin-top: 8px;
+}
+
+#tonic-grid .tcell {
+    aspect-ratio: 1;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--panel2);
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: ui-monospace, monospace;
+}
+
+#tonic-grid .tcell:hover {
+    border-color: var(--accent);
+}
+
+#tonic-grid .tcell.cur {
+    background: var(--main);
+    border-color: var(--main);
+    color: var(--lit-button-txt);
+    font-weight: 600;
+}
+
 .pc {
     font-size: calc(var(--scale) * 12px);
     text-align: center;

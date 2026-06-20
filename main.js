@@ -429,6 +429,16 @@ let colorChords = false, // opt-in: tint chord names (panel + cylinder) by harmo
     //   "fifths" — by a circle-of-fifths chroma wheel (independent of #tFifths)
     noteScheme = "axis",
     accessibleColors = false; // use the red-green-avoiding --accessible-* palette
+// Roman-numeral (relative) display: show chords as scale-degree numerals in a key.
+let relativeMode = false, // false = absolute chord names, true = Roman numerals
+    analysisTonic = 0, // which pitch class is degree I (the analysis key)
+    tonicUserSet = false; // has the user pinned a tonic, vs. the auto default?
+// label for a chord: an absolute symbol, or a Roman numeral in the analysis key.
+// (Possibility 1 "re-analyze" just changes analysisTonic; the sounding pitches —
+// ch.pcs — never move, so only this label changes.)
+function chordLabel(ch) {
+    return relativeMode ? chordToRelative(ch.symbol, majorKeyName(analysisTonic)) : ch.symbol;
+}
 // the fixed 24-cell tonnetz layout (6 columns × 4 rows): { pc, net } per cell,
 // matching axis-test.html. Horizontal neighbours are +4 (major third), the two
 // nets form a checkerboard.
@@ -576,7 +586,7 @@ let lastAxisSig = null;
 function refreshAxisSystem() {
     const el = document.getElementById("axis-system");
     if (!el) return;
-    const sig = JSON.stringify([tonicResidue, colorChords, noteScheme, chords.map((c) => [c.symbol, c.pcs])]);
+    const sig = JSON.stringify([tonicResidue, colorChords, noteScheme, relativeMode, analysisTonic, chords.map((c) => [c.symbol, c.pcs])]);
     if (sig === lastAxisSig) return;
     lastAxisSig = sig;
 
@@ -608,7 +618,7 @@ function refreshAxisSystem() {
             const bright = pc === 0 || pc === 5 || pc === 7 ? " bright-cfg" : "";
             cells += `<button class="grid-cell net${cellNet} ${pcFunction(pc, tonicResidue)}${belongs}${bright}" style="--n:${fifthsIndex(pc)}"><span class="grid-cell__label">${NOTE_NAMES[pc]}</span></button>`;
         }
-        html += `<div class="child-box"><span class="chord-name ${cls}"${style}>${escapeHtml(ch.symbol)}</span>` + `<div class="grid show-net${net} scheme-${noteScheme}">${cells}</div></div>`;
+        html += `<div class="child-box"><span class="chord-name ${cls}"${style}>${escapeHtml(chordLabel(ch))}</span>` + `<div class="grid show-net${net} scheme-${noteScheme}">${cells}</div></div>`;
     }
     html += "</div>";
     el.innerHTML = html;
@@ -713,7 +723,7 @@ function build() {
         // chord name label, at the adjustable azimuth/distance (in nameGroup so
         // it can be counter-spun); sized to its text, never cropped
         const az = (nameAzDeg * Math.PI) / 180;
-        const cname = makeLabel(ch.symbol, colorChords ? chordFunctionFill(ch) : COLORS.label.chord, 2.4);
+        const cname = makeLabel(chordLabel(ch), colorChords ? chordFunctionFill(ch) : COLORS.label.chord, 2.4);
         cname.position.set(nameDist * Math.cos(az), y, nameDist * Math.sin(az));
         nameGroup.add(cname);
     });
@@ -824,6 +834,9 @@ function encodeState() {
         na: Math.round(nameAzDeg),
         nd: round(nameDist, 2),
         tr: tonicResidue,
+        rm: relativeMode,
+        at: analysisTonic,
+        ap: tonicUserSet,
     };
 }
 function scheduleUrlUpdate() {
@@ -874,6 +887,12 @@ function restoreState() {
         if (st.na != null) nameAzDeg = st.na;
         if (st.nd != null) nameDist = st.nd;
         if (st.tr != null) tonicResidue = st.tr;
+        relativeMode = !!st.rm;
+        tonicUserSet = !!st.ap;
+        analysisTonic = st.at != null ? st.at : bestMajorTonic(chords.map((c) => c.pcs));
+        document.getElementById("tRoman").checked = relativeMode;
+        document.getElementById("key-picker").hidden = !relativeMode;
+        refreshKeyUI();
         document.getElementById("layerSlider").value = LAYER;
         document.getElementById("nameAzimuth").value = nameAzDeg;
         document.getElementById("nameDistance").value = nameDist;
@@ -921,7 +940,7 @@ function renderChips() {
         // refresh the chip's text + button labels/classes (cheap, keeps the
         // slider element alive so dragging it stays smooth)
         const refresh = () => {
-            nm.innerHTML = `${ch.symbol || "chord " + (idx + 1)} <small>${ch.pcs
+            nm.innerHTML = `${chordLabel(ch) || "chord " + (idx + 1)} <small>${ch.pcs
                 .map((p) => noteName(ch, p))
                 .join(" ")}</small>`;
             for (let pc = 0; pc < 12; pc++) {
@@ -992,7 +1011,7 @@ function renderAnalysis() {
     analysisIdx = Math.max(0, Math.min(analysisIdx, nT - 1)); // clamp if chords shrank
 
     // dropdown to pick a single transition (the whole list would be unwieldy)
-    const options = chords.slice(0, nT).map((_, i) => `<option value="${i}"${i === analysisIdx ? " selected" : ""}>⟨${i + 1}⟩ ${chords[i].symbol} → ${chords[i + 1].symbol}</option>`)
+    const options = chords.slice(0, nT).map((_, i) => `<option value="${i}"${i === analysisIdx ? " selected" : ""}>⟨${i + 1}⟩ ${chordLabel(chords[i])} → ${chordLabel(chords[i + 1])}</option>`)
         .join("");
     let html = `<h3>Connections</h3><select id="analysisSel" class="anaSel">${options}</select>`;
 
@@ -1034,6 +1053,7 @@ function doRender() {
             return;
         }
         chords = parsed.map(chordFromParsed);
+        if (relativeMode && !tonicUserSet) refreshDefaultTonic(); // follow the new progression
         renderChips();
         build();
         syncBaselines(); // text and chips are now in sync → clear both buttons
@@ -1050,10 +1070,46 @@ function transposeBy(deltaFifths) {
     if (!chords.length) return;
     const out = transposeProgression(chords.map((c) => c.symbol), deltaFifths);
     chords = out.map((s) => chordFromParsed(parseChord(s)));
+    // a real transposition moves the analysis key by the same interval, so the
+    // Roman numerals stay put — that's exactly what distinguishes it (Possibility
+    // 2) from re-analyzing in a new key (Possibility 1).
+    analysisTonic = (((analysisTonic + 7 * deltaFifths) % 12) + 12) % 12;
+    refreshKeyUI();
     progEl.value = chipsText();
     renderChips();
     build();
     syncBaselines(); // text and chips now agree → clear the Render/To-text prompts
+}
+
+// recompute the auto default tonic from the current chords
+function refreshDefaultTonic() {
+    analysisTonic = bestMajorTonic(chords.map((c) => c.pcs));
+}
+// reflect the current analysis key in the key-name readout and the tonic grid
+function refreshKeyUI() {
+    const nameEl = document.getElementById("key-name");
+    if (nameEl) nameEl.textContent = majorKeyName(analysisTonic);
+    renderTonicGrid();
+}
+// the 4×6 tonnetz key picker: clicking a note re-analyzes in that key (P1)
+function renderTonicGrid() {
+    const grid = document.getElementById("tonic-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+    TONNETZ.forEach(({ pc }) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "tcell" + (pc === analysisTonic ? " cur" : "");
+        b.textContent = majorKeyName(pc);
+        b.onclick = () => {
+            analysisTonic = pc;
+            tonicUserSet = true; // pin it; auto-default no longer overrides
+            refreshKeyUI();
+            build();
+            scheduleUrlUpdate();
+        };
+        grid.appendChild(b);
+    });
 }
 
 function setupUI() {
@@ -1104,6 +1160,14 @@ function setupUI() {
     document.querySelectorAll("#transpose [data-tf]").forEach((b) => {
         b.onclick = () => transposeBy(Number(b.dataset.tf));
     });
+    document.getElementById("tRoman").onchange = (e) => {
+        relativeMode = e.target.checked;
+        document.getElementById("key-picker").hidden = !relativeMode;
+        if (relativeMode && !tonicUserSet) refreshDefaultTonic();
+        refreshKeyUI();
+        build();
+    };
+    renderTonicGrid(); // populate the key picker once (it stays hidden until Roman mode)
     document.getElementById("tTetrad").onchange = (e) => {
         tetradShorthand = e.target.checked;
         setTetradShorthand(tetradShorthand);

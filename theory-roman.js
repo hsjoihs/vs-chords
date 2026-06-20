@@ -114,6 +114,32 @@
         return out;
     }
 
+    /* ---- absolute → relative (the inverse of chordToAbsolute) ---------
+     * Name an absolute chord as a Roman numeral in `key`. Follows the community
+     * convention: the numeral is ALWAYS uppercase and the chord's quality rides
+     * along as an explicit suffix (so a minor chord on the 6th degree is "VIm",
+     * never "vi"); chromatic degrees lean flat (♭II, ♭III, ♭V, ♭VI, ♭VII). The
+     * key is given relative to its major scale regardless of the song's mode — a
+     * minor-key tonic chord is analysed in the relative major, e.g. Am in C = VIm.
+     */
+    const ROMAN_BY_OFFSET = ["I", "♭II", "II", "♭III", "III", "IV", "♭V", "V", "♭VI", "VI", "♭VII", "VII"];
+    function noteToDegree(noteName, key) {
+        return ROMAN_BY_OFFSET[mod12(parseNote(noteName).pc - parseNote(key).pc)];
+    }
+    // absolute chord symbol -> Roman-numeral symbol in `key` (a note name)
+    function chordToRelative(absSym, key) {
+        const s = String(absSym).trim();
+        if (!s || /^n\.?c\.?$/i.test(s)) return s; // N.C. / empty: pass through
+        const slash = s.split("/");
+        const main = slash[0];
+        const rm = main.match(/^([A-Ga-g])(bb|♭♭|𝄫|##|x|𝄪|[#♯b♭])?/);
+        if (!rm) return s;
+        const rootName = rm[1].toUpperCase() + (rm[2] || "");
+        let out = noteToDegree(rootName, key) + main.slice(rm[0].length);
+        if (slash.length === 2) out += "/" + noteToDegree(slash[1].trim(), key);
+        return out;
+    }
+
     /* ---- "curly-brace relative" progression -------------------------
      * A progression of absolute chords, where a brace group splices in chords
      * written relative to one of the absolute chords. The "=" marks where the
@@ -217,7 +243,8 @@
 
     return {
         single: { toAbsolute: singleToAbsolute },
-        chord: { toAbsolute: chordToAbsolute },
+        chord: { toAbsolute: chordToAbsolute, toRelative: chordToRelative },
+        chordToRelative,
         progression: { parseAndResolveCurlyBraceRelative },
         degreeNote,
         accValue,

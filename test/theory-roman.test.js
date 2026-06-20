@@ -56,6 +56,40 @@ test("convert degrees into chord name", () => {
 
 });
 
+test("absolute → relative: uppercase numerals + explicit quality, flat-leaning", () => {
+    // the worked examples from the design discussion
+    assert.equal(T.chordToRelative("A♭7", "C"), "♭VI7");
+    assert.equal(T.chordToRelative("D♭", "C"), "♭II");
+    assert.equal(T.chordToRelative("A♭7", "D♭"), "V7");
+    assert.equal(T.chordToRelative("D♭", "D♭"), "I");
+    assert.equal(T.chordToRelative("Am", "C"), "VIm"); // minor song in its relative major
+    // qualities ride along; the bass of a slash chord is a degree too
+    assert.deepEqual(
+        ["Cmaj7", "Dm7", "G7", "Em7", "F/C", "B°"].map((c) => T.chordToRelative(c, "C")),
+        ["Imaj7", "IIm7", "V7", "IIIm7", "IV/I", "VII°"],
+    );
+    // N.C. passes through
+    assert.equal(T.chordToRelative("N.C.", "C"), "N.C.");
+});
+
+test("absolute → relative → absolute round-trips the pitch classes", () => {
+    const ABS = require("../theory-chordname.js");
+    const sortSet = (a) => [...new Set(a)].sort((x, y) => x - y);
+    const keys = ["C", "D♭", "E", "G", "B♭", "F♯"];
+    const syms = ["C", "Cm7", "A♭7", "D♭maj7", "G7", "F♯m7b5", "Bdim7", "E♭", "Am", "F/C"];
+    for (const key of keys) {
+        for (const sym of syms) {
+            const rel = T.chordToRelative(sym, key);
+            const back = T.chord.toAbsolute(rel, key);
+            assert.deepEqual(
+                sortSet(ABS.parseChord(back).pcs),
+                sortSet(ABS.parseChord(sym).pcs),
+                `${sym} in ${key} → "${rel}" → "${back}"`,
+            );
+        }
+    }
+});
+
 test("parse and resolve 'curly brace relative'", () => {
     assert.deepEqual(
         T.progression.parseAndResolveCurlyBraceRelative("C {V7 → i=} Am {V7 → I=} F {=I V} {II7 V7 I=} C"),
