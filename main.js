@@ -1074,6 +1074,7 @@ function transposeBy(deltaFifths) {
     // Roman numerals stay put — that's exactly what distinguishes it (Possibility
     // 2) from re-analyzing in a new key (Possibility 1).
     analysisTonic = (((analysisTonic + 7 * deltaFifths) % 12) + 12) % 12;
+    tonicResidue = (((tonicResidue + 7 * deltaFifths) % 3) + 3) % 3; // ride the group along
     refreshKeyUI();
     progEl.value = chipsText();
     renderChips();
@@ -1084,6 +1085,14 @@ function transposeBy(deltaFifths) {
 // recompute the auto default tonic from the current chords
 function refreshDefaultTonic() {
     analysisTonic = bestMajorTonic(chords.map((c) => c.pcs));
+    syncTonicGroup(); // snap the axis-system tonic group to the detected key
+    refreshKeyUI(); // …and keep the Roman-numerals tab's key readout in step
+}
+// snap the axis-system "tonic group" (pc % 3 residue) to the analysis key. The
+// user may still nudge it with the ◀▶ buttons afterwards; choosing a key just
+// re-seeds it.
+function syncTonicGroup() {
+    tonicResidue = ((analysisTonic % 3) + 3) % 3;
 }
 // reflect the current analysis key in the key-name readout and the tonic grid
 function refreshKeyUI() {
@@ -1107,6 +1116,7 @@ function renderTonicGrid() {
         b.onclick = () => {
             analysisTonic = pc;
             tonicUserSet = true; // pin it; auto-default no longer overrides
+            syncTonicGroup(); // re-seed the axis-system tonic group from the chosen key
             refreshKeyUI();
             build();
             scheduleUrlUpdate();
