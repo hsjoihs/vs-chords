@@ -54,23 +54,27 @@
       <div class="chips" id="chips"></div>
       <button id="add">+ Add chord</button>
     </div>
-
-    <div class="block">
-      <h2>Roman numerals</h2>
-      <div class="toggle"><input type="checkbox" id="tRoman"><label for="tRoman">Show chords as Roman numerals</label></div>
-      <div id="key-picker" hidden>
-        <div class="fld">Analyze in the key of <b id="key-name">C</b> Major</div>
-        <div class="spechint">click a note to re-analyze in that key (the sounding chords don't move)</div>
-        <div id="tonic-grid"></div>
-        <button type="button" id="autoKey" title="re-analyze in the automatically detected key">Auto-detect the adequate key</button>
-      </div>
-    </div>
-
   </div>
-
   <div id="stage">
     <div id="viewport"></div>
     <div id="analysis" class="overlay-box"></div>
+    <div id="roman-numeral" class="overlay-box">
+      <div class="block" style="padding-top: 0; border-top: none;">
+        <div class="toggle"><input type="checkbox" id="tRoman"><label for="tRoman">Show chords as Roman numerals</label></div>
+        <div id="key-picker" hidden>
+          <div style="display: flex">
+            <div>
+              <div class="fld">Analyzing in the key of <b id="key-name">C</b> Major</div>
+              <div class="spechint">click a note to re-analyze in that key</div>
+            </div>
+            <div style="padding-left: 10px;">
+              <button type="button" id="autoKey" title="re-analyze in the automatically detected key">Auto-detect</button>
+            </div>
+          </div>
+          <div id="tonic-grid"></div>
+        </div>
+      </div>
+    </div>
     
     <div id="tonnetz-and-coloring-box" class="overlay-box">
       <div class="block" style="border-top: 0 solid var(--line)">

@@ -281,6 +281,13 @@ button.primary:hover {
     font-size: 11.5px;
 }
 
+#roman-numeral {
+    position: absolute;
+    left: calc(16px + 36vw);
+    bottom: 8px;
+    max-width: 20vw;
+}
+
 /* the 4×6 tonnetz key picker (Roman-numeral mode) */
 #tonic-grid {
     display: grid;
@@ -300,6 +307,7 @@ button.primary:hover {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0px;
     font-family: ui-monospace, monospace;
 }
 
@@ -311,12 +319,11 @@ button.primary:hover {
     background: var(--main);
     border-color: var(--main);
     color: var(--lit-button-txt);
-    font-weight: 600;
 }
 
 #autoKey {
     margin-top: 8px;
-    font-size: 11.5px;
+    font-size: calc(var(--scale) * 11.5px);
 }
 
 .pc {
@@ -471,7 +478,7 @@ button.primary:hover {
 
 #weird-interpretation-box {
     position: absolute;
-    left: 360px;
+    left: 323px;
     bottom: 140px;
 }
 
@@ -494,7 +501,7 @@ button.primary:hover {
     position: absolute;
     left: 8px;
     bottom: 8px;
-    max-width: 56vw;
+    max-width: 40vw;
 }
 
 #tonnetz-and-coloring-box h3 {
