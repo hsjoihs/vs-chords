@@ -314,6 +314,11 @@ button.primary:hover {
     font-weight: 600;
 }
 
+#autoKey {
+    margin-top: 8px;
+    font-size: 11.5px;
+}
+
 .pc {
     font-size: calc(var(--scale) * 12px);
     text-align: center;

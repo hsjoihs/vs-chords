@@ -1089,6 +1089,9 @@ function refreshDefaultTonic() {
 function refreshKeyUI() {
     const nameEl = document.getElementById("key-name");
     if (nameEl) nameEl.textContent = majorKeyName(analysisTonic);
+    const auto = document.getElementById("autoKey");
+    // highlight the auto button while the key is auto-detected (not user-pinned)
+    if (auto) auto.classList.toggle("primary", !tonicUserSet);
     renderTonicGrid();
 }
 // the 4×6 tonnetz key picker: clicking a note re-analyzes in that key (P1)
@@ -1166,6 +1169,13 @@ function setupUI() {
         if (relativeMode && !tonicUserSet) refreshDefaultTonic();
         refreshKeyUI();
         build();
+    };
+    document.getElementById("autoKey").onclick = () => {
+        tonicUserSet = false; // un-pin → follow the auto-detected key again
+        refreshDefaultTonic();
+        refreshKeyUI();
+        build();
+        scheduleUrlUpdate();
     };
     renderTonicGrid(); // populate the key picker once (it stays hidden until Roman mode)
     document.getElementById("tTetrad").onchange = (e) => {
