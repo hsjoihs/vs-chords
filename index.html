@@ -58,8 +58,28 @@
   <div id="stage">
     <div id="viewport"></div>
     <div id="analysis" class="overlay-box"></div>
+    
+    <!-- lower boxes -->
+    <div id="tonnetz-and-coloring-box" class="overlay-box">
+      <div class="block" style="border-top: none">
+        <h2>Tonnetz / Coloring</h2>
+        <div class="toggle"><input type="checkbox" id="tAccessible"><label for="tAccessible">Reduce red–green distinction (accessible colors)</label></div>
+        <div class="note-scheme">Assign colors to pitch classes by:
+          <label><input type="radio" name="noteScheme" value="none" id="nsNone">nothing</label>
+          <label><input type="radio" name="noteScheme" value="axis" id="nsAxis" checked>the axis system</label>
+          <label><input type="radio" name="noteScheme" value="fifths" id="nsFifths">the circle of fifths</label>
+        </div>
+        <div class="note-scheme">Assign colors to chords by:
+          <label><input type="radio" name="chordScheme" value="none" id="csNone">nothing</label>
+          <label><input type="radio" name="chordScheme" value="soundquest" id="csSoundQuest">SoundQuest</label>
+          <label><input type="radio" name="chordScheme" value="hsjoihs" id="csHsjoihs">hsjoihs's <a href="explain-hsjoihs-interpretation.html" target="_blank">weird scheme</a></label>
+        </div>
+      </div>
+      <div id="axis-system"></div>
+    </div>
     <div id="roman-numeral" class="overlay-box">
-      <div class="block" style="padding-top: 0; border-top: none;">
+      <div class="block" style="border-top: none;">
+        <h2>Key / Degree</h2>
         <div class="toggle"><input type="checkbox" id="tRoman"><label for="tRoman">Show chords as Roman numerals</label></div>
         <div id="key-picker" hidden>
           <div style="display: flex">
@@ -75,27 +95,14 @@
         </div>
       </div>
     </div>
-    
-    <div id="tonnetz-and-coloring-box" class="overlay-box">
-      <div class="block" style="border-top: 0 solid var(--line)">
-        <h3>Tonnetz / Coloring</h3>
-        <div class="note-scheme">Assign colors to pitch classes by:
-          <label><input type="radio" name="noteScheme" value="none" id="nsNone">nothing</label>
-          <label><input type="radio" name="noteScheme" value="axis" id="nsAxis" checked>the axis system</label>
-          <label><input type="radio" name="noteScheme" value="fifths" id="nsFifths">the circle of fifths</label>
-        </div>
-        <div class="toggle"><input type="checkbox" id="tAccessible"><label for="tAccessible">Reduce red–green distinction (accessible colors)</label></div>
-      </div>
-      <div id="axis-system"></div>
-    </div>
-    <div id="weird-interpretation-box" class="overlay-box">
-      <div class="block" style="border-top: 0 solid var(--line)">
+    <div id="weird-interpretation-box" class="overlay-box" style="display: none;">
+      <div class="block" style="border-top: none;">
 
         <div class="toggle"><input type="checkbox" id="tColorNames"><label for="tColorNames">Use <a href="explain-hsjoihs-interpretation.html" target="_blank">hsjoihs's weird chord coloring</a></label></div>
       </div>
     </div>
     <div id="edit-view" class="overlay-box">
-      <div class="block" style="border-top: 0 solid var(--line)">
+      <div class="block" style="border-top: none;">
         <h2>View</h2>
         <label class="fld" for="layerSlider">Cylinder length (compress ↔ stretch)</label>
         <input id="layerSlider" class="vslider" type="range" min="1.5" max="9" step="0.1" value="4.2">

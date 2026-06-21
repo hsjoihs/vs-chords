@@ -20,6 +20,7 @@
     --accent: oklab(70% -0.12 0.08);
 
     --scale: 0.92;
+    --box-spacing: 8px;
 }
 
 
@@ -283,9 +284,10 @@ button.primary:hover {
 
 #roman-numeral {
     position: absolute;
-    left: calc(16px + 36vw);
-    bottom: 8px;
+    left: calc(var(--box-spacing) * 2 + 36vw);
+    bottom: var(--box-spacing);
     max-width: 20vw;
+    height: 270px;
 }
 
 /* the 4×6 tonnetz key picker (Roman-numeral mode) */
@@ -472,8 +474,9 @@ button.primary:hover {
 
 #edit-view {
     position: absolute;
-    right: 8px;
-    bottom: 8px;
+    right: var(--box-spacing);
+    bottom: var(--box-spacing);
+    height: 270px;
 }
 
 #weird-interpretation-box {
@@ -486,30 +489,23 @@ button.primary:hover {
     font-size: calc(var(--scale) * 12px);
     color: var(--muted);
     background: rgba(14, 17, 22, .7);
-    padding: 0 8px;
+    padding: 0 var(--box-spacing);
     border: 1px solid var(--line);
     backdrop-filter: blur(4px);
 }
 
 #legends {
     position: absolute;
-    left: 8px;
-    top: 8px;
+    left: var(--box-spacing);
+    top: var(--box-spacing);
 }
 
 #tonnetz-and-coloring-box {
     position: absolute;
-    left: 8px;
-    bottom: 8px;
+    left: var(--box-spacing);
+    bottom: var(--box-spacing);
     max-width: 40vw;
-}
-
-#tonnetz-and-coloring-box h3 {
-    margin: 2px 0 6px;
-    font-size: calc(var(--scale) * 11px);
-    text-transform: uppercase;
-    letter-spacing: .7px;
-    color: var(--muted);
+    height: 270px;
 }
 
 #axis-system .axis-controls {
@@ -645,8 +641,8 @@ button.primary:hover {
 
 #analysis {
     position: absolute;
-    right: 12px;
-    top: 12px;
+    right: var(--box-spacing);
+    top: var(--box-spacing);
 }
 
 #analysis h3 {
@@ -716,6 +712,9 @@ button.primary:hover {
     margin-right: 8px;
     cursor: pointer;
 }
+.note-scheme + .note-scheme {
+    margin-top: 3px;
+}
 
 .tag {
     display: inline-block;
@@ -757,6 +756,10 @@ button.primary:hover {
     font-size: calc(var(--scale) * 12px);
     color: var(--muted);
     margin-top: 8px
+}
+
+.toggle + .toggle {
+    margin-top: 3px;
 }
 
 .diagonal-cross-stripes {
