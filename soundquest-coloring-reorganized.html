@@ -6,6 +6,8 @@
 <link rel="stylesheet" href="musical-colors.css" />
 <style>
 
+    body {font-family: serif;}
+
 #axis-system .chord-name {
     display: inline-block;
     font-size: calc(var(--scale) * 13px);
@@ -25,6 +27,12 @@
 
 .chord-name {margin-bottom: 10px;}
 </style>
+
+<h1>SoundQuest-based coloring</h1>
+
+<p>The following list curates the colors that <a href="https://soundquest.jp">SoundQuest</a> assigns to chords.</p>
+
+<p>My code determines the coloring by inspecting the chord and finding out which category/categories it matches. Note that it suffers from overgeneralizing octave equivalences.</p>
 
 <div id="axis-system" style="line-height: 1.7em;">
 
@@ -91,9 +99,9 @@ III:
 <span class="chord-name dominant">IIIø(9,omit3)</span>
 <span class="chord-name dominant">IIIø</span>
 <br>
-/III:
+<!--/III:
 <span class="chord-name dominant">VIm/III</span>
-<br>
+<br>-->
 /V: 
 <span class="chord-name dominant">IIm7/V</span>
 <span class="chord-name dominant">IV/V</span>
@@ -291,7 +299,7 @@ VI:
 <span class="chord-name tonic">VIaug</span>
 <span class="chord-name tonic">VIaug7</span>
 <span class="chord-name tonic">VIdim7</span>
-<span class="chord-name tonic">VIm(+5)</span>
+<!--<span class="chord-name tonic">VIm(+5)</span>-->
 <span class="chord-name tonic">VIm(9,13)</span>
 <span class="chord-name tonic">VIm/♯IV</span>
 <span class="chord-name tonic">VIm/♯V</span>
