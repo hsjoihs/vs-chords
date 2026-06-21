@@ -286,7 +286,7 @@ button.primary:hover {
     position: absolute;
     left: calc(var(--box-spacing) * 2 + 560px);
     bottom: var(--box-spacing);
-    max-width: 20vw;
+    width: 290px;
     height: 270px;
 }
 

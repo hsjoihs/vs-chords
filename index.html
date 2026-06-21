@@ -75,7 +75,7 @@
           <label><input type="radio" name="chordScheme" value="hsjoihs" id="csHsjoihs">hsjoihs's <a href="explain-hsjoihs-interpretation.html" target="_blank">weird scheme</a></label>
         </div>
       </div>
-      <div id="axis-system"></div>
+      <div id="axis-system" style="padding-left: 4px;"></div>
     </div>
     <div id="roman-numeral" class="overlay-box">
       <div class="block" style="border-top: none; padding-left: 4px; padding-right: 4px;">
@@ -84,19 +84,19 @@
         <div id="key-picker" hidden>
           <div style="display: flex">
             <div>
-              <div class="fld">Analyzing in the key of <b id="key-name">C</b> Major</div>
+              <div class="fld" style="margin-top: 6px;">Analyzing in the key of <b id="key-name">C</b> Major</div>
               <div class="spechint">click a note to re-analyze in that key</div>
             </div>
             <div style="padding-left: 10px;">
               <button type="button" id="autoKey" title="re-analyze in the automatically detected key">Auto-detect</button>
             </div>
           </div>
-          <div id="tonic-grid"></div>
+          <div id="tonic-grid" style="margin-top: 4px;"></div>
         </div>
       </div>
     </div>
     <div id="edit-view" class="overlay-box">
-      <div class="block" style="border-top: none;">
+      <div class="block" style="border-top: none; padding-left: 4px; ">
         <h2>View</h2>
         <label class="fld" for="layerSlider">Cylinder length (compress ↔ stretch)</label>
         <input id="layerSlider" class="vslider" type="range" min="1.5" max="9" step="0.1" value="4.2">
