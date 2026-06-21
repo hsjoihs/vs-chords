@@ -61,7 +61,7 @@
     
     <!-- lower boxes -->
     <div id="tonnetz-and-coloring-box" class="overlay-box">
-      <div class="block" style="border-top: none">
+      <div class="block" style="border-top: none; padding-left: 4px;">
         <h2>Tonnetz / Coloring</h2>
         <div class="toggle"><input type="checkbox" id="tAccessible"><label for="tAccessible">Reduce red–green distinction (accessible colors)</label></div>
         <div class="note-scheme">Assign colors to pitch classes by:
@@ -71,14 +71,14 @@
         </div>
         <div class="note-scheme">Assign colors to chords by:
           <label><input type="radio" name="chordScheme" value="none" id="csNone">nothing</label>
-          <label><input type="radio" name="chordScheme" value="soundquest" id="csSoundQuest">SoundQuest</label>
+          <label><input type="radio" name="chordScheme" value="soundquest" id="csSoundQuest">mostly SoundQuest</label>
           <label><input type="radio" name="chordScheme" value="hsjoihs" id="csHsjoihs">hsjoihs's <a href="explain-hsjoihs-interpretation.html" target="_blank">weird scheme</a></label>
         </div>
       </div>
       <div id="axis-system"></div>
     </div>
     <div id="roman-numeral" class="overlay-box">
-      <div class="block" style="border-top: none;">
+      <div class="block" style="border-top: none; padding-left: 4px; padding-right: 4px;">
         <h2>Key / Degree</h2>
         <div class="toggle"><input type="checkbox" id="tRoman"><label for="tRoman">Show chords as Roman numerals</label></div>
         <div id="key-picker" hidden>
@@ -93,12 +93,6 @@
           </div>
           <div id="tonic-grid"></div>
         </div>
-      </div>
-    </div>
-    <div id="weird-interpretation-box" class="overlay-box" style="display: none;">
-      <div class="block" style="border-top: none;">
-
-        <div class="toggle"><input type="checkbox" id="tColorNames"><label for="tColorNames">Use <a href="explain-hsjoihs-interpretation.html" target="_blank">hsjoihs's weird chord coloring</a></label></div>
       </div>
     </div>
     <div id="edit-view" class="overlay-box">

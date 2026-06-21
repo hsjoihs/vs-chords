@@ -284,7 +284,7 @@ button.primary:hover {
 
 #roman-numeral {
     position: absolute;
-    left: calc(var(--box-spacing) * 2 + 36vw);
+    left: calc(var(--box-spacing) * 2 + 560px);
     bottom: var(--box-spacing);
     max-width: 20vw;
     height: 270px;
@@ -479,12 +479,6 @@ button.primary:hover {
     height: 270px;
 }
 
-#weird-interpretation-box {
-    position: absolute;
-    left: 323px;
-    bottom: 140px;
-}
-
 .overlay-box {
     font-size: calc(var(--scale) * 12px);
     color: var(--muted);
@@ -504,7 +498,7 @@ button.primary:hover {
     position: absolute;
     left: var(--box-spacing);
     bottom: var(--box-spacing);
-    max-width: 40vw;
+    width: 560px;
     height: 270px;
 }
 

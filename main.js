@@ -873,7 +873,7 @@ function restoreState() {
             document.getElementById("tConnections").checked = showConnections;
             document.getElementById("tSpin").checked = spin;
             document.getElementById("tFifths").checked = circleOfFifths;
-            document.getElementById("tColorNames").checked = colorChords;
+            document.getElementById(colorChords ? "csHsjoihs" : "csNone").checked = true;
             document.getElementById("tAccessible").checked = accessibleColors;
             document.body.classList.toggle("accessible", accessibleColors);
         }
@@ -1193,10 +1193,15 @@ function setupUI() {
         setTetradShorthand(tetradShorthand);
         doRender(); // re-parse the text box under the newly selected convention
     };
-    document.getElementById("tColorNames").onchange = (e) => {
-        colorChords = e.target.checked;
-        build();
-    };
+    // chord-coloring scheme radios: only "hsjoihs" tints the chord names (the
+    // axis-system interpretation); "none"/"soundquest" leave them uncolored
+    document.querySelectorAll('input[name="chordScheme"]').forEach((r) => {
+        r.onchange = (e) => {
+            if (!e.target.checked) return;
+            colorChords = e.target.value === "hsjoihs";
+            build();
+        };
+    });
     document.querySelectorAll('input[name="noteScheme"]').forEach((r) => {
         r.onchange = (e) => {
             if (!e.target.checked) return;
