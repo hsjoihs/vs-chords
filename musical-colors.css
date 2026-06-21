@@ -11,6 +11,11 @@
     --tonic-color: #49b656;
     --subdominant-color: #f1ab31;
     --dominant-color: #f15031;
+    --pseudotonic-color: #2CB28C;
+
+    --subdominant-minor-color: #987f43;
+    --pseudotonic-minor-color: #5A6958;
+    --dominant-minor-color: #C2380A;
 
     /* accessible mode */
     --accessible-tonic-color: #4096ff;

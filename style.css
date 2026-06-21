@@ -564,8 +564,12 @@ button.primary:hover {
 }
 
 #axis-system .chord-name.tonic { background-color: var(--tonic-color); color: #fff }
+#axis-system .chord-name.pseudotonic { background-color: var(--pseudotonic-color); color: #fff }
+#axis-system .chord-name.pseudotonic-minor { background-color: var(--pseudotonic-minor-color); color: #fff }
 #axis-system .chord-name.subdominant { background-color: var(--subdominant-color); color: #fff }
+#axis-system .chord-name.subdominant-minor { background-color: var(--subdominant-minor-color); color: #fff }
 #axis-system .chord-name.dominant { background-color: var(--dominant-color); color: #fff }
+#axis-system .chord-name.dominant-minor { background-color: var(--dominant-minor-color); color: #fff }
 
 #axis-system .grid {
     display: grid;
