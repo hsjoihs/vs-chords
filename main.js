@@ -1118,6 +1118,7 @@ function renderTonicGrid() {
             tonicUserSet = true; // pin it; auto-default no longer overrides
             syncTonicGroup(); // re-seed the axis-system tonic group from the chosen key
             refreshKeyUI();
+            renderChips(); // chip Roman labels depend on the key
             build();
             scheduleUrlUpdate();
         };
@@ -1178,12 +1179,14 @@ function setupUI() {
         document.getElementById("key-picker").hidden = !relativeMode;
         if (relativeMode && !tonicUserSet) refreshDefaultTonic();
         refreshKeyUI();
+        renderChips(); // chip headers switch between absolute names and Roman numerals
         build();
     };
     document.getElementById("autoKey").onclick = () => {
         tonicUserSet = false; // un-pin → follow the auto-detected key again
         refreshDefaultTonic();
         refreshKeyUI();
+        renderChips(); // chip Roman labels depend on the key
         build();
         scheduleUrlUpdate();
     };
