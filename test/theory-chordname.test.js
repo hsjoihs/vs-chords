@@ -323,6 +323,22 @@ test("both conventions agree on M, Maj, m, min (triads) and ø (half-diminished 
     }
 });
 
+test("Additional notations parse: +/- tensions and mΔ7/Δ9/augΔ7/sus variants", () => {
+    const pcs = (s) => sortSet(T.parseChord(s).pcs);
+    assert.deepEqual(pcs("CmΔ7"), [0, 3, 7, 11]); // minor-major 7th
+    assert.deepEqual(pcs("CΔ9"), [0, 2, 4, 7, 11]); // maj9 keeps the major 7th
+    assert.deepEqual(pcs("CΔ7sus4"), [0, 5, 7, 11]);
+    assert.deepEqual(pcs("C9sus4"), [0, 2, 5, 7, 10]);
+    assert.deepEqual(pcs("CaugΔ7"), [0, 4, 8, 11]);
+    assert.deepEqual(pcs("C+Δ7"), [0, 4, 8, 11]);
+    assert.deepEqual(pcs("C7(-9)"), [0, 1, 4, 7, 10]); // -9 = ♭9
+    assert.deepEqual(pcs("CΔ7(+11,13)"), [0, 4, 6, 7, 9, 11]); // +11 = ♯11, plus 13
+    assert.deepEqual(pcs("CmΔ7(+11,13)"), [0, 3, 6, 7, 9, 11]);
+    // + / - mean the same as ♯ / ♭ here
+    assert.deepEqual(pcs("C7(+9)"), pcs("C7(♯9)"));
+    assert.deepEqual(pcs("C7(-13)"), pcs("C7(♭13)"));
+});
+
 test("majorKeyName spells each key with the fewest accidentals (ties lean flat)", () => {
     const got = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((pc) => T.majorKeyName(pc));
     assert.deepEqual(got, ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"]);

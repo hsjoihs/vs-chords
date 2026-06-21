@@ -422,7 +422,9 @@ function hexCss(n) {
  * we show whichever one keeps the chord tones connected.
  */
 let tonicResidue = 0; // which pc % 3 residue is treated as the tonic (axis-system rotation)
-let colorChords = false, // opt-in: tint chord names (panel + cylinder) by harmonic function
+// how chord names are tinted: "none", "hsjoihs" (the axis-system interpretation),
+// or "soundquest" (the relative-to-tonic lookup table in soundquest-data.js)
+let chordScheme = "none",
     // how to color the notes (cylinder vertices, tonnetz cells, connections box):
     //   "none"   — no function/chroma tint
     //   "axis"   — by harmonic function (tonic / subdominant / dominant)
@@ -496,6 +498,99 @@ const AXIS_HEX_NORMAL = { tonic: "#49b656", subdominant: "#f1ab31", dominant: "#
 const AXIS_HEX_ACCESSIBLE = { tonic: "#4096ff", subdominant: "#f1ab31", dominant: "#5701e1", unjudgeable: "#9aa7b6" };
 function axisHex(func) {
     return (accessibleColors ? AXIS_HEX_ACCESSIBLE : AXIS_HEX_NORMAL)[(func)];
+}
+
+/* ---- SoundQuest chord coloring ----
+ * A relative-to-tonic lookup (soundquest-data.js): a chord's pitch classes,
+ * reduced relative to the analysis tonic, map to one or more color categories.
+ * Several categories on one chord (e.g. Vm7 = dominant + dominant-minor) draw as
+ * a 140° slash, like the axis-system "or".
+ */
+const SOUNDQUEST_DETAIL = buildSoundquestDetail(chordToAbsolute, parseChord);
+const CAT_CSS = {
+    tonic: "var(--tonic-color)",
+    pseudotonic: "var(--pseudotonic-color)",
+    "pseudotonic-minor": "var(--pseudotonic-minor-color)",
+    subdominant: "var(--subdominant-color)",
+    "subdominant-minor": "var(--subdominant-minor-color)",
+    dominant: "var(--dominant-color)",
+    "dominant-minor": "var(--dominant-minor-color)",
+};
+const CAT_HEX = {
+    tonic: "#49b656",
+    pseudotonic: "#2CB28C",
+    "pseudotonic-minor": "#5A6958",
+    subdominant: "#f1ab31",
+    "subdominant-minor": "#987f43",
+    dominant: "#f15031",
+    "dominant-minor": "#C2380A",
+};
+const CAT_ABBR = {
+    tonic: "T",
+    pseudotonic: "P",
+    "pseudotonic-minor": "Pm",
+    subdominant: "S",
+    "subdominant-minor": "Sm",
+    dominant: "D",
+    "dominant-minor": "Dm",
+};
+// In accessible mode the seven categories collapse onto the three core functions
+// (the red–green-safe palette only distinguishes T / S / D); the hover tooltip
+// then carries the finer T/P/Pm · S/Sm · D/Dm distinction in text instead.
+const ACCESSIBLE_GROUP = {
+    tonic: "tonic",
+    pseudotonic: "tonic",
+    "pseudotonic-minor": "tonic",
+    subdominant: "subdominant",
+    "subdominant-minor": "subdominant",
+    dominant: "dominant",
+    "dominant-minor": "dominant",
+};
+// reduce a chord's categories to the color keys actually drawn: the seven
+// categories normally, or the three merged groups (de-duplicated) when accessible
+function displayCats(cats) {
+    if (!accessibleColors) return cats;
+    const seen = new Set();
+    const out = [];
+    for (const c of cats) {
+        const g = ACCESSIBLE_GROUP[c];
+        if (!seen.has(g)) (seen.add(g), out.push(g));
+    }
+    return out;
+}
+function catCss(key) {
+    return CAT_CSS[key]; // body.accessible remaps the three core --*-color vars
+}
+function catHex(key) {
+    return accessibleColors ? AXIS_HEX_ACCESSIBLE[key] : CAT_HEX[key];
+}
+// the SoundQuest detail (ordered [{category, symbols}]) for a chord, relative to
+// the current analysis tonic
+function sqDetail(ch) {
+    if (!ch.pcs.length) return [];
+    return SOUNDQUEST_DETAIL.get(soundquestKey(ch.pcs, analysisTonic)) || [];
+}
+function sqCategories(ch) {
+    return sqDetail(ch).map((d) => d.category);
+}
+// hover text explaining the coloring: one line per category, "ABBR: sym, sym…"
+function sqTooltip(ch) {
+    return sqDetail(ch).map((d) => `${CAT_ABBR[d.category]}: ${d.symbols.join(", ")}`).join("\n");
+}
+// cylinder-sprite fill (hex, or a { colors, kind:"or" } slash gradient)
+function sqFill(ch) {
+    const cats = displayCats(sqCategories(ch));
+    if (cats.length === 0) return "#ffffff";
+    if (cats.length === 1) return catHex(cats[0]);
+    return { colors: cats.map(catHex), kind: "or" };
+}
+// panel chip {cls, style}: solid for one category, 140° slash for several
+function sqNameAttrs(ch) {
+    const cats = displayCats(sqCategories(ch));
+    if (cats.length === 0) return { cls: "", style: "" };
+    if (cats.length === 1) return { cls: "generic", style: ` style="background:${catCss(cats[0])};color:#fff"` };
+    const stops = cats.map((c, i) => `${catCss(c)} ${(i / cats.length) * 100}% ${((i + 1) / cats.length) * 100}%`).join(", ");
+    return { cls: "generic", style: ` style="background:linear-gradient(140deg,${stops});color:#fff"` };
 }
 
 /* ---- circle-of-fifths chroma wheel ----
@@ -577,6 +672,20 @@ function axisNameAttrs(funcs) {
     return { cls: "generic", style: ` style="background:linear-gradient(${angle}deg,${stops});color:#fff"` };
 }
 
+// dispatch chord-name coloring on the active scheme -------------------
+// cylinder-sprite fill (a CSS color string or { colors, kind } gradient)
+function chordNameFill(ch) {
+    if (chordScheme === "hsjoihs") return chordFunctionFill(ch);
+    if (chordScheme === "soundquest") return sqFill(ch);
+    return COLORS.label.chord;
+}
+// axis-panel chip attributes ({ cls, style })
+function chordNameAttrs(ch) {
+    if (chordScheme === "hsjoihs") return axisNameAttrs(approximateChordFunction(pcFunctionCounts(ch.pcs, tonicResidue)));
+    if (chordScheme === "soundquest") return sqNameAttrs(ch);
+    return { cls: "", style: "" };
+}
+
 function escapeHtml(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -586,7 +695,7 @@ let lastAxisSig = null;
 function refreshAxisSystem() {
     const el = document.getElementById("axis-system");
     if (!el) return;
-    const sig = JSON.stringify([tonicResidue, colorChords, noteScheme, relativeMode, analysisTonic, chords.map((c) => [c.symbol, c.pcs])]);
+    const sig = JSON.stringify([tonicResidue, chordScheme, noteScheme, accessibleColors, relativeMode, analysisTonic, chords.map((c) => [c.symbol, c.pcs])]);
     if (sig === lastAxisSig) return;
     lastAxisSig = sig;
 
@@ -604,10 +713,12 @@ function refreshAxisSystem() {
         `<button class="tonic-shift" id="tonicNext" title="shift tonic group">▶</button></div>`;
     html += '<div class="axis-row">';
     for (const ch of chords) {
-        // chord-name coloring (panel + cylinder) is opt-in — the nonstandard
-        // interpretation; note/tonnetz coloring always stays on
-        const funcs = approximateChordFunction(pcFunctionCounts(ch.pcs, tonicResidue));
-        const { cls, style } = colorChords ? axisNameAttrs(funcs) : { cls: "", style: "" };
+        // chord-name coloring (panel + cylinder) follows the selected scheme;
+        // note/tonnetz coloring is independent and always stays on
+        const { cls, style } = chordNameAttrs(ch);
+        // explain SoundQuest coloring on hover (also surfaces the fine T/P/Pm…
+        // distinction that the accessible 3-color merge hides)
+        const titleAttr = chordScheme === "soundquest" ? ` title="${escapeHtml(sqTooltip(ch))}"` : "";
         const net = chooseNet(ch.pcs);
         let cells = "";
         for (const { pc, net: cellNet } of TONNETZ) {
@@ -618,7 +729,7 @@ function refreshAxisSystem() {
             const bright = pc === 0 || pc === 5 || pc === 7 ? " bright-cfg" : "";
             cells += `<button class="grid-cell net${cellNet} ${pcFunction(pc, tonicResidue)}${belongs}${bright}" style="--n:${fifthsIndex(pc)}"><span class="grid-cell__label">${NOTE_NAMES[pc]}</span></button>`;
         }
-        html += `<div class="child-box"><span class="chord-name ${cls}"${style}>${escapeHtml(chordLabel(ch))}</span>` + `<div class="grid show-net${net} scheme-${noteScheme}">${cells}</div></div>`;
+        html += `<div class="child-box"><span class="chord-name ${cls}"${style}${titleAttr}>${escapeHtml(chordLabel(ch))}</span>` + `<div class="grid show-net${net} scheme-${noteScheme}">${cells}</div></div>`;
     }
     html += "</div>";
     el.innerHTML = html;
@@ -723,7 +834,7 @@ function build() {
         // chord name label, at the adjustable azimuth/distance (in nameGroup so
         // it can be counter-spun); sized to its text, never cropped
         const az = (nameAzDeg * Math.PI) / 180;
-        const cname = makeLabel(chordLabel(ch), colorChords ? chordFunctionFill(ch) : COLORS.label.chord, 2.4);
+        const cname = makeLabel(chordLabel(ch), chordNameFill(ch), 2.4);
         cname.position.set(nameDist * Math.cos(az), y, nameDist * Math.sin(az));
         nameGroup.add(cname);
     });
@@ -826,8 +937,9 @@ function encodeState() {
     return {
         v: 1,
         c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol]),
-        t: [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChords, accessibleColors].map((b) => (b ? 1 : 0)),
+        t: [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, accessibleColors].map((b) => (b ? 1 : 0)),
         ns: noteScheme,
+        cs: chordScheme,
         cv2: tetradShorthand,
         k: [round(camTheta, 3), round(camPhi, 3), round(camRad, 2), round(camTarget.x, 2), round(camTarget.y, 2), round(camTarget.z, 2)],
         L: round(LAYER, 2),
@@ -865,7 +977,7 @@ function restoreState() {
             symbol,
         }));
         if (Array.isArray(st.t)) {
-            [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, colorChords, accessibleColors] =
+            [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, accessibleColors] =
                 st.t.map(Boolean);
             document.getElementById("tConsonant").checked = showConsonant;
             document.getElementById("tDissonant").checked = showDissonant;
@@ -873,10 +985,12 @@ function restoreState() {
             document.getElementById("tConnections").checked = showConnections;
             document.getElementById("tSpin").checked = spin;
             document.getElementById("tFifths").checked = circleOfFifths;
-            document.getElementById(colorChords ? "csHsjoihs" : "csNone").checked = true;
             document.getElementById("tAccessible").checked = accessibleColors;
             document.body.classList.toggle("accessible", accessibleColors);
         }
+        if (typeof st.cs === "string") chordScheme = st.cs;
+        const csRadio = document.querySelector(`input[name="chordScheme"][value="${chordScheme}"]`);
+        if (csRadio) csRadio.checked = true;
         tetradShorthand = !!st.cv2;
         setTetradShorthand(tetradShorthand);
         document.getElementById("tTetrad").checked = tetradShorthand;
@@ -1053,7 +1167,7 @@ function doRender() {
             return;
         }
         chords = parsed.map(chordFromParsed);
-        if (relativeMode && !tonicUserSet) refreshDefaultTonic(); // follow the new progression
+        maybeAutoTonic(); // follow the new progression (Roman mode or SoundQuest)
         renderChips();
         build();
         syncBaselines(); // text and chips are now in sync → clear both buttons
@@ -1093,6 +1207,11 @@ function refreshDefaultTonic() {
 // re-seeds it.
 function syncTonicGroup() {
     tonicResidue = ((analysisTonic % 3) + 3) % 3;
+}
+// the analysis tonic matters whenever we show Roman numerals OR color chords with
+// the (relative) SoundQuest scheme — auto-detect it unless the user pinned a key
+function maybeAutoTonic() {
+    if (!tonicUserSet && (relativeMode || chordScheme === "soundquest")) refreshDefaultTonic();
 }
 // reflect the current analysis key in the key-name readout and the tonic grid
 function refreshKeyUI() {
@@ -1177,7 +1296,7 @@ function setupUI() {
     document.getElementById("tRoman").onchange = (e) => {
         relativeMode = e.target.checked;
         document.getElementById("key-picker").hidden = !relativeMode;
-        if (relativeMode && !tonicUserSet) refreshDefaultTonic();
+        maybeAutoTonic();
         refreshKeyUI();
         renderChips(); // chip headers switch between absolute names and Roman numerals
         build();
@@ -1196,12 +1315,16 @@ function setupUI() {
         setTetradShorthand(tetradShorthand);
         doRender(); // re-parse the text box under the newly selected convention
     };
-    // chord-coloring scheme radios: only "hsjoihs" tints the chord names (the
-    // axis-system interpretation); "none"/"soundquest" leave them uncolored
+    // chord-coloring scheme radios: "hsjoihs" (axis system), "soundquest" (the
+    // relative lookup table), or "none". SoundQuest needs an analysis tonic, so
+    // selecting it auto-detects one (unless the user has pinned a key).
     document.querySelectorAll('input[name="chordScheme"]').forEach((r) => {
         r.onchange = (e) => {
             if (!e.target.checked) return;
-            colorChords = e.target.value === "hsjoihs";
+            chordScheme = e.target.value;
+            const before = analysisTonic;
+            maybeAutoTonic();
+            if (analysisTonic !== before) renderChips(); // Roman labels track the key
             build();
         };
     });

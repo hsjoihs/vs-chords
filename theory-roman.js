@@ -118,11 +118,11 @@
      * Name an absolute chord as a Roman numeral in `key`. Follows the community
      * convention: the numeral is ALWAYS uppercase and the chord's quality rides
      * along as an explicit suffix (so a minor chord on the 6th degree is "VIm",
-     * never "vi"); chromatic degrees lean flat (♭II, ♭III, ♭V, ♭VI, ♭VII). The
+     * never "vi"); The
      * key is given relative to its major scale regardless of the song's mode — a
      * minor-key tonic chord is analysed in the relative major, e.g. Am in C = VIm.
      */
-    const ROMAN_BY_OFFSET = ["I", "♭II", "II", "♭III", "III", "IV", "♭V", "V", "♭VI", "VI", "♭VII", "VII"];
+    const ROMAN_BY_OFFSET = ["I", "♭II", "II", "♭III", "III", "IV", "♯IV", "V", "♭VI", "VI", "♭VII", "VII"];
     function noteToDegree(noteName, key) {
         return ROMAN_BY_OFFSET[mod12(parseNote(noteName).pc - parseNote(key).pc)];
     }
@@ -244,6 +244,7 @@
     return {
         single: { toAbsolute: singleToAbsolute },
         chord: { toAbsolute: chordToAbsolute, toRelative: chordToRelative },
+        chordToAbsolute,
         chordToRelative,
         progression: { parseAndResolveCurlyBraceRelative },
         degreeNote,
