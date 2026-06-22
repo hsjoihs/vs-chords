@@ -8,7 +8,7 @@
 
     body {font-family: serif;}
 
-#axis-system .chord-name {
+.chords .chord-name {
     display: inline-block;
     font-size: calc(var(--scale) * 13px);
     font-weight: 600;
@@ -17,24 +17,36 @@
     color: var(--txt);
 }
 
-#axis-system .chord-name.tonic { background-color: var(--tonic-color); color: #fff }
-#axis-system .chord-name.pseudotonic { background-color: var(--pseudotonic-color); color: #fff }
-#axis-system .chord-name.pseudotonic-minor { background-color: var(--pseudotonic-minor-color); color: #fff }
-#axis-system .chord-name.subdominant { background-color: var(--subdominant-color); color: #fff }
-#axis-system .chord-name.subdominant-minor { background-color: var(--subdominant-minor-color); color: #fff }
-#axis-system .chord-name.dominant { background-color: var(--dominant-color); color: #fff }
-#axis-system .chord-name.dominant-minor { background-color: var(--dominant-minor-color); color: #fff }
+.chords .chord-name.tonic { background-color: var(--tonic-color); color: #fff }
+.chords .chord-name.pseudotonic { background-color: var(--pseudotonic-color); color: #fff }
+.chords .chord-name.pseudotonic-minor { background-color: var(--pseudotonic-minor-color); color: #fff }
+.chords .chord-name.subdominant { background-color: var(--subdominant-color); color: #fff }
+.chords .chord-name.subdominant-minor { background-color: var(--subdominant-minor-color); color: #fff }
+.chords .chord-name.dominant { background-color: var(--dominant-color); color: #fff }
+.chords .chord-name.dominant-minor { background-color: var(--dominant-minor-color); color: #fff }
 
-.chord-name {margin-bottom: 10px;}
+div.chords .chord-name {margin-bottom: 10px;}
+
+:root:has(#accessibility:checked) .chords .chord-name.tonic { background-color: var(--accessible-tonic-color); }
+:root:has(#accessibility:checked) .chords .chord-name.pseudotonic { background-color: var(--accessible-tonic-color); }
+:root:has(#accessibility:checked) .chords .chord-name.pseudotonic-minor { background-color: var(--accessible-tonic-color); }
+:root:has(#accessibility:checked) .chords .chord-name.subdominant { background-color: var(--accessible-subdominant-color); }
+:root:has(#accessibility:checked) .chords .chord-name.subdominant-minor { background-color: var(--accessible-subdominant-color); }
+:root:has(#accessibility:checked) .chords .chord-name.dominant { background-color: var(--accessible-dominant-color); }
+:root:has(#accessibility:checked) .chords .chord-name.dominant-minor { background-color: var(--accessible-dominant-color); }
 </style>
 
 <h1>SoundQuest-based coloring</h1>
+<p style="text-align: right">hsjoihs<br>2026-06-22</p>
+
+<input type="checkbox" id="accessibility"><label for="accessibility">Click here to reduce the use of red-green distinction</label>
+
 
 <p>The following list curates the colors that <a href="https://soundquest.jp">SoundQuest</a> assigns to chords.</p>
 
 <p>My code determines the coloring by inspecting the chord and finding out which category/categories it matches. Note that it suffers from overgeneralizing octave equivalences.</p>
 
-<div id="axis-system" style="line-height: 1.7em;">
+<div class="chords" style="line-height: 1.7em;">
 
 
 
@@ -43,7 +55,7 @@
 
 
 
-<h2><i>Dm</i></h2>
+<h3><i>Dm</i></h3>
 ♭VII:
 <span class="chord-name dominant-minor">♭VII/I</span>
 <span class="chord-name dominant-minor">♭VII</span>
@@ -57,7 +69,7 @@ Vm:
 <span class="chord-name dominant-minor">Vm7</span>
 <span class="chord-name dominant-minor">Vm9</span>
 
-<h2><i>D</i></h2>
+<h3><i>D</i></h3>
 ♭II: <span class="chord-name dominant">♭II7</span>
 <span class="chord-name dominant">♭IIΔ7(+11,13)</span>
 <span class="chord-name dominant">♭IIΔ7(+9)</span>
@@ -130,7 +142,7 @@ V:
 <span class="chord-name dominant">VΔ7</span>
 
 
-<h2><i>Pm</i></h2>
+<h3><i>Pm</i></h3>
 ♭III:
 <span class="chord-name pseudotonic-minor">♭III</span>
 <span class="chord-name pseudotonic-minor">♭IIIdim7</span>
@@ -149,7 +161,7 @@ Im:
 <span class="chord-name pseudotonic-minor">ImΔ7(9)</span>
 <span class="chord-name pseudotonic-minor">ImΔ7</span>
 
-<h2><i>P</i></h2>
+<h3><i>P</i></h3>
 ♯I:
 <span class="chord-name pseudotonic">♯Im7</span>
 <br>
@@ -166,7 +178,7 @@ Im:
 <span class="chord-name pseudotonic">Iaug/♯IV</span>
 
 
-<h2><i>Sm</i></h2>
+<h3><i>Sm</i></h3>
 ♭II:
 <span class="chord-name subdominant-minor">♭IIΔ7</span>
 <br>
@@ -186,7 +198,7 @@ IVm:
 <span class="chord-name subdominant-minor">IVmΔ7(+11,13)</span>
 <span class="chord-name subdominant-minor">IVmΔ7</span>
 
-<h2><i>S</i></h2>
+<h3><i>S</i></h3>
 ♭II:
 <span class="chord-name subdominant">♭IIaug</span>
 <span class="chord-name subdominant">♭II@</span>
@@ -251,7 +263,7 @@ VII:
 <span class="chord-name subdominant">VIIø(9,omit3)</span>
 <span class="chord-name subdominant">VIIø</span>
 
-<h2><i>T</i></h2>
+<h3><i>T</i></h3>
 ♭III:
 <span class="chord-name tonic">♭III9(+11,omit3,omit5)</span>
 <br>
@@ -316,3 +328,130 @@ VI:
 <span class="chord-name tonic">VIsus4</span>
 <span class="chord-name tonic">VIΔ7</span>
 </div>
+
+<h2>Chords with multiple colors</h2>
+<p>Multiple colors are assigned to the following eighteen chords. "&asymp;" signifies some sort of inversions or changes in the voicing.</p>
+<table class="chords" border="1" cellpadding="3">
+<tr><td>relative pitch classes</td><td>colors</td><td>chords</td></tr>
+<tr><td>0,2,5,10</td><td>tonic + dominant-minor</td><td><span class="chord-name tonic">♭VII/I</span> = <span class="chord-name dominant-minor">♭VII/I</span></td></tr>
+<tr><td>2,5,10</td><td>dominant + dominant-minor</td><td>
+
+<span class="chord-name dominant">♭VII</span>
+=
+<span class="chord-name dominant-minor">♭VII</span>
+
+</td></tr>
+<tr><td>2,5,9,10</td><td>pseudotonic-minor + dominant-minor</td><td>
+<span class="chord-name pseudotonic-minor">♭VIIΔ7</span>
+=
+<span class="chord-name dominant-minor">♭VIIΔ7</span>
+
+</td></tr>
+<tr><td>0,2,3,5,7,10</td><td>pseudotonic-minor + dominant-minor</td><td>
+   <span class="chord-name pseudotonic-minor">Im11/V</span>
+
+     
+     &asymp;
+
+<span class="chord-name dominant-minor">Vm7(11,-13)</span>
+
+</td></tr>
+<tr><td>2,5,7,10</td><td>dominant + dominant-minor</td><td>
+
+<span class="chord-name dominant">Vm7</span> =
+
+<span class="chord-name dominant-minor">Vm7</span>
+
+    
+    </td></tr>
+<tr><td>0,1,5,8</td><td>subdominant-minor + dominant</td><td>
+<span class="chord-name subdominant-minor">♭IIΔ7</span>
+
+    
+=
+<span class="chord-name dominant">♭IIΔ7</span>
+
+    </td></tr>
+<tr><td>2,5,8,11</td><td>subdominant + dominant</td><td>
+    <span class="chord-name subdominant">VIIdim7</span> &asymp;
+<span class="chord-name dominant">♯Vdim7</span>
+
+   </td></tr>
+<tr><td>1,4,7,10</td><td>tonic + dominant</td><td>
+<span class="chord-name tonic">♯Idim7</span>
+&asymp;
+<span class="chord-name dominant">Vdim7</span>
+&asymp;
+<span class="chord-name dominant">♭VIIdim7</span>
+</td></tr>
+<tr><td>1,4,8,11</td><td>pseudotonic + dominant</td><td>
+<span class="chord-name pseudotonic">♯Im7</span>
+    &asymp;
+<span class="chord-name dominant">III6/♯V</span>
+</td></tr>
+<tr><td>0,4,8</td><td>tonic + dominant</td><td>
+<span class="chord-name tonic">Iaug</span>
+    &asymp;
+<span class="chord-name dominant">IIIaug</span>
+
+ </td></tr>
+<tr><td>2,4,7,10</td><td>tonic + dominant</td><td>
+<span class="chord-name tonic">IIIø</span>
+&asymp;
+<span class="chord-name dominant">IIIø</span></td></tr>
+<tr><td>1,5,7,9</td><td>tonic + dominant</td><td>
+<span class="chord-name tonic">VIaug7</span>
+&asymp;
+<span class="chord-name dominant">Vø(9,omit3)</span>
+</td></tr>
+<tr><td>0,2,7</td><td>tonic + dominant</td><td>
+<span class="chord-name tonic">Isus2</span>
+&asymp;
+<span class="chord-name dominant">Vsus4</span>
+</td></tr>
+<tr><td>0,3,6,9</td><td>tonic + pseudotonic-minor + subdominant</td><td>
+<span class="chord-name tonic">Idim7</span>
+&asymp;
+<span class="chord-name tonic">VIdim7</span>
+&asymp;
+<span class="chord-name pseudotonic-minor">♭IIIdim7</span>
+=
+<span class="chord-name subdominant">♯IIdim7</span>
+&asymp;
+<span class="chord-name subdominant">♯IVdim7</span>
+</td></tr>
+<tr><td>1,6,9</td><td>tonic + pseudotonic</td><td>
+<span class="chord-name tonic">♯IVm</span>
+=
+<span class="chord-name pseudotonic">♯IVm</span>
+</td></tr>
+<tr><td>0,4,6,9</td><td>tonic + pseudotonic + subdominant</td><td>
+<span class="chord-name tonic">VIm6</span>
+&asymp;
+<span class="chord-name pseudotonic">♯IVø7</span>
+    =
+<span class="chord-name subdominant">♯IVø</span>
+</td></tr>
+<tr><td>0,2,5,8</td><td>subdominant + subdominant-minor</td><td>
+<span class="chord-name subdominant-minor">IVm6</span>
+&asymp;
+<span class="chord-name subdominant">IIø</span>
+</td></tr>
+<tr><td>1,5,9</td><td>tonic + subdominant</td><td>
+<span class="chord-name tonic">VIaug</span>
+&asymp;
+<span class="chord-name subdominant">♭IIaug</span></td></tr>
+</table>
+
+I have intentionally excluded two chords attested in SoundQuest: 
+<ul class="chords">
+    <li style="margin-bottom: 10px;">
+        <span class="chord-name dominant">VIm/III</span> : an inversion of 
+<span class="chord-name tonic">VIm</span>
+    </li>
+    <li>
+         <span class="chord-name tonic">VIm(+5)</span> : an inversion of 
+<span class="chord-name subdominant">IV</span>
+
+    </li>
+</ul>

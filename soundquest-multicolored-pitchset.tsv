@@ -1,0 +1,19 @@
+relative pcs	colors	example chords
+0,2,5,10	tonic + dominant-minor	♭VII/I
+2,5,10	dominant + dominant-minor	♭VII
+2,5,9,10	pseudotonic-minor + dominant-minor	♭VIIΔ7
+0,2,3,5,7,10	pseudotonic-minor + dominant-minor	Vm7(11,-13) = Im11/V
+2,5,7,10	dominant + dominant-minor	Vm7
+0,1,5,8	subdominant-minor + dominant	♭IIΔ7
+2,5,8,11	subdominant + dominant	♯Vdim7 = VIIdim7
+1,4,7,10	tonic + dominant	Vdim7 = ♯Idim7 = ♭VIIdim7
+1,4,8,11	pseudotonic + dominant	♯Im7 = III6/♯V
+0,4,8	tonic + dominant	Iaug = IIIaug 
+2,4,7,10	tonic + dominant	IIIø
+1,5,7,9	tonic + dominant	VIaug7 = Vø(9,omit3)
+0,2,7	tonic + dominant	Vsus4 = Isus2
+0,3,6,9	tonic + pseudotonic-minor + subdominant	Idim7 = VIdim7 = ♭IIIdim7 = ♯IIdim7 = ♯IVdim7
+1,6,9	tonic + pseudotonic	♯IVm
+0,4,6,9	tonic + pseudotonic + subdominan	♯IVø7 = ♯IVø = VIm6
+0,2,5,8	subdominant + subdominant-minor	IVm6 = IIø
+1,5,9	tonic + subdominant	♭IIaug = VIaug
