@@ -25,6 +25,8 @@ const PRESETS = [
     "{II7→V7→I=}E♭",
     "{V7 ♭III=} A♭",
     "D{=I V vi iii IV I IV V}",
+    "keyG#{IV V iii vi}",
+    "keyEb{4536251}",
     "F→{V7→i=}Dm→{V7→I=}B♭{=I→V}→{II7→V7→I=}F",
     "G - F#@ - F",
     "G7sus4→G7→C",
@@ -1138,7 +1140,7 @@ function renderAnalysis() {
     analysisIdx = Math.max(0, Math.min(analysisIdx, nT - 1)); // clamp if chords shrank
 
     // dropdown to pick a single transition (the whole list would be unwieldy)
-    const options = chords.slice(0, nT).map((_, i) => `<option value="${i}"${i === analysisIdx ? " selected" : ""}>⟨${i + 1}⟩ ${chordLabel(chords[i])} → ${chordLabel(chords[i + 1])}</option>`)
+    const options = chords.slice(0, nT).map((_, i) => `<option value="${i}"${i === analysisIdx ? " selected" : ""}>⟨${i + 1}⟩ ${chordLabel(chords[i])} → ⟨${i + 2}⟩ ${chordLabel(chords[i + 1])}</option>`)
         .join("");
     let html = `<h3>Connections</h3><select id="analysisSel" class="anaSel">${options}</select>`;
 

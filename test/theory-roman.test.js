@@ -131,3 +131,45 @@ test("parse and resolve 'curly brace relative'", () => {
         "G7 E♭".split(" ")
     );
 });
+
+test("explicit key{…} groups (Roman and numeric shorthand)", () => {
+    // keyG#{IV V iii vi}: every chord relative to G♯ major
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("keyG#{IV V iii vi}"),
+        "C♯ D♯ B♯m E♯m".split(" ")
+    );
+    // the numeric shorthand 1..7 → I IIm IIIm IV V VIm VIIdim; 4536 = IV V IIIm VIm
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("keyG#{4536}"),
+        "C♯ D♯ B♯m E♯m".split(" ")
+    );
+    // digits may also be delimited by space / hyphen / arrow — same result
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("keyG#{4-5-3-6}"),
+        "C♯ D♯ B♯m E♯m".split(" ")
+    );
+    // the full diatonic set in C, by number and by Roman, agree
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("keyC{1234567}"),
+        T.progression.parseAndResolveCurlyBraceRelative("keyC{I IIm IIIm IV V VIm VIIdim}")
+    );
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("keyC{1234567}"),
+        "C Dm Em F G Am Bdim".split(" ")
+    );
+    // a key group composes with ordinary absolute chords around it
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("Am → keyF{4 5} → C"),
+        "Am B♭ C C".split(" ")
+    );
+    // Roman tokens may still carry richer qualities inside a key group
+    assert.deepEqual(
+        T.progression.parseAndResolveCurlyBraceRelative("keyC{IIm7 V7 IΔ7}"),
+        "Dm7 G7 CΔ7".split(" ")
+    );
+});
+
+test("explicit key{…} groups reject '=' and a missing brace", () => {
+    assert.throws(() => T.progression.parseAndResolveCurlyBraceRelative("keyG#{I = IV}"), /must not contain/);
+    assert.throws(() => T.progression.parseAndResolveCurlyBraceRelative("keyG# IV V"), /must be followed by/);
+});

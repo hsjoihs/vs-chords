@@ -183,19 +183,47 @@
             .filter(Boolean);
     }
 
-    // group tokens into brace groups ({kind:"prefix"|"suffix", rels}) and bare
-    // absolute chords ({kind:"chord", value})
+    // the diatonic triads of a major key, for the numeric shorthand 1..7
+    const DIATONIC = { 1: "I", 2: "IIm", 3: "IIIm", 4: "IV", 5: "V", 6: "VIm", 7: "VIIdim" };
+
+    // expand one token inside a key{…} group into relative-chord symbols. A run of
+    // digits 1–7 is the self-delimiting shorthand (each digit a diatonic triad, so
+    // "4536" → IV V IIIm VIm); anything else is taken as a Roman numeral verbatim.
+    function expandRelToken(tok) {
+        if (/^[1-7]+$/.test(tok)) return tok.split("").map((d) => DIATONIC[d]);
+        return [tok];
+    }
+
+    // consume a "{ … }" run from `tokens` starting at the "{" index `i`; returns
+    // [innerTokens, indexAfterClosingBrace]
+    function readBrace(tokens, i) {
+        const inner = [];
+        i++; // skip "{"
+        while (i < tokens.length && tokens[i] !== "}") inner.push(tokens[i++]);
+        if (tokens[i] !== "}") throw new Error("Unbalanced '{' in progression");
+        return [inner, i + 1];
+    }
+
+    // group tokens into brace groups ({kind:"prefix"|"suffix", rels}), explicit-key
+    // groups ({kind:"keygroup", key, rels}), and bare absolute chords ({kind:"chord", value})
     function groupCurly(tokens) {
         const items = [];
         let i = 0;
         while (i < tokens.length) {
             const t = tokens[i];
-            if (t === "{") {
-                const inner = [];
+            if (/^key[A-Ga-g]/.test(t)) {
+                // explicit key: keyG#{ IV V iii vi }  — every chord is relative to
+                // that key, no "=" anchor, and the numeric shorthand is allowed
+                const key = t.slice(3);
                 i++;
-                while (i < tokens.length && tokens[i] !== "}") inner.push(tokens[i++]);
-                if (tokens[i] !== "}") throw new Error("Unbalanced '{' in progression");
-                i++;
+                if (tokens[i] !== "{") throw new Error("'key" + key + "' must be followed by '{…}'");
+                let inner;
+                [inner, i] = readBrace(tokens, i);
+                if (inner.includes("=")) throw new Error("a key" + key + "{…} group must not contain '='");
+                items.push({ kind: "keygroup", key, rels: inner });
+            } else if (t === "{") {
+                let inner;
+                [inner, i] = readBrace(tokens, i);
                 const eq = inner.indexOf("=");
                 if (eq === -1) throw new Error("Brace group needs '=': {" + inner.join(" ") + "}");
                 if (eq === inner.length - 1) items.push({ kind: "prefix", rels: inner.slice(0, eq) });
@@ -217,6 +245,12 @@
         const out = [];
         let i = 0;
         while (i < items.length) {
+            // an explicit key{…} group stands alone (no anchoring absolute chord)
+            if (items[i].kind === "keygroup") {
+                const g = items[i++];
+                for (const tok of g.rels) for (const rel of expandRelToken(tok)) out.push(chordToAbsolute(rel, g.key));
+                continue;
+            }
             let prefix = null;
             let suffix = null;
             if (items[i] && items[i].kind === "prefix") prefix = items[i++];
