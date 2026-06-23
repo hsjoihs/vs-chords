@@ -1,4 +1,4 @@
-# vs.Chords
+# vs.chords
 
 A multi-purpose web app that helps you win the battle against chord progressions
 
