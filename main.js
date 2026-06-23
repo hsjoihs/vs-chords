@@ -22,12 +22,6 @@ const PRESETS = [
     "Abdim7 → C6", "F6 C°7 C6",
     "Fm7 → B♭7 → C6",
     "A → N.C. → E7 → A",
-    "{II7→V7→I=}E♭",
-    "{V7 ♭III=} A♭",
-    "D{=I V vi iii IV I IV V}",
-    "keyG#{IV V iii vi}",
-    "keyEb{4536251}",
-    "F→{V7→i=}Dm→{V7→I=}B♭{=I→V}→{II7→V7→I=}F",
     "G - F#@ - F",
     "G7sus4→G7→C",
     "Dm → E7/D → C/D → D7",
@@ -36,6 +30,16 @@ const PRESETS = [
     "C - Caug - C - F#@ - BΔ7",
     "Am7 → Dø(9,13)omit3 → G7(b9,13)omit5 → C",
     "EbΔ7 - Dm7 - CΔ7 - Bm7 - AΔ7 - G#m7 - GbΔ7 - Fm7 - EbΔ7"
+];
+
+const PRESETS_WITH_RELATIVE_DEGREES = [
+    "{II7→V7→I=}E♭",
+    "{V7 ♭III=} A♭",
+    "D{=I V vi iii IV I IV V}",
+    "keyG#{IV V iii vi}",
+    "keyEb{4536251}",
+    "keyF{6-4-5-1}",
+    "F→{V7→i=}Dm→{V7→I=}B♭{=I→V}→{II7→V7→I=}F",
 ];
 
 // build an editor chord from a parsed symbol, auto-choosing the spelling slider
@@ -1392,6 +1396,19 @@ function setupUI() {
             doRender();
         };
         pr.appendChild(b);
+    });
+
+    const pr_rel = document.getElementById("presets-relative");
+    PRESETS_WITH_RELATIVE_DEGREES.forEach((p) => {
+        const b = document.createElement("button");
+        b.className = "preset";
+        b.textContent = p;
+        b.onclick = () => {
+            document.getElementById("prog").value = p;
+            tonicUserSet = false; // zapping through presets → drop any pinned key, re-detect
+            doRender();
+        };
+        pr_rel.appendChild(b);
     });
 }
 
