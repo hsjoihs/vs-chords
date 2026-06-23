@@ -901,6 +901,19 @@ function chipsText() {
         .filter(Boolean)
         .join(" → ");
 }
+// transliterate a progression string to ASCII the parser still accepts, for the
+// "Force To-text to ASCII" option (Δ/△→maj, °→dim, ø/∅→m7b5, ♯→#, ♭→b, →→->)
+function toAsciiProgression(s) {
+    return s
+        .replace(/[ø∅]7?/g, "m7b5") // ø already implies the 7th; drop a redundant "7"
+        .replace(/[Δ△]/g, "Maj")
+        .replace(/°/g, "dim")
+        .replace(/𝄪/g, "x")
+        .replace(/𝄫/g, "bb")
+        .replace(/♯/g, "#")
+        .replace(/♭/g, "b")
+        .replace(/→/g, "->");
+}
 function updateButtons() {
     if (!renderBtn) return;
     renderBtn.classList.toggle("primary", progEl.value !== textBaseline);
@@ -1269,7 +1282,8 @@ function setupUI() {
     // inverse of Render: turn the current chips back into a progression string.
     // Each chip's symbol is describe()-generated, so it re-parses to the same notes.
     toTextBtn.onclick = () => {
-        progEl.value = chipsText();
+        const text = chipsText();
+        progEl.value = document.getElementById("tForceAscii").checked ? toAsciiProgression(text) : text;
         document.getElementById("err").textContent = "";
         syncBaselines(); // chips and text now match → clear both buttons
     };
