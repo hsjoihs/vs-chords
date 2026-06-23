@@ -1,24 +1,12 @@
-# Cylindrical analysis of chord progressions
+# vs.Chords
 
-A small web app that draws a short chord progression on a 3‑D cylinder. One
-octave wraps once around the cylinder. Each chord is a
-ring of vertices joined by **every** interval, the chords stack upward in time,
-and dashed lines between layers trace the motion.
+A multi-purpose web app that helps you win the battle against chord progressions
 
-The ring can be arranged **chromatically** or by the **circle of fifths** (a
-toggle in the View panel — it sends every other vertex to its antipode). On the
-circle of fifths a single ring step is a fifth rather than a semitone, so the
-between-chord connections show motion by {none, a fifth, a whole tone}; a whole
-tone is two steps either way. Interior intervals can be filtered into
-**consonant** (m3, M3, P4) and **dissonant** (H, W, TT) groups.
+It is intentionally packed with tons of features, not unlike an [IDE (Integrated development environment)](https://en.wikipedia.org/wiki/Integrated_development_environment).
 
-## Running it
+## Features
 
-It is a static site — open `index.html` in a browser, or serve the folder:
-
-```sh
-python3 -m http.server   # then visit http://localhost:8000
-```
+### Text & Chord chips
 
 Type a progression such as `G7 → C`, `Gm → F♯+ → B♭/F → Eø`, or
 `Am7 → Dø(9,13)omit3 → G7(b9,13)omit5 → C`, or edit each chord on its ring.
@@ -33,8 +21,6 @@ The full scene — every chord, the toggles, and the camera angle — is mirrore
 into the URL's query string as you work (via `history.replaceState`, so it never
 clogs the back button). Copy the URL to share or bookmark an exact view.
 
-### Chord chip
-
 Each chord chip has twelve pitch-class buttons and a spelling slider:
 
 - **Left-click** a button to add or remove that note.
@@ -48,22 +34,19 @@ Each chord chip has twelve pitch-class buttons and a spelling slider:
   auto-set to the segment that best matches the symbol's implied enharmonics
   (so `Fm` lands on a flat segment and shows `A♭`, not `G♯`).
 
-## Project layout
+### Chord cylinder
 
-| File         | Responsibility                                                        |
-| ------------ | --------------------------------------------------------------------- |
-| `theory-pitchclass.js` | Pure pitch-class (0–11) arithmetic: intervals, the chromatic/circle-of-fifths ring, voice-leading connections. |
-| `theory-chordname.js`  | Chord symbols & note spelling: `parseChord`, `describe`, the line-of-fifths window. Builds on nothing else. |
-| `theory-roman.js`      | Roman-numeral (relative) → absolute conversion, including the "curly-brace relative" progression syntax. Builds on `theory-chordname.js`. |
-| `main.js`    | Rendering and UI (THREE.js scene, orbit controls, the chord chip).   |
-| `style.css`  | Styling.                                                              |
-| `index.html` | Wires it together (loads the three `theory-*.js` modules before `main.js`). |
-| `test/`      | Parser tests for Node's built‑in runner (one file per theory module). |
+Draws a short chord progression on a 3‑D cylinder. One
+octave wraps once around the cylinder. Each chord is a
+ring of vertices joined by **every** interval, the chords stack upward in time,
+and dashed lines between layers trace the motion.
 
-The theory modules are independent except that `theory-roman.js` depends on
-`theory-chordname.js`. The app uses all three: the progression input box accepts
-"curly-brace relative" notation (e.g. `C {V7 → i=} Am`), which `theory-roman.js`
-expands into absolute chords before the rest of the pipeline runs.
+The ring can be arranged **chromatically** or by the **circle of fifths** (a
+toggle in the View panel — it sends every other vertex to its antipode). On the
+circle of fifths a single ring step is a fifth rather than a semitone, so the
+between-chord connections show motion by {none, a fifth, a whole tone}; a whole
+tone is two steps either way. Interior intervals can be filtered into
+**consonant** (m3, M3, P4) and **dissonant** (H, W, TT) groups.
 
 
 ## The parser
@@ -84,50 +67,3 @@ sevenths (`7`, `maj7`/`Δ7`/`M7`, `m7`, `m7b5`/`ø`, `dim7`/`°7`, `mM7`/`mMaj7`
 sixths (`6`, `m6`, `6/9`), extensions (`9`, `11`, `13`, `maj9`, `m9`, …),
 added tones and parenthetical tensions (`add9`, `(9,13)`, `(b9,13)`, `#11`, …),
 omissions (`omit3`, `no5`, `drop9`), and slash chords (`B♭/F`).
-
-## Tests
-
-```sh
-node --test          # or: npm test
-```
-
-Tests live in `test/theory-*.test.js` and are written as plain tables so anyone
-who knows music theory can verify them at a glance:
-
-```js
-["G7", "G B D F"],
-["Fm", "F A♭ C"],
-["F♯+", "F♯ A♯ Cx"],
-```
-
-No dependencies are required to run the tests — only Node ≥ 18.
-
-## Enforcement
-
-**Pre‑commit hook** (`.githooks/pre-commit`) runs the tests and blocks the
-commit on failure. Enable it once per clone:
-
-```sh
-git config core.hooksPath .githooks
-```
-
-(`npm install` does this automatically via the `prepare` script.)
-
-**GitHub Actions** (`.github/workflows/ci.yml`) runs the tests on every push and
-pull request to `main`.
-
-## Publishing to GitHub Pages
-
-`.github/workflows/pages.yml` deploys the site after tests pass. In the repo,
-go to **Settings → Pages → Build and deployment → Source: "GitHub Actions"**.
-The site is plain static files at the repo root, so it works as‑is.
-
-## Formatting
-
-Prettier is provided as optional tooling (config in `.prettierrc.json`,
-4‑space indent). It is **not** enforced by CI, so format whenever you like:
-
-```sh
-npm install     # installs Prettier (the only dev dependency)
-npm run format  # apply  /  npm run format:check  to verify
-```

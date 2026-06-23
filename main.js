@@ -1,5 +1,5 @@
 /* =====================================================================
- * main.js — rendering + UI for the chord cylinder.
+ * main.js — rendering + UI for everything.
  *
  * All music theory lives in three modules that must be loaded BEFORE this file:
  *   theory-pitchclass.js
