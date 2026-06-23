@@ -441,10 +441,10 @@ let relativeMode = false, // false = absolute chord names, true = Roman numerals
 function chordLabel(ch) {
     return relativeMode ? chordToRelative(ch.symbol, majorKeyName(analysisTonic)) : ch.symbol;
 }
-// the fixed 24-cell tonnetz layout (6 columns × 4 rows): { pc, net } per cell,
-// matching axis-test.html. Horizontal neighbours are +4 (major third), the two
+// the fixed 24-cell doubled-tonnetz layout (6 columns × 4 rows): { pc, net } per cell,
+// matching axis-test.html. Horizontal neighbours in each net are +4 (major third), the two
 // nets form a checkerboard.
-const TONNETZ = [
+const DOUBLED_TONNETZ = [
     { pc: 3, net: 1 }, { pc: 5, net: 2 }, { pc: 7, net: 1 }, { pc: 9, net: 2 }, { pc: 11, net: 1 }, { pc: 1, net: 2 },
     { pc: 10, net: 2 }, { pc: 0, net: 1 }, { pc: 2, net: 2 }, { pc: 4, net: 1 }, { pc: 6, net: 2 }, { pc: 8, net: 1 },
     { pc: 5, net: 1 }, { pc: 7, net: 2 }, { pc: 9, net: 1 }, { pc: 11, net: 2 }, { pc: 1, net: 1 }, { pc: 3, net: 2 },
@@ -456,7 +456,7 @@ const TONNETZ = [
 // or sit one row and one column apart.
 function netComponents(pcs, net) {
     const cells = [];
-    TONNETZ.forEach((c, i) => {
+    DOUBLED_TONNETZ.forEach((c, i) => {
         if (c.net === net && pcs.includes(c.pc)) cells.push({ row: (i / 6) | 0, col: i % 6 });
     });
     const adj = (a, b) => {
@@ -721,7 +721,7 @@ function refreshAxisSystem() {
         const titleAttr = chordScheme === "soundquest" ? ` title="${escapeHtml(sqTooltip(ch))}"` : "";
         const net = chooseNet(ch.pcs);
         let cells = "";
-        for (const { pc, net: cellNet } of TONNETZ) {
+        for (const { pc, net: cellNet } of DOUBLED_TONNETZ) {
             const belongs = ch.pcs.includes(pc) ? " belongs" : "";
             // both scheme classes are present; CSS picks one via the grid's scheme-* class
             // C/F/G get the brightest accessible fifths-wheel fills, so they're flagged
@@ -1222,12 +1222,12 @@ function refreshKeyUI() {
     if (auto) auto.classList.toggle("primary", !tonicUserSet);
     renderTonicGrid();
 }
-// the 4×6 tonnetz key picker: clicking a note re-analyzes in that key (P1)
+// the 4×6 key picker: clicking a note re-analyzes in that key (P1)
 function renderTonicGrid() {
     const grid = document.getElementById("tonic-grid");
     if (!grid) return;
     grid.innerHTML = "";
-    TONNETZ.forEach(({ pc }) => {
+    DOUBLED_TONNETZ.forEach(({ pc }) => {
         const b = document.createElement("button");
         b.type = "button";
         b.className = "tcell" + (pc === analysisTonic ? " cur" : "");
@@ -1372,6 +1372,7 @@ function setupUI() {
         b.textContent = p;
         b.onclick = () => {
             document.getElementById("prog").value = p;
+            tonicUserSet = false; // zapping through presets → drop any pinned key, re-detect
             doRender();
         };
         pr.appendChild(b);
