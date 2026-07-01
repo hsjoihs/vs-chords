@@ -86,8 +86,18 @@
     <div class="block">
       <h2>Progression</h2>
       <input id="prog" type="text" value="CM7 → A7 → Dm7 → G7" spellcheck="false" autocomplete="off" readonly>
-      <button class="primary" id="play" style="min-height: 3em; height: 3em; width: 7em; min-width: 7em;">▶ Play</button>
       
+      <div class="transport">
+        <div class="transport-buttons">
+          <button class="primary" id="play" style="min-height: 3em; height: 3em; width: 7em; min-width: 7em;">▶ Play</button>
+          <button class="primary" id="stop" style="min-height: 3em; height: 3em; width: 7em; min-width: 7em;">🚧 Stop</button>
+        </div>
+        <div class="transport-seek">
+          <span class="fld" style="display: inline;">0:13</span>
+          <input min="0" max="16" step="0.1" type="range" value="13" style="flex: 1; accent-color: var(--main); cursor: pointer;">
+          <span class="fld" style="display: inline;">0:16</span>
+        </div>
+      </div>
       <div class="err" id="err"></div>
 
       <div class="row" id="transpose">
