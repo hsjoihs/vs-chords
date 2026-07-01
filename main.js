@@ -1372,6 +1372,29 @@ function setupUI() {
         spin = e.target.checked;
         scheduleUrlUpdate();
     };
+    // show/hide the View panel: the bottom-bar button reveals it (on click, or on
+    // a 0.5 s hover), and its own ✕ button hides it. layoutViewport() re-fits the
+    // 3-D render area around the box appearing/disappearing.
+    (() => {
+        const editView = document.getElementById("edit-view");
+        const shower = document.getElementById("show-box-of-edit-view");
+        if (!editView || !shower) return;
+        const setShown = (on) => {
+            editView.style.display = on ? "" : "none";
+            layoutViewport();
+        };
+        shower.addEventListener("click", () => setShown(true));
+        let hoverTimer = null;
+        shower.addEventListener("mouseenter", () => {
+            hoverTimer = setTimeout(() => setShown(true), 500);
+        });
+        shower.addEventListener("mouseleave", () => {
+            clearTimeout(hoverTimer);
+            hoverTimer = null;
+        });
+        const hideBtn = editView.querySelector(".hide");
+        if (hideBtn) hideBtn.addEventListener("click", () => setShown(false));
+    })();
     document.getElementById("layerSlider").oninput = (e) => {
         LAYER = Number(e.target.value);
         build();
