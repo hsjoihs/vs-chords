@@ -1264,6 +1264,31 @@ function renderTonicGrid() {
     });
 }
 
+// Wire a bottom-bar toggler to show/hide an overlay panel: click toggles it,
+// hovering for 0.5 s reveals it, and the panel's own ".hide" button hides it.
+function wirePanelToggle(panelId, togglerId) {
+    const panel = document.getElementById(panelId);
+    const toggler = document.getElementById(togglerId);
+    if (!panel || !toggler) return;
+    let hoverTimer = null;
+    const cancelHover = () => {
+        clearTimeout(hoverTimer);
+        hoverTimer = null;
+    };
+    const setShown = (on) => {
+        cancelHover(); // an explicit show/hide wins over any queued hover-reveal
+        panel.style.display = on ? "" : "none";
+        layoutViewport(); // re-fit the 3-D render area around the panel
+    };
+    toggler.addEventListener("click", () => setShown(panel.style.display === "none"));
+    toggler.addEventListener("mouseenter", () => {
+        hoverTimer = setTimeout(() => setShown(true), 500);
+    });
+    toggler.addEventListener("mouseleave", cancelHover);
+    const hideBtn = panel.querySelector(".hide");
+    if (hideBtn) hideBtn.addEventListener("click", () => setShown(false));
+}
+
 function setupUI() {
     progEl = document.getElementById("prog");
     renderBtn = document.getElementById("render");
@@ -1372,29 +1397,11 @@ function setupUI() {
         spin = e.target.checked;
         scheduleUrlUpdate();
     };
-    // show/hide the View panel: the bottom-bar button toggles it (on click), or
-    // reveals it on a 0.5 s hover, and its own hide button hides it.
-    // layoutViewport() re-fits the 3-D render area around the box appearing/disappearing.
-    (() => {
-        const editView = document.getElementById("edit-view");
-        const toggler = document.getElementById("toggle-box-of-edit-view");
-        if (!editView || !toggler) return;
-        const setShown = (on) => {
-            editView.style.display = on ? "" : "none";
-            layoutViewport();
-        };
-        toggler.addEventListener("click", () => setShown(editView.style.display === "none"));
-        let hoverTimer = null;
-        toggler.addEventListener("mouseenter", () => {
-            hoverTimer = setTimeout(() => setShown(true), 500);
-        });
-        toggler.addEventListener("mouseleave", () => {
-            clearTimeout(hoverTimer);
-            hoverTimer = null;
-        });
-        const hideBtn = editView.querySelector(".hide");
-        if (hideBtn) hideBtn.addEventListener("click", () => setShown(false));
-    })();
+    // A bottom-bar button toggles its overlay panel (on click), or reveals it on a
+    // 0.5 s hover; the panel's own hide button hides it. layoutViewport() re-fits
+    // the 3-D render area around the panel appearing/disappearing.
+    wirePanelToggle("edit-view", "toggle-box-of-edit-view");
+    wirePanelToggle("key-degree", "toggle-box-of-key-degree");
     document.getElementById("layerSlider").oninput = (e) => {
         LAYER = Number(e.target.value);
         build();
