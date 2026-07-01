@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="lower-boxes.css" />
+<link rel="stylesheet" href="musical-colors.css" />
+<title>vs.chords</title>
+</head>
+<style>
+  .scheme-axis { display: none !important; }
+  #piano-roll {
+    position: absolute;
+    left: 700px;
+    top: 25px;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+#tonnetz-and-coloring {
+  height: 100px !important;
+}
+
+.piano-roll-grid { font-size: 10px; margin-left: 2px; border-spacing: 8px 0; margin-left: -6px; }
+.piano-roll-grid td { height: 10px; min-height: 10px; width: 45px; }
+.roll-note {background-color: #005242;}
+</style>
+<body>
+<div id="app">
+  <div id="piano-roll">
+          <div id="axis-system" style="padding-left: 4px;"></div>
+      <table class="piano-roll-grid">
+        <tr><td class="roll-note">B4</td><td></td><td></td><td class="roll-note">B4</td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td class="roll-note">A4</td><td class="roll-note">A4</td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td class="roll-note">G4</td><td class="roll-note">G4</td><td></td><td class="roll-note">G4</td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td class="roll-note">F4</td><td class="roll-note">F4</td></tr>
+        <tr><td class="roll-note">E4</td><td class="roll-note">E4</td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td class="roll-note">D4</td><td class="roll-note">D4</td></tr>
+        <tr><td>&nbsp;</td><td class="roll-note">C#4</td><td></td><td></td></tr>
+        <tr><td class="roll-note">C4</td><td></td><td class="roll-note">C4</td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td class="roll-note">A2</td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td class="roll-note">G2</td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td class="roll-note">D2</td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
+        <tr><td class="roll-note">C2</td><td></td><td></td><td></td></tr>
+
+      </table>
+  </div>
+  <div id="side">
+    <h1>vs.chords</h1>
+    <div class="sub">A multi-purpose web app that helps you win the battle against chord progressions</div>
+
+    <div class="block">
+      <h2>Progression</h2>
+      <div class="row" id="presets" style="display: none;"></div>
+      <div class="row" id="presets-relative" style="display: none;"></div>
+      <input id="prog" type="text" value="CM7 → A7 → Dm7 → G7" spellcheck="false" autocomplete="off" readonly>
+      <div class="keypad" id="keypad" style="display: none;">
+        <span class="kp-label">accidental</span>
+        <button type="button" class="kp" data-ins="♭" title="flat">♭</button>
+        <button type="button" class="kp" data-ins="♯" title="sharp">♯</button>
+        <button type="button" class="kp" data-ins="𝄪" title="double sharp">𝄪</button>
+        <button type="button" class="kp" data-ins="𝄫" title="double flat">𝄫</button>
+      </div>
+      <div class="keypad" id="keypad2" style="display: none;">
+        <span class="kp-label">quality</span>
+        <button type="button" class="kp" data-ins="ø" title="half-diminished">ø</button>
+        <button type="button" class="kp" data-ins="°" title="diminished">°</button>
+        <button type="button" class="kp" data-ins="Δ" title="major 7th">Δ</button>
+      </div>
+      <div class="keypad" id="keypad3" style="display: none;">
+        <span class="kp-label">separator</span>
+        <button type="button" class="kp" data-ins=" → " title="next chord">→</button>
+      </div>
+      <div class="toggle" style="display: none;"><input type="checkbox" id="tTetrad"><label for="tTetrad">Read bare Δ&nbsp;°&nbsp;−&nbsp;o&nbsp;dim as 7th chords</label></div>
+      <div class="row" style="display: none;">
+        <button class="primary" id="render">↓ Render</button>
+        <button id="toText">↑ To text</button>
+      </div>
+      <div class="toggle" style="display: none;"><input type="checkbox" id="tForceAscii"><label for="tForceAscii">Force "To text" to use ASCII only</label></div>
+      <div class="err" id="err"></div>
+
+      <div class="row" id="transpose">
+        <span class="fld transpose-label">Transpose all by</span>
+        <button type="button" data-tf="-7" title="down a semitone">−semi</button>
+        <button type="button" data-tf="7" title="up a semitone">+semi</button>
+        <button type="button" data-tf="-1" title="down a perfect fifth">−5th</button>
+        <button type="button" data-tf="1" title="up a perfect fifth">+5th</button>
+      </div>
+
+      <div class="chips" id="chips"></div>
+      <button id="add">+ Add chord</button>
+    </div>
+  </div>
+  <div id="stage">
+    <div id="viewport" style="display: none;"></div>
+    <div id="analysis" class="overlay-box"></div>
+    
+    <!-- lower boxes -->
+    <div id="tonnetz-and-coloring" class="overlay-box lower-box">
+      <div class="block">
+        <div class="title-and-hiding">
+          <h2>Coloring</h2>
+          <button class="hide" title="Hide"><img src="image/icons/hide.svg" width="10.8" height="9" /></button>
+        </div>
+        <div class="toggle"><input type="checkbox" id="tAccessible"><label for="tAccessible">Reduce red–green distinction (accessible colors)</label></div>
+        <div class="note-scheme">Assign colors to pitch classes by:
+          <label><input type="radio" name="noteScheme" value="none" id="nsNone">nothing</label>
+          <label><input type="radio" name="noteScheme" value="axis" id="nsAxis" checked>the axis system</label>
+          <label><input type="radio" name="noteScheme" value="fifths" id="nsFifths">the circle of fifths</label>
+        </div>
+        <div class="note-scheme">Assign colors to chords by:
+          <label><input type="radio" name="chordScheme" value="none" id="csNone">nothing</label>
+          <label><input type="radio" name="chordScheme" value="soundquest" id="csSoundQuest" checked><span>SoundQuest<a href="./soundquest-coloring-reorganized.html">-based</a></span></label>
+          <label><input type="radio" name="chordScheme" value="hsjoihs" id="csHsjoihs">hsjoihs's <a href="explain-hsjoihs-interpretation.html" target="_blank">weird scheme</a></label>
+        </div>
+      </div>
+    </div>
+    <div id="key-degree" class="overlay-box lower-box">
+      <div class="block">
+        <div class="title-and-hiding">
+          <h2>Key / Degree</h2>
+          <button class="hide" title="Hide"><img src="image/icons/hide.svg" width="10.8" height="9" /></button>
+        </div>
+        <div class="toggle"><input type="checkbox" id="tRoman"><label for="tRoman">Show chords as Roman numerals</label></div>
+        <div id="key-picker" hidden>
+          <div style="display: flex">
+            <div>
+              <div class="fld" style="margin-top: 6px;">Analyzing in the key of <b id="key-name">C</b> Major</div>
+              <div class="spechint">click a note to re-analyze in that key</div>
+            </div>
+            <div style="padding-left: 10px;">
+              <button type="button" id="autoKey" title="re-analyze in the automatically detected key">Auto-detect</button>
+            </div>
+          </div>
+          <div id="tonic-grid" style="margin-top: 4px;"></div>
+        </div>
+      </div>
+    </div>
+    <div id="edit-view" class="overlay-box lower-box" style="display: none">
+      <div class="block">
+        <div class="title-and-hiding">
+          <h2>View</h2>
+          <button class="hide" title="Hide"><img src="image/icons/hide.svg" width="10.8" height="9" /></button>
+        </div>
+        <label class="fld" for="layerSlider">Cylinder length (compress ↔ stretch)</label>
+        <input id="layerSlider" class="vslider" type="range" min="1.5" max="9" step="0.1" value="4.2">
+        <label class="fld" for="nameAzimuth">Chord-name angle</label>
+        <input id="nameAzimuth" class="vslider" type="range" min="0" max="360" step="1" value="270">
+        <label class="fld" for="nameDistance">Chord-name distance from axis</label>
+        <input id="nameDistance" class="vslider" type="range" min="6" max="16" step="0.2" value="7.4">
+        <div class="toggle"><input type="checkbox" id="tSpin"><label for="tSpin">Auto-rotate the scene</label></div>
+        <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan.</div>
+      </div>
+    </div>
+    <div id="legends" class="overlay-box">
+      <div class="block" style="display: none;">
+        <h2 style="display: none;">Ring ordering</h2>
+        <div class="legend" style="display: none;">
+        <div class="toggle"><input type="checkbox" id="tFifths"><label for="tFifths">Arrange rings by circle of fifths</label></div>
+        </div>
+      </div>
+      
+      <div class="block" style="border-top: 0 solid var(--line)">
+        <h2>Inside a chord</h2>
+        <div class="legend">
+          <table class="intervals">
+            <tr><td><i style="border-color:var(--semitone)"></i></td><td><b>H</b></td><td>half step</td><td>1 semitone</td></tr>
+            <tr><td><i style="border-color:var(--whole)"></i></td><td><b>W</b></td><td>whole step</td><td>2 semitones</td></tr>
+            <tr><td><i style="border-color:var(--minor3rd)"></i></td><td><b>m3</b></td><td>minor 3rd</td><td>3 semitones</td></tr>
+            <tr><td><i style="border-color:var(--major3rd)"></i></td><td><b>M3</b></td><td>major 3rd</td><td>4 semitones</td></tr>
+            <tr><td><i style="border-color:var(--p4p5)"></i></td><td><b>P4</b></td><td>perfect 4th</td><td>5 semitones</td></tr>
+            <tr><td><i style="border-color:var(--tritone)"></i></td><td><b>TT</b></td><td>tritone</td><td>6 semitones</td></tr>
+          </table>
+          <div class="toggle"><input type="checkbox" id="tConsonant" checked><label for="tConsonant">Show consonant intervals (<span style="text-decoration: var(--minor3rd) underline; text-underline-offset: 0.2em;">m3</span> <span style="text-decoration: var(--major3rd) underline; text-underline-offset: 0.2em;">M3</span> <span style="text-decoration: var(--p4p5) underline; text-underline-offset: 0.2em;">P4</span>)</label></div>
+          <div class="toggle"><input type="checkbox" id="tDissonant" checked><label for="tDissonant">Show dissonant intervals (<span style="text-decoration: var(--semitone) underline; text-underline-offset: 0.2em;">H</span> <span style="text-decoration: var(--whole) underline; text-underline-offset: 0.2em;">W</span> <span style="text-decoration: var(--tritone) underline; text-underline-offset: 0.2em;">TT</span>)</label></div>
+          <div class="toggle"><input type="checkbox" id="tIntervalLabels" checked><label for="tIntervalLabels">Label intervals</label></div>
+        </div>
+      </div>
+      <div class="block">
+        <h2>Between chords</h2>
+        <div class="legend">
+          <table class="intervals">
+            <tr><td><u style="border-color:#999999"></u></td><td>held note</td></tr>
+            <tr><td><i class="diagonal-cross-stripes" style="width: 22px; height: 15px; display: inline-block; border-top: none"></i></td><td>pair of held notes</td></tr>
+            <tr id="conn-single-step"><td><u style="border-color:var(--semitone);border-left-style:dotted"></u></td><td>semitone</td></tr>
+            <tr><td><u style="border-color: var(--whole);border-left-style:dashed;"></u></td><td>whole tone</td></tr>
+          </table>
+          <div></div>
+          <div class="toggle"><input type="checkbox" id="tConnections" checked><label for="tConnections">Show all</label></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="bottom-bar">
+    <div class="box-visibility-toggler" id="toggle-box-of-tonnetz-and-coloring">Adjust Coloring 🎨</div>
+    <div class="box-visibility-toggler" id="toggle-box-of-key-degree">🔑 Adjust Key / Degree 📐</div>
+    <div class="box-visibility-toggler" id="toggle-box-of-edit-view" style="display: none">👀 Adjust View 🔭</div>
+  </div>
+  <div id="left-bar" style="padding-top: 3px;">
+    <img src="image/icons/cylinder.svg" title="Cylinder" width="45" height="45" style="opacity: 0.5; cursor: pointer;" />
+    <img src="image/icons/piano-roll.svg" title="Piano Roll" width="45" height="45" style="border-left: 1px solid white; cursor: pointer;" />
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="theory-pitchclass.js"></script>
+<script src="theory-chordname.js"></script>
+<script src="theory-roman.js"></script>
+<script src="soundquest-data.js"></script>
+<script src="piano-roll.js"></script>
+</body>
+</html>
