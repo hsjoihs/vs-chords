@@ -91,6 +91,17 @@
         <input id="tempo" type="range" min="0" max="1000" step="1" value="500" title="tempo" style="flex: 1; accent-color: var(--main); cursor: pointer;">
         <span id="tempo-val" style="min-width: 62px; text-align: right; font-size: 12px; color: var(--muted);">100 BPM</span>
       </div>
+      <div class="row">
+        <label class="toggle" style="margin: 0;"><input type="checkbox" id="tMetronome" checked><span>Metronome</span></label>
+      </div>
+      <div class="row">
+        <span class="fld" style="margin: 0 0 0 auto;">Time signature</span>
+        <input id="meterNum" type="number" min="1" max="16" step="1" value="4" title="beats per measure" style="width: 44px;">
+        <span>/</span>
+        <select id="meterDen" title="beat unit">
+          <option>2</option><option selected>4</option><option>8</option><option>16</option>
+        </select>
+      </div>
       <div class="err" id="err"></div>
 
       <div class="row" id="transpose">

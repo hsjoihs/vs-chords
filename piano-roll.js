@@ -25,7 +25,10 @@ const DEMO_VOICING = [
     ["D2", "C4", "D4", "F4", "A4"], // Dm7
     ["G2", "D4", "F4", "G4", "B4"], // G7
 ];
-let bpm = 120; // playback tempo (one chord per four beats); driven by the log tempo slider
+let bpm = 120; // playback tempo (one chord per bar line); driven by the log tempo slider
+let metronomeOn = true; // click on every beat during playback
+let meterNum = 4, // time-signature numerator — drives the metronome accent grouping
+    meterDen = 4; // denominator (for the reading/notation; the click rate is bpm)
 
 // build an editor chord from a parsed symbol, auto-choosing the spelling slider
 function chordFromParsed(c) {
@@ -283,6 +286,9 @@ function encodeState() {
         ns: noteScheme,
         cs: chordScheme,
         bp: Math.round(bpm),
+        mt: metronomeOn ? 1 : 0,
+        mn: meterNum,
+        md: meterDen,
         tr: tonicResidue,
         rm: relativeMode,
         at: analysisTonic,
@@ -331,6 +337,12 @@ function restoreState() {
         if (nsRadio) nsRadio.checked = true;
         if (st.bp != null) bpm = st.bp;
         refreshTempoUI();
+        if (st.mt != null) metronomeOn = !!st.mt;
+        if (st.mn != null) meterNum = st.mn;
+        if (st.md != null) meterDen = st.md;
+        document.getElementById("tMetronome").checked = metronomeOn;
+        document.getElementById("meterNum").value = meterNum;
+        document.getElementById("meterDen").value = meterDen;
         if (st.tr != null) tonicResidue = st.tr;
         relativeMode = !!st.rm;
         tonicUserSet = !!st.ap;
@@ -601,13 +613,26 @@ function refreshTempoUI() {
 function setupUI() {
     progEl = document.getElementById("prog");
 
-    document.getElementById("play").onclick = () => playVoicing(DEMO_VOICING, { chordDur: 60 * 4 /* four beats per chord */ / bpm });
+    document.getElementById("play").onclick = () =>
+        playVoicing(DEMO_VOICING, { bpm, beatsPerChord: meterNum, metronome: metronomeOn, meterNumerator: meterNum });
     document.getElementById("tempo").oninput = (e) => {
         bpm = bpmFromFraction(Number(e.target.value) / 1000);
         document.getElementById("tempo-val").textContent = Math.round(bpm) + " BPM";
         scheduleUrlUpdate();
     };
     refreshTempoUI();
+    document.getElementById("tMetronome").onchange = (e) => {
+        metronomeOn = e.target.checked;
+        scheduleUrlUpdate();
+    };
+    document.getElementById("meterNum").oninput = (e) => {
+        meterNum = Math.max(1, Math.floor(Number(e.target.value) || 4));
+        scheduleUrlUpdate();
+    };
+    document.getElementById("meterDen").onchange = (e) => {
+        meterDen = Number(e.target.value);
+        scheduleUrlUpdate();
+    };
     document.getElementById("add").onclick = () => {
         chords.push(chordFromParsed(parseChord("C")));
         renderChips();

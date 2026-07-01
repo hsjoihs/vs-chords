@@ -41,3 +41,19 @@ test("midiToFrequency / noteToFrequency use A4 = 440 Hz equal temperament", () =
     assert.ok(Math.abs(A.noteToFrequency("A5") - 880) < 1e-9); // an octave up doubles
     assert.ok(Math.abs(A.noteToFrequency("A3") - 220) < 1e-9); // an octave down halves
 });
+
+test("metronomePattern accents downbeats (simple) and each group of 3 (compound)", () => {
+    const S = "strong", w = "weak";
+    assert.deepEqual(A.metronomePattern(4), [S, w, w, w]); // 4/4
+    assert.deepEqual(A.metronomePattern(3), [S, w, w]); // 3/4 — simple, not compound
+    assert.deepEqual(A.metronomePattern(2), [S, w]);
+    assert.deepEqual(A.metronomePattern(6), [S, w, w, S, w, w]); // 6/8 — the requested case
+    assert.deepEqual(A.metronomePattern(9), [S, w, w, S, w, w, S, w, w]);
+    assert.deepEqual(A.metronomePattern(12), [S, w, w, S, w, w, S, w, w, S, w, w]);
+    assert.deepEqual(A.metronomePattern(5), [S, w, w, w, w]); // odd meter — simple
+    assert.deepEqual(A.metronomePattern(1), [S]);
+    for (const n of [2, 3, 4, 5, 6, 7, 8, 9, 12]) {
+        assert.equal(A.metronomePattern(n).length, n); // one entry per beat
+        assert.equal(A.metronomePattern(n)[0], S); // the downbeat is always strong
+    }
+});

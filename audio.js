@@ -70,6 +70,21 @@
         return Math.log(bpm / TEMPO_MIN_BPM) / Math.log(TEMPO_MAX_BPM / TEMPO_MIN_BPM);
     }
 
+    /* ---- metronome accent pattern ------------------------------------
+     * The beat accents for a meter's numerator, "strong" / "weak", one per beat.
+     * A compound meter (numerator a multiple of 3 greater than 3 — 6, 9, 12, …) is
+     * felt in groups of three, each group starting strong; every other meter is
+     * simple, with only the downbeat strong. So 4/4 → S w w w, 6/8 → S w w S w w.
+     * (The denominator affects notation, not this grouping.)
+     */
+    function metronomePattern(numerator) {
+        const n = Math.max(1, Math.floor(numerator));
+        const compound = n > 3 && n % 3 === 0;
+        const out = [];
+        for (let i = 0; i < n; i++) out.push((compound ? i % 3 === 0 : i === 0) ? "strong" : "weak");
+        return out;
+    }
+
     /* ---- Web Audio playback (browser only) ---------------------------- */
     let audioCtx = null;
     function getCtx() {
@@ -77,18 +92,38 @@
         return audioCtx;
     }
 
-    // Play a sequence of chords (each an array of note names) one after another,
-    // as simple triangle-wave tones with a short attack/release envelope so they
-    // don't click. Returns the end time (AudioContext seconds).
-    function playVoicing(voicing, { chordDur = 0.9, noteGain = 0.13 } = {}) {
+    // a short metronome click at time `t`: a higher, louder blip on strong beats.
+    function metronomeClick(ctx, dest, t, strong) {
+        const osc = ctx.createOscillator();
+        osc.type = "square";
+        osc.frequency.value = strong ? 1760 : 1245;
+        const g = ctx.createGain();
+        const dur = 0.045;
+        const peak = strong ? 0.5 : 0.26;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(peak, t + 0.002);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        osc.connect(g).connect(dest);
+        osc.start(t);
+        osc.stop(t + dur + 0.01);
+    }
+
+    // Play a sequence of chords (each an array of note names) one after another, as
+    // triangle-wave tones with a short attack/release envelope so they don't click.
+    // Each chord lasts `beatsPerChord` beats at `bpm`; if `metronome`, a click sounds
+    // on every beat, accented by `meterNumerator`. Returns the end time (ctx seconds).
+    function playVoicing(voicing, { bpm = 120, beatsPerChord = 4, metronome = true, meterNumerator = 4, noteGain = 0.13 } = {}) {
         const ctx = getCtx();
         if (ctx.state === "suspended") ctx.resume(); // browsers gate audio on a gesture
+        const beatSec = 60 / bpm;
+        const chordDur = beatsPerChord * beatSec;
         const master = ctx.createGain();
         master.gain.value = 0.85;
         master.connect(ctx.destination);
         const attack = 0.012,
             release = 0.14;
-        let t = ctx.currentTime + 0.06;
+        const start = ctx.currentTime + 0.06;
+        let t = start;
         for (const chord of voicing) {
             for (const name of chord) {
                 const osc = ctx.createOscillator();
@@ -105,6 +140,13 @@
             }
             t += chordDur;
         }
+        if (metronome) {
+            const pattern = metronomePattern(meterNumerator);
+            const totalBeats = voicing.length * beatsPerChord;
+            for (let i = 0; i < totalBeats; i++) {
+                metronomeClick(ctx, ctx.destination, start + i * beatSec, pattern[i % pattern.length] === "strong");
+            }
+        }
         return t;
     }
 
@@ -117,5 +159,6 @@
         TEMPO_MAX_BPM,
         bpmFromFraction,
         fractionFromBpm,
+        metronomePattern,
     };
 });
