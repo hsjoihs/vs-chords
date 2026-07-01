@@ -9,7 +9,6 @@
 <title>vs.chords</title>
 </head>
 <style>
-  .scheme-axis { display: none !important; }
   #piano-roll {
     position: absolute;
     left: 700px;
@@ -77,32 +76,7 @@
 
     <div class="block">
       <h2>Progression</h2>
-      <div class="row" id="presets" style="display: none;"></div>
-      <div class="row" id="presets-relative" style="display: none;"></div>
       <input id="prog" type="text" value="CM7 → A7 → Dm7 → G7" spellcheck="false" autocomplete="off" readonly>
-      <div class="keypad" id="keypad" style="display: none;">
-        <span class="kp-label">accidental</span>
-        <button type="button" class="kp" data-ins="♭" title="flat">♭</button>
-        <button type="button" class="kp" data-ins="♯" title="sharp">♯</button>
-        <button type="button" class="kp" data-ins="𝄪" title="double sharp">𝄪</button>
-        <button type="button" class="kp" data-ins="𝄫" title="double flat">𝄫</button>
-      </div>
-      <div class="keypad" id="keypad2" style="display: none;">
-        <span class="kp-label">quality</span>
-        <button type="button" class="kp" data-ins="ø" title="half-diminished">ø</button>
-        <button type="button" class="kp" data-ins="°" title="diminished">°</button>
-        <button type="button" class="kp" data-ins="Δ" title="major 7th">Δ</button>
-      </div>
-      <div class="keypad" id="keypad3" style="display: none;">
-        <span class="kp-label">separator</span>
-        <button type="button" class="kp" data-ins=" → " title="next chord">→</button>
-      </div>
-      <div class="toggle" style="display: none;"><input type="checkbox" id="tTetrad"><label for="tTetrad">Read bare Δ&nbsp;°&nbsp;−&nbsp;o&nbsp;dim as 7th chords</label></div>
-      <div class="row" style="display: none;">
-        <button class="primary" id="render">↓ Render</button>
-        <button id="toText">↑ To text</button>
-      </div>
-      <div class="toggle" style="display: none;"><input type="checkbox" id="tForceAscii"><label for="tForceAscii">Force "To text" to use ASCII only</label></div>
       <div class="err" id="err"></div>
 
       <div class="row" id="transpose">
@@ -118,7 +92,6 @@
     </div>
   </div>
   <div id="stage">
-    <div id="viewport" style="display: none;"></div>
     <div id="analysis" class="overlay-box"></div>
     
     <!-- lower boxes -->
@@ -162,30 +135,7 @@
         </div>
       </div>
     </div>
-    <div id="edit-view" class="overlay-box lower-box" style="display: none">
-      <div class="block">
-        <div class="title-and-hiding">
-          <h2>View</h2>
-          <button class="hide" title="Hide"><img src="image/icons/hide.svg" width="10.8" height="9" /></button>
-        </div>
-        <label class="fld" for="layerSlider">Cylinder length (compress ↔ stretch)</label>
-        <input id="layerSlider" class="vslider" type="range" min="1.5" max="9" step="0.1" value="4.2">
-        <label class="fld" for="nameAzimuth">Chord-name angle</label>
-        <input id="nameAzimuth" class="vslider" type="range" min="0" max="360" step="1" value="270">
-        <label class="fld" for="nameDistance">Chord-name distance from axis</label>
-        <input id="nameDistance" class="vslider" type="range" min="6" max="16" step="0.2" value="7.4">
-        <div class="toggle"><input type="checkbox" id="tSpin"><label for="tSpin">Auto-rotate the scene</label></div>
-        <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan.</div>
-      </div>
-    </div>
     <div id="legends" class="overlay-box">
-      <div class="block" style="display: none;">
-        <h2 style="display: none;">Ring ordering</h2>
-        <div class="legend" style="display: none;">
-        <div class="toggle"><input type="checkbox" id="tFifths"><label for="tFifths">Arrange rings by circle of fifths</label></div>
-        </div>
-      </div>
-      
       <div class="block" style="border-top: 0 solid var(--line)">
         <h2>Inside a chord</h2>
         <div class="legend">
@@ -220,7 +170,6 @@
   <div id="bottom-bar">
     <div class="box-visibility-toggler" id="toggle-box-of-tonnetz-and-coloring">Adjust Coloring 🎨</div>
     <div class="box-visibility-toggler" id="toggle-box-of-key-degree">🔑 Adjust Key / Degree 📐</div>
-    <div class="box-visibility-toggler" id="toggle-box-of-edit-view" style="display: none">👀 Adjust View 🔭</div>
   </div>
   <div id="left-bar" style="padding-top: 3px;">
     <img src="image/icons/cylinder.svg" title="Cylinder" width="45" height="45" style="opacity: 0.5; cursor: pointer;" />
@@ -228,7 +177,6 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="theory-pitchclass.js"></script>
 <script src="theory-chordname.js"></script>
 <script src="theory-roman.js"></script>
