@@ -1372,23 +1372,23 @@ function setupUI() {
         spin = e.target.checked;
         scheduleUrlUpdate();
     };
-    // show/hide the View panel: the bottom-bar button reveals it (on click, or on
-    // a 0.5 s hover), and its own ✕ button hides it. layoutViewport() re-fits the
-    // 3-D render area around the box appearing/disappearing.
+    // show/hide the View panel: the bottom-bar button toggles it (on click), or
+    // reveals it on a 0.5 s hover, and its own hide button hides it.
+    // layoutViewport() re-fits the 3-D render area around the box appearing/disappearing.
     (() => {
         const editView = document.getElementById("edit-view");
-        const shower = document.getElementById("show-box-of-edit-view");
-        if (!editView || !shower) return;
+        const toggler = document.getElementById("toggle-box-of-edit-view");
+        if (!editView || !toggler) return;
         const setShown = (on) => {
             editView.style.display = on ? "" : "none";
             layoutViewport();
         };
-        shower.addEventListener("click", () => setShown(true));
+        toggler.addEventListener("click", () => setShown(editView.style.display === "none"));
         let hoverTimer = null;
-        shower.addEventListener("mouseenter", () => {
+        toggler.addEventListener("mouseenter", () => {
             hoverTimer = setTimeout(() => setShown(true), 500);
         });
-        shower.addEventListener("mouseleave", () => {
+        toggler.addEventListener("mouseleave", () => {
             clearTimeout(hoverTimer);
             hoverTimer = null;
         });

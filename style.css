@@ -786,7 +786,7 @@ button.primary:hover {
             transparent 5px);
 }
 
-#show-box-of-edit-view {
+#toggle-box-of-edit-view {
     position: absolute;
     right: 33px;
     top: 0;
