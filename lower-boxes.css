@@ -7,6 +7,24 @@
     height: var(--bottom-bar-height);
 }
 
+.lower-box .block {
+    border-top: none; 
+    padding-left: 4px;
+}
+
+.lower-box .title-and-hiding {
+    display: flex; 
+    justify-content: space-between;
+}
+
+.lower-box .toggle {
+    margin-top: 0;
+}
+
+.lower-box .note-scheme {
+    margin-top: 0;
+}
+
 button.hide {
     background-color: transparent;
     border-color: transparent;
@@ -34,15 +52,19 @@ button.hide:hover {
 
 
 /**************************
- * tonnetz-and-coloring-box
+ * tonnetz-and-coloring
  **************************/
 
-#tonnetz-and-coloring-box {
+#toggle-box-of-tonnetz-and-coloring {
+    right: 770px;
+}
+
+#tonnetz-and-coloring {
     position: absolute;
     left: var(--box-spacing);
-    bottom: var(--bottom-bar-height);
+    bottom: calc(var(--bottom-bar-height) + var(--box-spacing));
     width: 560px;
-    height: 270px;
+    height: 260px;
 }
 
 #axis-system .axis-controls {
@@ -209,7 +231,7 @@ button.hide:hover {
 }
 
 #tonic-grid .tcell {
-    aspect-ratio: 1.2;
+    aspect-ratio: 1.05;
     border: 1px solid var(--line);
     border-radius: 4px;
     background: var(--panel2);

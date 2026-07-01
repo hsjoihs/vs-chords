@@ -1400,6 +1400,7 @@ function setupUI() {
     // A bottom-bar button toggles its overlay panel (on click), or reveals it on a
     // 0.5 s hover; the panel's own hide button hides it. layoutViewport() re-fits
     // the 3-D render area around the panel appearing/disappearing.
+    wirePanelToggle("tonnetz-and-coloring", "toggle-box-of-tonnetz-and-coloring");
     wirePanelToggle("edit-view", "toggle-box-of-edit-view");
     wirePanelToggle("key-degree", "toggle-box-of-key-degree");
     document.getElementById("layerSlider").oninput = (e) => {

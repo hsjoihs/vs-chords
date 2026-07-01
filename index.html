@@ -64,9 +64,12 @@
     <div id="analysis" class="overlay-box"></div>
     
     <!-- lower boxes -->
-    <div id="tonnetz-and-coloring-box" class="overlay-box">
-      <div class="block" style="border-top: none; padding-left: 4px;">
-        <h2>Tonnetz / Coloring</h2>
+    <div id="tonnetz-and-coloring" class="overlay-box lower-box">
+      <div class="block">
+        <div class="title-and-hiding">
+          <h2>Tonnetz / Coloring</h2>
+          <button class="hide" title="Hide"><img src="hide.svg" width="10.8" height="9" /></button>
+        </div>
         <div class="toggle"><input type="checkbox" id="tAccessible"><label for="tAccessible">Reduce red–green distinction (accessible colors)</label></div>
         <div class="note-scheme">Assign colors to pitch classes by:
           <label><input type="radio" name="noteScheme" value="none" id="nsNone">nothing</label>
@@ -81,9 +84,9 @@
       </div>
       <div id="axis-system" style="padding-left: 4px;"></div>
     </div>
-    <div id="key-degree" class="overlay-box">
-      <div class="block" style="border-top: none; padding-left: 4px; padding-right: 4px;">
-        <div style="display: flex; justify-content: space-between;">
+    <div id="key-degree" class="overlay-box lower-box">
+      <div class="block">
+        <div class="title-and-hiding">
           <h2>Key / Degree</h2>
           <button class="hide" title="Hide"><img src="hide.svg" width="10.8" height="9" /></button>
         </div>
@@ -102,9 +105,9 @@
         </div>
       </div>
     </div>
-    <div id="edit-view" class="overlay-box">
-      <div class="block" style="border-top: none; padding-left: 4px; padding-right: 4px;">
-        <div style="display: flex; justify-content: space-between;">
+    <div id="edit-view" class="overlay-box lower-box">
+      <div class="block">
+        <div class="title-and-hiding">
           <h2>View</h2>
           <button class="hide" title="Hide"><img src="hide.svg" width="10.8" height="9" /></button>
         </div>
@@ -158,6 +161,7 @@
     </div>
   </div>
   <div id="bottom-bar">
+    <div class="box-visibility-toggler" id="toggle-box-of-tonnetz-and-coloring">🕸 Adjust Tonnetz / Coloring 🎨</div>
     <div class="box-visibility-toggler" id="toggle-box-of-key-degree">🔑 Adjust Key / Degree 📐</div>
     <div class="box-visibility-toggler" id="toggle-box-of-edit-view">👀 Adjust View 🔭</div>
   </div>
