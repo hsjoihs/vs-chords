@@ -593,3 +593,7 @@ button.primary:hover {
     background-color: var(--left-bar);
     width: 45px;
 }
+
+#transpose button {
+    padding: 6px 4px;
+}
