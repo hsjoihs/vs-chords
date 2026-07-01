@@ -8,6 +8,7 @@
     --txt:              oklab(95% 0.005 -0.01);
     --muted:            oklab(70% 0.015 -0.03);
     --main:             oklab(70% 0.065 -0.13);
+    --dark-button:      oklab(35% 0.04  -0.08);
 
     --link:             oklab(74% 0.065 -0.13);
     --link-hover:       oklab(78% 0.055 -0.11);
@@ -19,8 +20,9 @@
     --danger: oklab(70% 0.2 0.06);
     --accent: oklab(70% -0.12 0.08);
 
-    --scale: 0.92;
+    --scale: 0.9;
     --box-spacing: 8px;
+    --bottom-bar-height: 22px;
 }
 
 
@@ -59,6 +61,7 @@ body {
 
 table.intervals td {
     padding: 0 5px;
+    font-size: 9.6px;
 }
 
 #app {
@@ -75,6 +78,15 @@ table.intervals td {
     display: flex;
     flex-direction: column;
     overflow-y: auto
+}
+
+#bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    background-color: var(--main);
+    height: var(--bottom-bar-height);
 }
 
 #stage {
@@ -285,7 +297,7 @@ button.primary:hover {
 #roman-numeral {
     position: absolute;
     left: calc(var(--box-spacing) * 2 + 560px);
-    bottom: var(--box-spacing);
+    bottom: var(--bottom-bar-height);
     width: 290px;
     height: 270px;
 }
@@ -475,8 +487,8 @@ button.primary:hover {
 #edit-view {
     position: absolute;
     right: var(--box-spacing);
-    bottom: var(--box-spacing);
-    height: 270px;
+    bottom: calc(var(--bottom-bar-height) + var(--box-spacing));
+    height: calc(270px - var(--box-spacing));
 }
 
 .overlay-box {
@@ -497,7 +509,7 @@ button.primary:hover {
 #tonnetz-and-coloring-box {
     position: absolute;
     left: var(--box-spacing);
-    bottom: var(--box-spacing);
+    bottom: var(--bottom-bar-height);
     width: 560px;
     height: 270px;
 }
@@ -772,4 +784,30 @@ button.primary:hover {
             #999999 1px,
             transparent 1px,
             transparent 5px);
+}
+
+#show-box-of-edit-view {
+    position: absolute;
+    right: 33px;
+    top: 0;
+    height: 100%;
+
+    font-size: 13px;
+    background-color: var(--dark-button);
+
+    display: inline-flex;
+    align-items: center;
+    padding: 0 5px;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+button.hide {
+    background-color: transparent;
+    border-color: transparent;
+    padding: 1px 5px;
+}
+
+button.hide:hover {
+    background-color: var(--panel2);
 }

@@ -100,7 +100,10 @@
     </div>
     <div id="edit-view" class="overlay-box">
       <div class="block" style="border-top: none; padding-left: 4px; ">
-        <h2>View</h2>
+        <div style="display: flex; justify-content: space-between;">
+          <h2>View</h2>
+          <button class="hide" title="Hide"><img src="hide.svg" width="10.8" height="9" /></button>
+        </div>
         <label class="fld" for="layerSlider">Cylinder length (compress ↔ stretch)</label>
         <input id="layerSlider" class="vslider" type="range" min="1.5" max="9" step="0.1" value="4.2">
         <label class="fld" for="nameAzimuth">Chord-name angle</label>
@@ -149,6 +152,9 @@
         </div>
       </div>
     </div>
+  </div>
+  <div id="bottom-bar">
+    <div id="show-box-of-edit-view">👀 Adjust View</div>
   </div>
 </div>
 
