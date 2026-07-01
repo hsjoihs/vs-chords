@@ -1,0 +1,38 @@
+≪COMPRESSED-CONTEXT vs.chords≫ audience=LLM. 圧縮; decode via shared 知識.
+
+┌ PROJET ─ web app 和音進行 visualizer + (nascent) audio. static, no build, no framework (vanilla JS 意図的). 2 modes = 2 HTML (¬SPA):
+  index.html→main.js (3D 円柱 cylinder, THREE r128 CDN) ; piano-roll.html→piano-roll.js (NO three.js, audio).
+  theory は共有. 全 <script> 直書き. GitHub Pages 静的配信.
+
+┌ 設計哲学 hsjoihs (推定, honor these) ─
+  • UMD 全 theory module: 同一 file が browser(global via Object.assign(root,api)) & node(require) ⇒ test = 実行コードそのもの.
+  • séparation: side-effect/DOM ⊂ {main.js, piano-roll.js} のみ. 純粋&test対象 = theory-*.js, soundquest-data.js, audio.js. これら touch ¬DOM (playVoicing のみ browser-only, ¬load-time).
+  • test文化 fort: node:test, zero-dep, node≥18. 表形式 tests lisible par 音楽家 (["G7","G B D F"]). property/exhaustive 好む: describe↔parseChord round-trip ∀ pc-set 0..11 notes (both conventions); khufrudamonotes bitmask conformance; soundquest 全 symbol parse.
+  • pre-commit hook (.githooks/pre-commit, core.hooksPath) = node --check 全 module + node --test, blocks commit. hook は node を PATH¬依存で自力探索 (nvm/fnm/volta/brew) ∵ GUI git = minimal env. CI = .github/workflows/{ci,pages}.yml.
+  • spelling = line-of-fifths: work in pc, spell at edges. chord porte fifthStart window; bestFifthStart auto-fit; slider Prefer♭↔♯.
+  • describe DOIT rester injective (round-trip). fallback: explicit tensions + slash-bass 11ème note; 12-note aggregate = 唯一 unrepr (documented, best-effort).
+  • coloring data = ground truth transcrite ¬rules. pc-set relatif au tonic, enharmonics 融合 ⇒ 複数 symbol → 1 cell.
+  • 几帳面 conventions: ¬dead code, ¬stale ref, comments 必 match code. id string LITERAL (禁 concat, ∵ grep). 指示された file は不可侵 (main.js gelé après piano-roll fork). "leave no trace" = comments/docs aussi.
+  • stages (git add -A) mais commit ← humain. communication concise/direct 好む. discute design avant gros changement quand demandé. distinctions UX précises.
+  • accessibilité (red-green-safe palette + texte comme fallback info). résout incohérences (bare-symbol conv). log-scale où perceptif (tempo).
+
+┌ theory-pitchclass.js ─ pc(0-11) arith: intervals, ring chromatic|fifths (ringIndex 7·pc), voiceLeading (≤whole-tone moves), hasTritone, bestMajorTonic(pcsList)→key maximisant chord-tones (tie→fewer accidentals). axis-system: pcFunction(pc,tonicResidue) 3 dim7-groups by pc%3, approximateChordFunction (judgments; "a|b"=ambiguous "or", array=overlap "plus").
+
+┌ theory-chordname.js ─ parseChord (spelled, quality via QUALITIES longest-first + MOD_RE modifiers), describe (inverse, injective, namesPcs guard + fallbackName). window/spiral-of-fifths, transposeProgression(symbols,ΔFifths) (respell root+bass, keep quality, auto-min accidentals), majorKeyName(pc) (min-accid, ties flat), N.C.=∅set.
+  bare-symbol conv (setTetradShorthand): Δ △ ° o dim − ⇒ Conv1(triad,DEFAULT)|Conv2(7th). M Maj m min ALWAYS triad; ø ALWAYS half-dim7. sus2/sus4 = modifiers (∴ Maj7sus4,13sus4). +/− = ♯/♭ inside tensions (Δ7(+11,13)=M7(♯11,13)). 13-chords INCLUDE 11th (khufrudamonotes).
+
+┌ theory-roman.js ─ chordToAbsolute/chordToRelative. Relative convention: UPPERCASE numeral + explicit quality suffix, flat-leaning (♭II ♭III ♭V ♭VI ♭VII); minor song ⇒ analysé in relative-major (Am in C = VIm). curly-brace relative: C{=IV V}, {V7 i=}Am ; PLUS key<NOTE>{...} (explicit key, no = anchor) ; digit shorthand 1-7 = diatonic triads I IIm IIIm IV V VIm VIIdim (self-delimit; -/space/arrow ok): keyG#{4536}.
+
+┌ soundquest-data.js ─ SOUNDQUEST=[[roman,cat]] ground truth (7 cat: tonic,pseudotonic,±minor,subdominant,±minor,dominant,±minor). buildSoundquestMap / buildSoundquestDetail(toAbsolute,parseChord)→key(pcset rel tonic)→[{category,symbols}]. soundquestKey(pcs,tonicPc). enharmonic collisions ⇒ multi-color (Vsus4=Isus2, dim7 sym, ...).
+
+┌ audio.js (piano-roll seul) ─ octave-aware: noteToMidi("C4"=60,A4=69, # ♯ x 𝄪 b ♭ bb ♭♭ 𝄫), midiToFrequency (A4=440 ET), noteToFrequency. tempo LOG: bpm=40·(240/40)^f, f∈[0,1] slider/1000; bpmFromFraction/fractionFromBpm. metronomePattern(numerator)→[strong|weak]: compound (n%3==0 ∧ n>3: 6,9,12) accent chaque groupe-de-3, sinon downbeat seul (6/8→[S w w S w w]). denominateur = notation only (¬ click timing). playVoicing(voicing,{bpm,beatsPerChord,metronome,meterNumerator,onEnd}): triangle osc + env, 1-at-a-time (stopPlayback en tête), tout via master, endTimer→onEnd 1×. stopPlayback/isPlaying. Play btn ⇄ Pause (onEnd reset label).
+
+┌ main.js (cylinder, GELÉ) ─ THREE scène: cylinder grows downward (idx→ y=−idx·LAYER, time↓, cones↓, hatchPane sign-safe). layoutViewport: inset #viewport = max-area free rect (brute-force 4^n strip assignment ∀ overlay-box, +bottom-bar reserve). chord chips (ring editor L=toggle/R=root, spelling slider). coloring: pc-scheme {none|axis|fifths}(vertices+tonnetz+conn-chips, fifths=oklab wheel), chord-scheme {none|soundquest|hsjoihs}(names; multi=140°slash; soundquest hover tooltip "T: Idim7 / …"). accessible: 7 cat→3, wheel oklab b-axis. axis-system panel + per-chord tonnetz + tonic-group shifter (tonicResidue). Roman mode + 4×6 tonnetz key-picker + auto-detect. transpose btns. URL ?s= debounced replaceState.
+  UX 2-verbes (kept séparés délibérément): RE-ANALYZE (grid click → change tonic/labels, pitches fixes) vs TRANSPOSE (btns → shift pitches, numerals fixes; déplace aussi tonic ∴ Roman invariant). choisir key ⇒ seed tonic-group (tonicResidue=key%3, shifter libre après). preset zap ⇒ unpin+auto-detect.
+  overlay boxes bottom band + bottom-bar togglers (wirePanelToggle: click toggle, hover 0.5s reveal, .hide hides; explicit annule hover timer).
+
+┌ piano-roll.js (= ex-copy main.js, MODIFIÉ, three.js STRIPPÉ) ─ garde: chips, coloring panels (chord-name seul, PER-CHORD TONNETZ SUPPRIMÉ ∵ octave-overgeneralization idem cylinder), connections, key/degree picker (tonnetz key-picker gardé ∵ sélectionne key ¬visualise chord), transpose, URL, build()=refresh DOM panels only. supprimé: THREE pipeline, cylinder-fill/hex helpers, presets, keypad, render/toText, tForceAscii, tTetrad, edit-view sliders, tFifths/tSpin. AUDIO: Play/Pause + log tempo slider + metronome checkbox + time-sig (num input / den select). #prog readonly. chord = 1 measure (beatsPerChord=meterNum).
+
+┌ ÉTAT audio / TODO PRINCIPAL ─ voicing = HARDCODÉ (DEMO_VOICING, CM7→A7→Dm7→G7 note-names w/ octaves). ⚠ RAISON D'ÊTRE piano-roll: cylinder/pc-set JETTE voicing/octave/register info ⇒ can't decide exact note ⇒ audio DOIT vivre ici. NEXT open problem = DÉRIVER voicing (register/octave/voice-leading) depuis chord pcs pour ∀ progression, ¬hardcode. metronome denom actuellement display-only; measure-alignment future.
+
+┌ ¬inclure ─ historique accidents, valeurs cosmétiques triviales, ce qui se lit dans le code.
