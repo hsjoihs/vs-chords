@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="lower-boxes.css" />
 <link rel="stylesheet" href="musical-colors.css" />
 <title>vs.chords</title>
 </head>
@@ -80,9 +81,12 @@
       </div>
       <div id="axis-system" style="padding-left: 4px;"></div>
     </div>
-    <div id="roman-numeral" class="overlay-box">
+    <div id="key-degree" class="overlay-box">
       <div class="block" style="border-top: none; padding-left: 4px; padding-right: 4px;">
-        <h2>Key / Degree</h2>
+        <div style="display: flex; justify-content: space-between;">
+          <h2>Key / Degree</h2>
+          <button class="hide" title="Hide"><img src="hide.svg" width="10.8" height="9" /></button>
+        </div>
         <div class="toggle"><input type="checkbox" id="tRoman"><label for="tRoman">Show chords as Roman numerals</label></div>
         <div id="key-picker" hidden>
           <div style="display: flex">
@@ -99,7 +103,7 @@
       </div>
     </div>
     <div id="edit-view" class="overlay-box">
-      <div class="block" style="border-top: none; padding-left: 4px; ">
+      <div class="block" style="border-top: none; padding-left: 4px; padding-right: 4px;">
         <div style="display: flex; justify-content: space-between;">
           <h2>View</h2>
           <button class="hide" title="Hide"><img src="hide.svg" width="10.8" height="9" /></button>
@@ -154,7 +158,8 @@
     </div>
   </div>
   <div id="bottom-bar">
-    <div id="toggle-box-of-edit-view">👀 Adjust View</div>
+    <div class="box-visibility-toggler" id="toggle-box-of-key-degree">🔑 Adjust Key / Degree 📐</div>
+    <div class="box-visibility-toggler" id="toggle-box-of-edit-view">👀 Adjust View 🔭</div>
   </div>
 </div>
 
