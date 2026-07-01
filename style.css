@@ -10,6 +10,8 @@
     --main:             oklab(70% 0.065 -0.13);
     --dark-button:      oklab(35% 0.04  -0.08);
 
+    --left-bar:         oklab(30% 0.01  -0.02);
+
     --link:             oklab(74% 0.065 -0.13);
     --link-hover:       oklab(78% 0.055 -0.11);
     /* slightly change the hue */
@@ -71,8 +73,10 @@ table.intervals td {
 }
 
 #side {
-    width: 340px;
-    min-width: 340px;
+    margin-left: 45px;
+    margin-bottom: var(--bottom-bar-height);
+    width: 310px;
+    min-width: 310px;
     background: var(--panel);
     border-right: 1px solid var(--line);
     display: flex;
@@ -581,3 +585,11 @@ button.primary:hover {
             transparent 5px);
 }
 
+#left-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: calc(100vh - var(--bottom-bar-height));
+    background-color: var(--left-bar);
+    width: 45px;
+}
