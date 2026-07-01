@@ -52,7 +52,7 @@ NODE=$(find_node) || {
 
 # Syntax-check the browser scripts (they reference THREE/window at runtime,
 # so we only parse them here rather than execute).
-for f in theory-pitchclass.js theory-chordname.js theory-roman.js soundquest-data.js main.js; do
+for f in theory-pitchclass.js theory-chordname.js theory-roman.js soundquest-data.js audio.js main.js piano-roll.js; do
     "$NODE" --check "$f" || { echo "$f failed syntax check"; exit 1; }
 done
 

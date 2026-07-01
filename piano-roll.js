@@ -17,6 +17,15 @@
 // fifths is adopted as the circle of fifths (see theory-chordname.js).
 let chords = [];
 
+// a fixed voicing (with octaves) for the demo progression CM7 → A7 → Dm7 → G7.
+// Chords here carry actual pitches, unlike the octave-free ch.pcs elsewhere.
+const DEMO_VOICING = [
+    ["C2", "C4", "E4", "G4", "B4"], // CM7
+    ["A2", "C#4", "E4", "G4", "A4"], // A7
+    ["D2", "C4", "D4", "F4", "A4"], // Dm7
+    ["G2", "D4", "F4", "G4", "B4"], // G7
+];
+
 // build an editor chord from a parsed symbol, auto-choosing the spelling slider
 function chordFromParsed(c) {
     return { symbol: c.symbol, pcs: c.pcs, rootPc: c.rootPc, fifthStart: bestFifthStart(c.notes) };
@@ -580,6 +589,7 @@ function wirePanelToggle(panelId, togglerId) {
 function setupUI() {
     progEl = document.getElementById("prog");
 
+    document.getElementById("play").onclick = () => playVoicing(DEMO_VOICING);
     document.getElementById("add").onclick = () => {
         chords.push(chordFromParsed(parseChord("C")));
         renderChips();
