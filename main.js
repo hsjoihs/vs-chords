@@ -406,10 +406,11 @@ function hatchPane(p, q, y0, y1, color) {
     const P0 = pcPos(p, y0),
         Q0 = pcPos(q, y0);
     const W = P0.distanceTo(Q0); // pane width  (the interval, as a straight chord)
-    const H = y1 - y0; // pane height (one layer)
+    const H = Math.abs(y1 - y0); // pane height (one layer)
+    const vy = Math.sign(y1 - y0) || 1; // which way the layer runs vertically
     if (W < 1e-6) return;
     const dHat = new THREE.Vector3().subVectors(Q0, P0).normalize();
-    const at = (s, t) => P0.clone().addScaledVector(dHat, s).add(new THREE.Vector3(0, t, 0));
+    const at = (s, t) => P0.clone().addScaledVector(dHat, s).add(new THREE.Vector3(0, vy * t, 0));
     const pts = [];
     // "/" family: s - t = c
     for (let c = -H; c <= W; c += HATCH_SPACING) {
