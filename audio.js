@@ -91,8 +91,54 @@
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         return audioCtx;
     }
+    // one playback at a time: track the live oscillators + master so it can be
+    // stopped, and fire onEnd exactly once (whether it finishes or is stopped).
+    let activeNodes = [];
+    let activeMaster = null;
+    let endTimer = null;
+    let onEndCb = null;
+    let playing = false;
+
+    function isPlaying() {
+        return playing;
+    }
+    // reset state and fire onEnd once (shared by natural end and stopPlayback)
+    function finishPlayback() {
+        if (endTimer) clearTimeout(endTimer);
+        endTimer = null;
+        activeNodes = [];
+        activeMaster = null;
+        playing = false;
+        const cb = onEndCb;
+        onEndCb = null;
+        if (cb) cb();
+    }
+    // stop playback now, fading the master out over a few ms to avoid a click.
+    function stopPlayback() {
+        if (!playing) return;
+        const ctx = audioCtx;
+        if (ctx && activeMaster) {
+            const now = ctx.currentTime;
+            try {
+                activeMaster.gain.cancelScheduledValues(now);
+                activeMaster.gain.setValueAtTime(activeMaster.gain.value, now);
+                activeMaster.gain.linearRampToValueAtTime(0, now + 0.03);
+            } catch (e) {
+                /* node already gone */
+            }
+            for (const n of activeNodes) {
+                try {
+                    n.stop(now + 0.05);
+                } catch (e) {
+                    /* already stopped */
+                }
+            }
+        }
+        finishPlayback();
+    }
 
     // a short metronome click at time `t`: a higher, louder blip on strong beats.
+    // Returns the oscillator so the caller can track it for stopping.
     function metronomeClick(ctx, dest, t, strong) {
         const osc = ctx.createOscillator();
         osc.type = "square";
@@ -106,13 +152,16 @@
         osc.connect(g).connect(dest);
         osc.start(t);
         osc.stop(t + dur + 0.01);
+        return osc;
     }
 
     // Play a sequence of chords (each an array of note names) one after another, as
     // triangle-wave tones with a short attack/release envelope so they don't click.
     // Each chord lasts `beatsPerChord` beats at `bpm`; if `metronome`, a click sounds
-    // on every beat, accented by `meterNumerator`. Returns the end time (ctx seconds).
-    function playVoicing(voicing, { bpm = 120, beatsPerChord = 4, metronome = true, meterNumerator = 4, noteGain = 0.13 } = {}) {
+    // on every beat, accented by `meterNumerator`. Only one playback runs at a time;
+    // `onEnd` fires when it finishes or is stopped. Returns the end time (ctx seconds).
+    function playVoicing(voicing, { bpm = 120, beatsPerChord = 4, metronome = true, meterNumerator = 4, noteGain = 0.13, onEnd = null } = {}) {
+        stopPlayback(); // never overlap two playbacks
         const ctx = getCtx();
         if (ctx.state === "suspended") ctx.resume(); // browsers gate audio on a gesture
         const beatSec = 60 / bpm;
@@ -120,6 +169,10 @@
         const master = ctx.createGain();
         master.gain.value = 0.85;
         master.connect(ctx.destination);
+        activeMaster = master;
+        activeNodes = [];
+        onEndCb = onEnd;
+        playing = true;
         const attack = 0.012,
             release = 0.14;
         const start = ctx.currentTime + 0.06;
@@ -137,6 +190,7 @@
                 osc.connect(g).connect(master);
                 osc.start(t);
                 osc.stop(t + chordDur + 0.02);
+                activeNodes.push(osc);
             }
             t += chordDur;
         }
@@ -144,9 +198,11 @@
             const pattern = metronomePattern(meterNumerator);
             const totalBeats = voicing.length * beatsPerChord;
             for (let i = 0; i < totalBeats; i++) {
-                metronomeClick(ctx, ctx.destination, start + i * beatSec, pattern[i % pattern.length] === "strong");
+                activeNodes.push(metronomeClick(ctx, master, start + i * beatSec, pattern[i % pattern.length] === "strong"));
             }
         }
+        // revert to the idle state a moment after the last sound finishes
+        endTimer = setTimeout(finishPlayback, Math.max(0, t - ctx.currentTime) * 1000 + 120);
         return t;
     }
 
@@ -155,6 +211,8 @@
         midiToFrequency,
         noteToFrequency,
         playVoicing,
+        stopPlayback,
+        isPlaying,
         TEMPO_MIN_BPM,
         TEMPO_MAX_BPM,
         bpmFromFraction,

@@ -613,8 +613,21 @@ function refreshTempoUI() {
 function setupUI() {
     progEl = document.getElementById("prog");
 
-    document.getElementById("play").onclick = () =>
-        playVoicing(DEMO_VOICING, { bpm, beatsPerChord: meterNum, metronome: metronomeOn, meterNumerator: meterNum });
+    const playBtn = document.getElementById("play");
+    playBtn.onclick = () => {
+        if (isPlaying()) {
+            stopPlayback(); // its onEnd resets the label to "▶ Play"
+            return;
+        }
+        playBtn.textContent = "⏸ Pause";
+        playVoicing(DEMO_VOICING, {
+            bpm,
+            beatsPerChord: meterNum,
+            metronome: metronomeOn,
+            meterNumerator: meterNum,
+            onEnd: () => (playBtn.textContent = "▶ Play"),
+        });
+    };
     document.getElementById("tempo").oninput = (e) => {
         bpm = bpmFromFraction(Number(e.target.value) / 1000);
         document.getElementById("tempo-val").textContent = Math.round(bpm) + " BPM";
