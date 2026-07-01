@@ -29,6 +29,12 @@ let bpm = 120; // playback tempo (one chord per bar line); driven by the log tem
 let metronomeOn = true; // click on every beat during playback
 let meterNum = 4, // time-signature numerator — drives the metronome accent grouping
     meterDen = 4; // denominator (for the reading/notation; the click rate is bpm)
+// transport / seek state
+let positionSec = 0, // the retained cursor position (seconds into the piece)
+    seeking = false, // is the user dragging the seek bar?
+    posRaf = null, // requestAnimationFrame handle for the cursor loop
+    playBpm = bpm, // bpm / meter snapshotted at play start, so the piece length
+    playMeter = meterNum; //   stays consistent with the already-scheduled audio
 
 // build an editor chord from a parsed symbol, auto-choosing the spelling slider
 function chordFromParsed(c) {
@@ -343,6 +349,7 @@ function restoreState() {
         document.getElementById("tMetronome").checked = metronomeOn;
         document.getElementById("meterNum").value = meterNum;
         document.getElementById("meterDen").value = meterDen;
+        refreshTransportUI(); // seek total depends on bpm/meter
         if (st.tr != null) tonicResidue = st.tr;
         relativeMode = !!st.rm;
         tonicUserSet = !!st.ap;
@@ -610,36 +617,133 @@ function refreshTempoUI() {
     if (tempoVal) tempoVal.textContent = Math.round(bpm) + " BPM";
 }
 
+/* ---- transport (play / pause / stop / seek cursor) ---- */
+// while playing, the piece length is frozen to the snapshot so the seek cursor
+// stays consistent with the audio already scheduled; otherwise it tracks bpm/meter.
+function chordDurSec() {
+    return (isPlaying() ? playMeter : meterNum) * (60 / (isPlaying() ? playBpm : bpm));
+}
+function pieceTotalSec() {
+    return DEMO_VOICING.length * chordDurSec();
+}
+function fmtTime(sec) {
+    sec = Math.max(0, Math.round(sec));
+    return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
+}
+// the chord index sounding at `positionSec` (0-based, clamped to the voicing)
+function currentChordIndex() {
+    return Math.max(0, Math.min(DEMO_VOICING.length - 1, Math.floor(positionSec / chordDurSec())));
+}
+// tint the currently-sounding chip and axis-row chord name; idx < 0 clears
+function highlightChord(idx) {
+    document.querySelectorAll("#chips .chip").forEach((el, i) => el.classList.toggle("playing", i === idx));
+    document.querySelectorAll("#axis-system .child-box").forEach((el, i) => el.classList.toggle("playing", i === idx));
+}
+// mirror positionSec onto the seek slider (unless the user is dragging it) and the
+// mm:ss readouts
+function refreshTransportUI() {
+    const total = pieceTotalSec();
+    const seek = document.getElementById("seek");
+    if (seek) {
+        seek.max = total.toFixed(2);
+        if (!seeking) seek.value = Math.min(positionSec, total);
+    }
+    const cur = document.getElementById("current-position");
+    const tot = document.getElementById("total-length");
+    if (cur) cur.textContent = fmtTime(positionSec);
+    if (tot) tot.textContent = fmtTime(total);
+}
+function stopPositionLoop() {
+    if (posRaf) cancelAnimationFrame(posRaf);
+    posRaf = null;
+}
+function positionLoop() {
+    if (seeking) {
+        posRaf = requestAnimationFrame(positionLoop); // the drag owns the cursor; stay dormant
+        return;
+    }
+    const pos = playbackPosition();
+    if (pos == null) {
+        posRaf = null;
+        return; // playback ended; onEnd handles the reset
+    }
+    positionSec = Math.min(pos, pieceTotalSec());
+    refreshTransportUI();
+    highlightChord(currentChordIndex());
+    posRaf = requestAnimationFrame(positionLoop);
+}
+// start playback from `offset` seconds; drive the cursor loop and Pause label
+function playFrom(offset) {
+    playBpm = bpm;
+    playMeter = meterNum;
+    positionSec = offset;
+    playVoicing(DEMO_VOICING, {
+        bpm,
+        beatsPerChord: meterNum,
+        metronome: metronomeOn,
+        meterNumerator: meterNum,
+        offset,
+        onEnd: (reason) => {
+            document.getElementById("play").textContent = "▶ Play";
+            stopPositionLoop();
+            if (reason === "ended") {
+                positionSec = 0; // natural end → cursor back to start
+                refreshTransportUI();
+                highlightChord(-1);
+            }
+        },
+    });
+    document.getElementById("play").textContent = "⏸ Pause";
+    stopPositionLoop();
+    posRaf = requestAnimationFrame(positionLoop);
+}
+
 function setupUI() {
     progEl = document.getElementById("prog");
 
-    const playBtn = document.getElementById("play");
-    playBtn.onclick = () => {
+    document.getElementById("play").onclick = () => {
         if (isPlaying()) {
-            stopPlayback(); // its onEnd resets the label to "▶ Play"
+            // Pause: capture where we are, stop the sound, keep the cursor
+            positionSec = Math.min(playbackPosition() ?? positionSec, pieceTotalSec());
+            stopPlayback(); // onEnd("stopped") → label "▶ Play", cursor kept
             return;
         }
-        playBtn.textContent = "⏸ Pause";
-        playVoicing(DEMO_VOICING, {
-            bpm,
-            beatsPerChord: meterNum,
-            metronome: metronomeOn,
-            meterNumerator: meterNum,
-            onEnd: () => (playBtn.textContent = "▶ Play"),
-        });
+        if (positionSec >= pieceTotalSec() - 1e-3) positionSec = 0; // at the end → restart
+        playFrom(positionSec);
+    };
+    document.getElementById("stop").onclick = () => {
+        stopPlayback(); // no-op if idle
+        positionSec = 0; // Stop: cursor back to the start
+        document.getElementById("play").textContent = "▶ Play";
+        refreshTransportUI();
+        highlightChord(-1);
+    };
+    const seek = document.getElementById("seek");
+    seek.oninput = () => {
+        seeking = true;
+        positionSec = Math.min(Number(seek.value), pieceTotalSec());
+        document.getElementById("current-position").textContent = fmtTime(positionSec);
+        highlightChord(currentChordIndex()); // preview which chord we're scrubbing to
+    };
+    seek.onchange = () => {
+        seeking = false;
+        playFrom(positionSec); // releasing the seek bar starts audio from there
     };
     document.getElementById("tempo").oninput = (e) => {
         bpm = bpmFromFraction(Number(e.target.value) / 1000);
         document.getElementById("tempo-val").textContent = Math.round(bpm) + " BPM";
+        refreshTransportUI();
         scheduleUrlUpdate();
     };
     refreshTempoUI();
+    refreshTransportUI();
     document.getElementById("tMetronome").onchange = (e) => {
         metronomeOn = e.target.checked;
         scheduleUrlUpdate();
     };
     document.getElementById("meterNum").oninput = (e) => {
         meterNum = Math.max(1, Math.floor(Number(e.target.value) || 4));
+        refreshTransportUI();
         scheduleUrlUpdate();
     };
     document.getElementById("meterDen").onchange = (e) => {

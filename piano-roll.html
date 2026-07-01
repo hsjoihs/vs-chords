@@ -34,6 +34,9 @@
 .piano-roll-grid { font-size: 10px; margin-left: 2px; border-spacing: 8px 0; margin-left: -6px; }
 .piano-roll-grid td { height: 10px; min-height: 10px; width: 45px; }
 .roll-note {background-color: #005242;}
+/* the currently-sounding chord: a translucent overlay tints the background (via
+   an inset box-shadow, so a colored chord-name keeps its scheme hue underneath) */
+.chip.playing, #axis-system .child-box.playing { box-shadow: inset 0 0 0 999px rgba(90, 150, 255, 0.45); }
 </style>
 <body>
 <div id="app">
@@ -93,9 +96,8 @@
           <button class="primary" id="stop" style="min-height: 3em; height: 3em; width: 7em; min-width: 7em;">🚧 Stop</button>
         </div>
         <div class="transport-seek">
-          <span class="fld" style="display: inline;">0:13</span>
-          <input min="0" max="16" step="0.1" type="range" value="13" style="flex: 1; accent-color: var(--main); cursor: pointer;">
-          <span class="fld" style="display: inline;">0:16</span>
+          <input id="seek" min="0" max="16" step="0.1" type="range" value="0" style="flex: 1; accent-color: var(--main); cursor: pointer;">
+          <span class="fld" style="display: inline;" id="current-position">0:13</span><span class="fld" style="display: inline;"> / </span><span class="fld" style="display: inline;" id="total-length">0:16</span>
         </div>
       </div>
       <div class="err" id="err"></div>

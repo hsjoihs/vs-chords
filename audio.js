@@ -98,12 +98,18 @@
     let endTimer = null;
     let onEndCb = null;
     let playing = false;
+    let anchorCtx = 0; // ctx time corresponding to piece-position 0 (for the seek cursor)
 
     function isPlaying() {
         return playing;
     }
-    // reset state and fire onEnd once (shared by natural end and stopPlayback)
-    function finishPlayback() {
+    // seconds into the piece right now, or null when idle
+    function playbackPosition() {
+        if (!playing || !audioCtx) return null;
+        return Math.max(0, audioCtx.currentTime - anchorCtx);
+    }
+    // reset state and fire onEnd(reason) once (shared by natural end and stopPlayback)
+    function finishPlayback(reason) {
         if (endTimer) clearTimeout(endTimer);
         endTimer = null;
         activeNodes = [];
@@ -111,7 +117,7 @@
         playing = false;
         const cb = onEndCb;
         onEndCb = null;
-        if (cb) cb();
+        if (cb) cb(reason);
     }
     // stop playback now, fading the master out over a few ms to avoid a click.
     function stopPlayback() {
@@ -134,7 +140,7 @@
                 }
             }
         }
-        finishPlayback();
+        finishPlayback("stopped");
     }
 
     // a short metronome click at time `t`: a higher, louder blip on strong beats.
@@ -155,17 +161,19 @@
         return osc;
     }
 
-    // Play a sequence of chords (each an array of note names) one after another, as
-    // triangle-wave tones with a short attack/release envelope so they don't click.
-    // Each chord lasts `beatsPerChord` beats at `bpm`; if `metronome`, a click sounds
-    // on every beat, accented by `meterNumerator`. Only one playback runs at a time;
-    // `onEnd` fires when it finishes or is stopped. Returns the end time (ctx seconds).
-    function playVoicing(voicing, { bpm = 120, beatsPerChord = 4, metronome = true, meterNumerator = 4, noteGain = 0.13, onEnd = null } = {}) {
+    // Play a sequence of chords (each an array of note names) as triangle-wave tones
+    // with a short attack/release envelope. Each chord lasts `beatsPerChord` beats at
+    // `bpm`; if `metronome`, a click sounds on every beat, accented by `meterNumerator`.
+    // `offset` (seconds) starts partway through the piece. Only one playback runs at a
+    // time; `onEnd(reason)` fires once — "ended" (natural) or "stopped". Returns total.
+    function playVoicing(voicing, { bpm = 120, beatsPerChord = 4, metronome = true, meterNumerator = 4, noteGain = 0.13, offset = 0, onEnd = null } = {}) {
         stopPlayback(); // never overlap two playbacks
         const ctx = getCtx();
         if (ctx.state === "suspended") ctx.resume(); // browsers gate audio on a gesture
         const beatSec = 60 / bpm;
         const chordDur = beatsPerChord * beatSec;
+        const total = voicing.length * chordDur;
+        offset = Math.max(0, Math.min(offset, total));
         const master = ctx.createGain();
         master.gain.value = 0.85;
         master.connect(ctx.destination);
@@ -175,35 +183,43 @@
         playing = true;
         const attack = 0.012,
             release = 0.14;
+        // `start` = ctx time at which piece-position `offset` sounds; anchor maps
+        // piece-position 0 so playbackPosition() reads correctly while seeking.
         const start = ctx.currentTime + 0.06;
-        let t = start;
-        for (const chord of voicing) {
-            for (const name of chord) {
+        anchorCtx = start - offset;
+        for (let ci = 0; ci < voicing.length; ci++) {
+            const chordStart = ci * chordDur; // piece time
+            const chordEnd = chordStart + chordDur;
+            if (chordEnd <= offset) continue; // this chord is already behind the cursor
+            const s = anchorCtx + Math.max(chordStart, offset); // ctx time this note begins
+            const e = anchorCtx + chordEnd; // ctx time it ends
+            for (const name of voicing[ci]) {
                 const osc = ctx.createOscillator();
                 osc.type = "triangle";
                 osc.frequency.value = noteToFrequency(name);
                 const g = ctx.createGain();
-                g.gain.setValueAtTime(0, t);
-                g.gain.linearRampToValueAtTime(noteGain, t + attack);
-                g.gain.setValueAtTime(noteGain, t + chordDur - release);
-                g.gain.linearRampToValueAtTime(0, t + chordDur);
+                g.gain.setValueAtTime(0, s);
+                g.gain.linearRampToValueAtTime(noteGain, s + attack);
+                g.gain.setValueAtTime(noteGain, Math.max(s + attack, e - release));
+                g.gain.linearRampToValueAtTime(0, e);
                 osc.connect(g).connect(master);
-                osc.start(t);
-                osc.stop(t + chordDur + 0.02);
+                osc.start(s);
+                osc.stop(e + 0.02);
                 activeNodes.push(osc);
             }
-            t += chordDur;
         }
         if (metronome) {
             const pattern = metronomePattern(meterNumerator);
             const totalBeats = voicing.length * beatsPerChord;
             for (let i = 0; i < totalBeats; i++) {
-                activeNodes.push(metronomeClick(ctx, master, start + i * beatSec, pattern[i % pattern.length] === "strong"));
+                const beatTime = i * beatSec; // piece time
+                if (beatTime < offset - 1e-6) continue;
+                activeNodes.push(metronomeClick(ctx, master, anchorCtx + beatTime, pattern[i % pattern.length] === "strong"));
             }
         }
-        // revert to the idle state a moment after the last sound finishes
-        endTimer = setTimeout(finishPlayback, Math.max(0, t - ctx.currentTime) * 1000 + 120);
-        return t;
+        // revert to idle a moment after the last sound finishes (natural end)
+        endTimer = setTimeout(() => finishPlayback("ended"), (anchorCtx + total - ctx.currentTime) * 1000 + 120);
+        return total;
     }
 
     return {
@@ -213,6 +229,7 @@
         playVoicing,
         stopPlayback,
         isPlaying,
+        playbackPosition,
         TEMPO_MIN_BPM,
         TEMPO_MAX_BPM,
         bpmFromFraction,
