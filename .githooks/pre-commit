@@ -5,18 +5,63 @@
 
 echo "pre-commit: running parser tests..."
 
+# --- locate node ---------------------------------------------------------
+# Git may run this hook with a minimal PATH (GUI git clients, or version
+# managers such as nvm / fnm / volta / asdf that only configure PATH inside an
+# interactive shell). `node` can then be missing here even though it works in a
+# normal terminal. Search the usual places and fall back to a version manager.
+find_node() {
+    # already on PATH?
+    if command -v node >/dev/null 2>&1; then
+        command -v node
+        return 0
+    fi
+    # fixed install locations (Homebrew arm64 / Intel, volta, asdf, ~/.local)
+    for c in \
+        /opt/homebrew/bin/node \
+        /usr/local/bin/node \
+        "$HOME/.volta/bin/node" \
+        "$HOME/.asdf/shims/node" \
+        "$HOME/.local/bin/node"; do
+        [ -x "$c" ] && { echo "$c"; return 0; }
+    done
+    # nvm: source it, else grab the newest installed version directly
+    NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        # shellcheck disable=SC1091
+        . "$NVM_DIR/nvm.sh" >/dev/null 2>&1
+        command -v node >/dev/null 2>&1 && { command -v node; return 0; }
+    fi
+    # fnm / nvm version dirs: newest node under any of these roots
+    for base in \
+        "$NVM_DIR/versions/node" \
+        "$HOME/.local/share/fnm/node-versions" \
+        "$HOME/Library/Application Support/fnm/node-versions"; do
+        n=$(ls -d "$base"/*/bin/node "$base"/*/installation/bin/node 2>/dev/null | sort -V | tail -1)
+        [ -n "$n" ] && { echo "$n"; return 0; }
+    done
+    return 1
+}
+
+NODE=$(find_node) || {
+    echo "pre-commit: could not find 'node'."
+    echo "  It runs in your terminal but not here — git ran the hook with a reduced PATH."
+    echo "  Add node's directory to this hook (see find_node), or commit with --no-verify."
+    exit 1
+}
+
 # Syntax-check the browser scripts (they reference THREE/window at runtime,
 # so we only parse them here rather than execute).
-for f in theory-pitchclass.js theory-chordname.js theory-roman.js main.js; do
-    echo "bypass node" # node --check "$f" || { echo "$f failed syntax check"; exit 1; }
+for f in theory-pitchclass.js theory-chordname.js theory-roman.js soundquest-data.js main.js; do
+    "$NODE" --check "$f" || { echo "$f failed syntax check"; exit 1; }
 done
 
 # Run the test suite (zero dependencies — Node's built-in runner).
-# node --test || {
-#     echo
-#     echo "✗ tests failed — commit aborted."
-#     echo "  Fix the failures (or run 'node --test' to see them) and try again."
-#     exit 1
-# }
+"$NODE" --test || {
+    echo
+    echo "✗ tests failed — commit aborted."
+    echo "  Fix the failures (or run 'node --test' to see them) and try again."
+    exit 1
+}
 
 echo "✓ tests passed."

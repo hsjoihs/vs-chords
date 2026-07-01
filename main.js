@@ -145,41 +145,74 @@ function initThree() {
 }
 
 // Fit the #viewport to the largest central rectangle of #stage that the overlay
-// boxes don't cover. Each box is anchored to one or more stage edges; we carve a
-// strip off the side it's pinned to (choosing the thinnest strip for corner
-// boxes, so e.g. the wide-but-short tonnetz eats the bottom, not half the width).
+// boxes don't cover. Each box must be carved out by ONE of four full-width/height
+// strips (left / right / top / bottom); carving any single strip fully removes the
+// box, so the rectangle can never overlap one. We choose the strips to maximize the
+// final rectangle's AREA rather than greedily picking the thinnest strip per box —
+// the greedy rule wastes width on a corner box (e.g. #edit-view) whose bottom is
+// already carved by its neighbours, so carving its bottom too is free. With only a
+// handful of boxes we can brute-force all 4ⁿ assignments.
 function layoutViewport() {
     const stage = document.getElementById("stage");
     const viewport = document.getElementById("viewport");
     if (!stage || !viewport) return;
     const sr = stage.getBoundingClientRect();
     const M = 8; // breathing room between the render area and the boxes
-    const EDGE = 24; // a box within this many px of an edge counts as anchored there
-    let left = 0,
-        top = 0,
-        right = sr.width,
-        bottom = sr.height;
+    const boxes = [];
     stage.querySelectorAll(".overlay-box").forEach((box) => {
         if (box.offsetParent === null) return; // skip hidden boxes
         const r = box.getBoundingClientRect();
         if (r.width === 0 || r.height === 0) return;
-        const x0 = r.left - sr.left,
-            x1 = r.right - sr.left,
-            y0 = r.top - sr.top,
-            y1 = r.bottom - sr.top;
-        // candidate strips for whichever edges this box hugs, with their thickness
-        const cands = [];
-        if (x0 <= EDGE) cands.push({ side: "left", t: x1 });
-        if (sr.width - x1 <= EDGE) cands.push({ side: "right", t: sr.width - x0 });
-        if (y0 <= EDGE) cands.push({ side: "top", t: y1 });
-        if (sr.height - y1 <= EDGE) cands.push({ side: "bottom", t: sr.height - y0 });
-        if (!cands.length) return;
-        const pick = cands.reduce((a, b) => (b.t < a.t ? b : a));
-        if (pick.side === "left") left = Math.max(left, x1);
-        else if (pick.side === "right") right = Math.min(right, x0);
-        else if (pick.side === "top") top = Math.max(top, y1);
-        else bottom = Math.min(bottom, y0);
+        boxes.push({ x0: r.left - sr.left, x1: r.right - sr.left, y0: r.top - sr.top, y1: r.bottom - sr.top });
     });
+    let left = 0,
+        top = 0,
+        right = sr.width,
+        bottom = sr.height;
+    if (boxes.length && boxes.length <= 8) {
+        // brute force: for each box, side 0=left 1=right 2=top 3=bottom
+        let bestArea = -1;
+        for (let mask = 0; mask < 4 ** boxes.length; mask++) {
+            let L = 0,
+                T = 0,
+                R = sr.width,
+                B = sr.height,
+                m = mask;
+            for (const b of boxes) {
+                const side = m & 3;
+                m >>= 2;
+                if (side === 0) L = Math.max(L, b.x1);
+                else if (side === 1) R = Math.min(R, b.x0);
+                else if (side === 2) T = Math.max(T, b.y1);
+                else B = Math.min(B, b.y0);
+            }
+            const area = Math.max(0, R - L) * Math.max(0, B - T);
+            if (area > bestArea) (bestArea = area), (left = L), (top = T), (right = R), (bottom = B);
+        }
+    } else {
+        // fallback for an unexpected number of boxes: greedily carve the thinnest strip
+        for (const b of boxes) {
+            const cands = [
+                { s: 0, t: b.x1 },
+                { s: 1, t: sr.width - b.x0 },
+                { s: 2, t: b.y1 },
+                { s: 3, t: sr.height - b.y0 },
+            ];
+            const p = cands.reduce((a, c) => (c.t < a.t ? c : a));
+            if (p.s === 0) left = Math.max(left, b.x1);
+            else if (p.s === 1) right = Math.min(right, b.x0);
+            else if (p.s === 2) top = Math.max(top, b.y1);
+            else bottom = Math.min(bottom, b.y0);
+        }
+    }
+    // the bottom bar (a sibling of #stage, overlapping its lower edge) isn't an
+    // .overlay-box, so reserve its height explicitly — matters when every lower
+    // box is hidden and nothing else carves the bottom
+    const bar = document.getElementById("bottom-bar");
+    if (bar) {
+        const barTop = bar.getBoundingClientRect().top - sr.top;
+        if (barTop < bottom) bottom = barTop;
+    }
     left += M;
     top += M;
     right -= M;
