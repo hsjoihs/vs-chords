@@ -87,21 +87,7 @@
       <h2>Progression</h2>
       <input id="prog" type="text" value="CM7 → A7 → Dm7 → G7" spellcheck="false" autocomplete="off" readonly>
       <button class="primary" id="play" style="min-height: 3em; height: 3em; width: 7em; min-width: 7em;">▶ Play</button>
-      <div class="row" style="align-items: center; gap: 8px;">
-        <input id="tempo" type="range" min="0" max="1000" step="1" value="500" title="tempo" style="flex: 1; accent-color: var(--main); cursor: pointer;">
-        <span id="tempo-val" style="min-width: 62px; text-align: right; font-size: 12px; color: var(--muted);">100 BPM</span>
-      </div>
-      <div class="row">
-        <label class="toggle" style="margin: 0;"><input type="checkbox" id="tMetronome" checked><span>Metronome</span></label>
-      </div>
-      <div class="row">
-        <span class="fld" style="margin: 0 0 0 auto;">Time signature</span>
-        <input id="meterNum" type="number" min="1" max="16" step="1" value="4" title="beats per measure" style="width: 44px;">
-        <span>/</span>
-        <select id="meterDen" title="beat unit">
-          <option>2</option><option selected>4</option><option>8</option><option>16</option>
-        </select>
-      </div>
+      
       <div class="err" id="err"></div>
 
       <div class="row" id="transpose">
@@ -160,6 +146,29 @@
         </div>
       </div>
     </div>
+    <div id="tempo-metronome" class="overlay-box lower-box">
+      <div class="block">
+        <div class="title-and-hiding">
+          <h2>Tempo / Metronome</h2>
+          <button class="hide" title="Hide"><img src="image/icons/hide.svg" width="10.8" height="9" /></button>
+        </div>
+        <div class="row" style="align-items: center; gap: 8px;">
+          <input id="tempo" type="range" min="0" max="1000" step="1" value="500" title="tempo" style="flex: 1; accent-color: var(--main); cursor: pointer;">
+          <span id="tempo-val" style="min-width: 62px; text-align: right; font-size: 12px; color: var(--muted);">100 BPM</span>
+        </div>
+        <div class="row">
+          <label class="toggle" style="margin: 0;"><input type="checkbox" id="tMetronome" checked><span>Metronome</span></label>
+        </div>
+        <div class="row">
+          <span class="fld" style="margin: 0 0 0 auto;">Time signature</span>
+          <input id="meterNum" type="number" min="1" max="16" step="1" value="4" title="beats per measure" style="width: 44px;">
+          <span>/</span>
+          <select id="meterDen" title="beat unit">
+            <option>2</option><option selected>4</option><option>8</option><option>16</option>
+          </select>
+        </div>
+      </div>
+    </div>
     <div id="legends" class="overlay-box">
       <div class="block" style="border-top: 0 solid var(--line)">
         <h2>Inside a chord</h2>
@@ -195,6 +204,7 @@
   <div id="bottom-bar">
     <div class="box-visibility-toggler" id="toggle-box-of-tonnetz-and-coloring">Adjust Coloring 🎨</div>
     <div class="box-visibility-toggler" id="toggle-box-of-key-degree">🔑 Adjust Key / Degree 📐</div>
+    <div class="box-visibility-toggler" id="toggle-box-of-tempo-metronome">🕰️ Adjust Tempo / Metronome 🎚️</div>
   </div>
   <div id="left-bar" style="padding-top: 3px;">
     <img src="image/icons/cylinder.svg" title="Cylinder" width="45" height="45" style="opacity: 0.5; cursor: pointer;" />

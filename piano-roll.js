@@ -716,6 +716,7 @@ function setupUI() {
     // 0.5 s hover; the panel's own hide button hides it.
     wirePanelToggle("tonnetz-and-coloring", "toggle-box-of-tonnetz-and-coloring");
     wirePanelToggle("key-degree", "toggle-box-of-key-degree");
+    wirePanelToggle("tempo-metronome", "toggle-box-of-tempo-metronome");
 }
 
 window.addEventListener("DOMContentLoaded", () => {

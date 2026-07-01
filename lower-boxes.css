@@ -275,3 +275,18 @@ button.hide:hover {
     bottom: calc(var(--bottom-bar-height) + var(--box-spacing));
     height: 260px;
 }
+
+/******************
+ * tempo-metronome
+ ******************/
+
+#toggle-box-of-tempo-metronome {
+    right: 33px;
+}
+
+#tempo-metronome {
+    position: absolute;
+    right: var(--box-spacing);
+    bottom: calc(var(--bottom-bar-height) + var(--box-spacing));
+    height: 260px;
+}
