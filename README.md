@@ -46,7 +46,7 @@ Each chip has twelve pitch-class buttons and a spelling slider:
 ## The chord cylinder
 
 The progression is drawn on a 3-D cylinder. One octave wraps once around it; each
-chord is a ring of vertices joined by **every** interval; chords stack upward in
+chord is a ring of vertices joined by **every** interval; chords stack downward in
 time, and dashed spirals between layers trace the voice-leading.
 
 - The ring can be arranged **chromatically** or by the **circle of fifths** (a

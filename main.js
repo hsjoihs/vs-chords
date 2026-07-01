@@ -388,7 +388,7 @@ function dashSpiral(fn, color, radius, period, onFrac) {
 }
 
 // a small cone at the curve's midpoint, pointing along travel — an arrowhead
-// that shows the progression advancing up the cylinder
+// that shows the progression advancing down the cylinder
 function arrowCone(fn, color, {coneRadius, t}) {
     const mid = fn(t);
     const dir = new THREE.Vector3().subVectors(fn(0.54), fn(0.46)).normalize();
@@ -785,7 +785,7 @@ function build() {
     refreshAxisSystem();
     if (chords.length === 0) return;
     const totalH = (chords.length - 1) * LAYER;
-    camTarget.set(0, totalH / 2, 0);
+    camTarget.set(0, -totalH / 2, 0);
     if (camRad < 8) camRad = 26;
     applyCam();
 
@@ -795,7 +795,7 @@ function build() {
         shellGeo,
         new THREE.MeshBasicMaterial({ color: COLORS.scene.shell, transparent: true, opacity: 0.1, side: THREE.DoubleSide }),
     );
-    shell.position.y = totalH / 2;
+    shell.position.y = -totalH / 2;
     group.add(shell);
     for (let pc = 0; pc < 12; pc++) {
         const a = pcAngle(pc);
@@ -803,25 +803,25 @@ function build() {
             z = R * Math.sin(a);
         const railColor = pc % 2 === 0 ? COLORS.scene.railEven : COLORS.scene.railOdd;
         const g = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(x, -1, z),
-            new THREE.Vector3(x, totalH + 1, z),
+            new THREE.Vector3(x, 1, z),
+            new THREE.Vector3(x, -(totalH + 1), z),
         ]);
         group.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: railColor })));
         const lbl = makeLabel(NOTE_NAMES[pc], COLORS.label.rail, 1.0);
-        lbl.position.set(x * 1.12, -1.6, z * 1.12);
+        lbl.position.set(x * 1.12, 1.6, z * 1.12);
         group.add(lbl);
     }
-    // bottom ring outline
+    // starting ring outline (the top rim, where the progression begins)
     const ringPts = [];
     for (let i = 0; i <= 48; i++) {
         const a = (i / 48) * Math.PI * 2;
-        ringPts.push(new THREE.Vector3(R * Math.cos(a), -1, R * Math.sin(a)));
+        ringPts.push(new THREE.Vector3(R * Math.cos(a), 1, R * Math.sin(a)));
     }
     group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts), new THREE.LineBasicMaterial({ color: COLORS.scene.baseRing })));
 
-    // each chord layer
+    // each chord layer (later chords sit lower — time runs down the cylinder)
     chords.forEach((ch, idx) => {
-        const y = idx * LAYER;
+        const y = -idx * LAYER;
         const pcs = ch.pcs;
         // chord plane ring (thin)
         const rp = [];
@@ -882,8 +882,8 @@ function build() {
     // within a whole tone, styled by how far the note moves
     if (showConnections) {
         for (let i = 0; i < chords.length - 1; i++) {
-            const y0 = i * LAYER,
-                y1 = (i + 1) * LAYER;
+            const y0 = -i * LAYER,
+                y1 = -(i + 1) * LAYER;
             const A = chords[i].pcs,
                 B = chords[i + 1].pcs;
             voiceLeading(A, B, circleOfFifths).forEach((mv) => {
