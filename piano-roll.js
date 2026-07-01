@@ -25,6 +25,7 @@ const DEMO_VOICING = [
     ["D2", "C4", "D4", "F4", "A4"], // Dm7
     ["G2", "D4", "F4", "G4", "B4"], // G7
 ];
+let bpm = 120; // playback tempo (one chord per four beats); driven by the log tempo slider
 
 // build an editor chord from a parsed symbol, auto-choosing the spelling slider
 function chordFromParsed(c) {
@@ -281,6 +282,7 @@ function encodeState() {
         t: [showConsonant, showDissonant, showIntervalLabels, showConnections, accessibleColors].map((b) => (b ? 1 : 0)),
         ns: noteScheme,
         cs: chordScheme,
+        bp: Math.round(bpm),
         tr: tonicResidue,
         rm: relativeMode,
         at: analysisTonic,
@@ -327,6 +329,8 @@ function restoreState() {
         if (typeof st.ns === "string") noteScheme = st.ns;
         const nsRadio = document.querySelector(`input[name="noteScheme"][value="${noteScheme}"]`);
         if (nsRadio) nsRadio.checked = true;
+        if (st.bp != null) bpm = st.bp;
+        refreshTempoUI();
         if (st.tr != null) tonicResidue = st.tr;
         relativeMode = !!st.rm;
         tonicUserSet = !!st.ap;
@@ -586,10 +590,24 @@ function wirePanelToggle(panelId, togglerId) {
     if (hideBtn) hideBtn.addEventListener("click", () => setShown(false));
 }
 
+// reflect the current tempo (bpm) onto the log slider position and the readout
+function refreshTempoUI() {
+    const tempo = document.getElementById("tempo");
+    const tempoVal = document.getElementById("tempo-val");
+    if (tempo) tempo.value = Math.round(fractionFromBpm(bpm) * 1000);
+    if (tempoVal) tempoVal.textContent = Math.round(bpm) + " BPM";
+}
+
 function setupUI() {
     progEl = document.getElementById("prog");
 
-    document.getElementById("play").onclick = () => playVoicing(DEMO_VOICING);
+    document.getElementById("play").onclick = () => playVoicing(DEMO_VOICING, { chordDur: 60 * 4 /* four beats per chord */ / bpm });
+    document.getElementById("tempo").oninput = (e) => {
+        bpm = bpmFromFraction(Number(e.target.value) / 1000);
+        document.getElementById("tempo-val").textContent = Math.round(bpm) + " BPM";
+        scheduleUrlUpdate();
+    };
+    refreshTempoUI();
     document.getElementById("add").onclick = () => {
         chords.push(chordFromParsed(parseChord("C")));
         renderChips();

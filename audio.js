@@ -55,6 +55,21 @@
         return midiToFrequency(noteToMidi(name));
     }
 
+    /* ---- tempo (logarithmic slider) ----------------------------------
+     * The tempo slider is log-scaled: a slider fraction f ∈ [0, 1] maps to
+     *   bpm = MIN · (MAX / MIN)^f
+     * so equal slider movement is an equal *ratio* of tempo (which reads evenly),
+     * spanning TEMPO_MIN_BPM … TEMPO_MAX_BPM. fractionFromBpm is its inverse.
+     */
+    const TEMPO_MIN_BPM = 60;
+    const TEMPO_MAX_BPM = 240;
+    function bpmFromFraction(f) {
+        return TEMPO_MIN_BPM * Math.pow(TEMPO_MAX_BPM / TEMPO_MIN_BPM, f);
+    }
+    function fractionFromBpm(bpm) {
+        return Math.log(bpm / TEMPO_MIN_BPM) / Math.log(TEMPO_MAX_BPM / TEMPO_MIN_BPM);
+    }
+
     /* ---- Web Audio playback (browser only) ---------------------------- */
     let audioCtx = null;
     function getCtx() {
@@ -93,5 +108,14 @@
         return t;
     }
 
-    return { noteToMidi, midiToFrequency, noteToFrequency, playVoicing };
+    return {
+        noteToMidi,
+        midiToFrequency,
+        noteToFrequency,
+        playVoicing,
+        TEMPO_MIN_BPM,
+        TEMPO_MAX_BPM,
+        bpmFromFraction,
+        fractionFromBpm,
+    };
 });

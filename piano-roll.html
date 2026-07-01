@@ -22,6 +22,15 @@
   height: 100px !important;
 }
 
+#prog {
+  border-bottom: none;
+}
+
+#prog:focus {
+    outline: none;
+    border: none;
+}
+
 .piano-roll-grid { font-size: 10px; margin-left: 2px; border-spacing: 8px 0; margin-left: -6px; }
 .piano-roll-grid td { height: 10px; min-height: 10px; width: 45px; }
 .roll-note {background-color: #005242;}
@@ -77,7 +86,11 @@
     <div class="block">
       <h2>Progression</h2>
       <input id="prog" type="text" value="CM7 → A7 → Dm7 → G7" spellcheck="false" autocomplete="off" readonly>
-      <div class="row"><button class="primary" id="play">▶ Play</button></div>
+      <div class="row" style="align-items: center; gap: 8px;">
+        <button class="primary" id="play">▶ Play</button>
+        <input id="tempo" type="range" min="0" max="1000" step="1" value="500" title="tempo" style="flex: 1; accent-color: var(--main); cursor: pointer;">
+        <span id="tempo-val" style="min-width: 62px; text-align: right; font-size: 12px; color: var(--muted);">100 BPM</span>
+      </div>
       <div class="err" id="err"></div>
 
       <div class="row" id="transpose">
