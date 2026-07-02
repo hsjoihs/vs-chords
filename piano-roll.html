@@ -33,6 +33,7 @@
 
 .piano-roll-grid { font-size: 10px; margin-left: 2px; border-spacing: 8px 0; margin-left: -6px; }
 .piano-roll-grid td { height: 10px; min-height: 10px; width: 45px; }
+.piano-roll-grid td.interval { height: 10px; min-height: 10px; min-width: 25px; width: 25px; text-align: right; }
 .roll-note {background-color: #005242;}
 /* the currently-sounding chord: a translucent overlay tints the background (via
    an inset box-shadow, so a colored chord-name keeps its scheme hue underneath) */
@@ -43,42 +44,42 @@
   <div id="piano-roll">
           <div id="axis-system" style="padding-left: 4px;"></div>
       <table class="piano-roll-grid">
-        <tr><td class="roll-note">B4</td><td></td><td></td><td class="roll-note">B4</td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td class="roll-note">A4</td><td class="roll-note">A4</td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td class="roll-note">G4</td><td class="roll-note">G4</td><td></td><td class="roll-note">G4</td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td class="roll-note">F4</td><td class="roll-note">F4</td></tr>
-        <tr><td class="roll-note">E4</td><td class="roll-note">E4</td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td class="roll-note">D4</td><td class="roll-note">D4</td></tr>
-        <tr><td>&nbsp;</td><td class="roll-note">C#4</td><td></td><td></td></tr>
-        <tr><td class="roll-note">C4</td><td></td><td class="roll-note">C4</td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td class="roll-note">A2</td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td class="roll-note">G2</td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td class="roll-note">D2</td><td></td></tr>
-        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>
-        <tr><td class="roll-note">C2</td><td></td><td></td><td></td></tr>
+        <tr><td class="interval">M7</td><td class="roll-note">B4</td><td class="interval"></td><td></td><td></td><td class="roll-note">B4</td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval">R</td><td class="roll-note">A4</td><td class="roll-note">A4</td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval">P5</td><td class="roll-note">G4</td><td class="interval">m7</td><td class="roll-note">G4</td><td></td><td class="roll-note">G4</td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td class="roll-note">F4</td><td class="roll-note">F4</td></tr>
+        <tr><td class="interval">M3</td><td class="roll-note">E4</td><td class="interval">P5</td><td class="roll-note">E4</td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td class="roll-note">D4</td><td class="roll-note">D4</td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval">M3</td><td class="roll-note">C#4</td><td></td><td></td></tr>
+        <tr><td class="interval">R</td><td class="roll-note">C4</td><td class="interval"></td><td></td><td class="roll-note">C4</td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval">R</td><td class="roll-note">A2</td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td class="roll-note">G2</td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td class="roll-note">D2</td><td></td></tr>
+        <tr><td class="interval"></td><td>&nbsp;</td><td class="interval"></td><td></td><td></td><td></td></tr>
+        <tr><td class="interval">R</td><td class="roll-note">C2</td><td class="interval"></td><td></td><td></td><td></td></tr>
 
       </table>
   </div>
@@ -203,7 +204,6 @@
         <div class="legend">
           <table class="intervals">
             <tr><td><u style="border-color:#999999"></u></td><td>held note</td></tr>
-            <tr><td><i class="diagonal-cross-stripes" style="width: 22px; height: 15px; display: inline-block; border-top: none"></i></td><td>pair of held notes</td></tr>
             <tr id="conn-single-step"><td><u style="border-color:var(--semitone);border-left-style:dotted"></u></td><td>semitone</td></tr>
             <tr><td><u style="border-color: var(--whole);border-left-style:dashed;"></u></td><td>whole tone</td></tr>
           </table>
