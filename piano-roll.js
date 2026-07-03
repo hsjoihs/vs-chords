@@ -356,15 +356,19 @@ function rollNoteSvg(x, note, ghost) {
     return g + "</g>";
 }
 
-// an I-beam (vertical stem + short caps) bracketing a dissonant pair, in the
-// gutter just right of the chord's boxes
-function rollIbeamSvg(x, y1, y2, col) {
-    const bx = x + ROLL.boxW / 2,
-        cap = 5;
+// I-beam geometry: the stem sits just right of the note boxes; when a chord has
+// several beams they stack rightwards so their caps don't collide.
+const BEAM_STEM_GAP = 5, // stem x, measured right of the note-box right edge
+    BEAM_CAP = 4, // half-length of the horizontal caps
+    BEAM_STEP = 12; // extra x per additional beam in the same chord
+
+// an I-beam (vertical stem + short caps) bracketing a dissonant pair, drawn with
+// its stem at `bx` (already positioned in the gutter right of the boxes)
+function rollIbeamSvg(bx, y1, y2, col) {
     return (
         `<line x1="${bx}" y1="${y1}" x2="${bx}" y2="${y2}" stroke="${col}" stroke-width="1.3"/>` +
-        `<line x1="${bx - cap}" y1="${y1}" x2="${bx + cap}" y2="${y1}" stroke="${col}" stroke-width="1.3"/>` +
-        `<line x1="${bx - cap}" y1="${y2}" x2="${bx + cap}" y2="${y2}" stroke="${col}" stroke-width="1.3"/>`
+        `<line x1="${bx - BEAM_CAP}" y1="${y1}" x2="${bx + BEAM_CAP}" y2="${y1}" stroke="${col}" stroke-width="1.3"/>` +
+        `<line x1="${bx - BEAM_CAP}" y1="${y2}" x2="${bx + BEAM_CAP}" y2="${y2}" stroke="${col}" stroke-width="1.3"/>`
     );
 }
 
@@ -389,6 +393,31 @@ function renderPianoRoll() {
             }
         return { voiced, ghosts };
     });
+
+    // dissonant-pair I-beams per chord, each assigned a stem x in the right gutter
+    // (stacked rightwards when a chord has more than one)
+    const beamsByChord = columns.map((c) => {
+        const notes = c.voiced,
+            beams = [];
+        for (let a = 0; a < notes.length; a++)
+            for (let b = a + 1; b < notes.length; b++) {
+                const gap = Math.abs(notes[a].midi - notes[b].midi);
+                if (DISSONANT_GAPS.has(gap))
+                    beams.push({ lo: Math.min(notes[a].midi, notes[b].midi), hi: Math.max(notes[a].midi, notes[b].midi), col: DISSONANT_COLORS[gap] });
+            }
+        beams.forEach((beam, k) => (beam.stem = ROLL.boxW + BEAM_STEM_GAP + k * BEAM_STEP)); // x, relative to the box left
+        return beams;
+    });
+    // where an arrow leaving chord i, from a note at `midi`, should start: normally
+    // just right of the box, but shifted clear of any I-beam it would otherwise
+    // cross (i.e. any beam whose C♯4–G4-style interval contains the note)
+    function arrowStartX(i, midi) {
+        const boxRight = rollBoxX(i) + ROLL.boxW;
+        let x = boxRight + 2;
+        for (const beam of beamsByChord[i])
+            if (midi >= beam.lo && midi <= beam.hi) x = Math.max(x, rollBoxX(i) + beam.stem + BEAM_CAP + 2);
+        return x;
+    }
 
     const width = ROLL.padLeft + (N - 1) * ROLL.colW + ROLL.boxW + ROLL.gutter;
     const height = 2 * ROLL.padTop + (ROLL_MIDI_HI - ROLL_MIDI_LO + 1) * ROLL.rowH;
@@ -417,8 +446,7 @@ function renderPianoRoll() {
     for (let i = 0; i < N; i++) for (const gh of columns[i].ghosts) s += rollNoteSvg(rollBoxX(i), gh, true);
     
     for (let i = 0; i < N - 1; i++) {
-        const x0 = rollBoxX(i) + ROLL.boxW,
-            x1 = rollBoxX(i + 1);
+        const x1 = rollBoxX(i + 1);
         for (const a of columns[i].voiced)
             for (const b of columns[i + 1].voiced) {
                 const d = Math.abs(a.midi - b.midi);
@@ -431,20 +459,13 @@ function renderPianoRoll() {
                         : d === 1
                           ? { kind: "semitone", col: "var(--semitone)", w: 1.5, dash: ' stroke-dasharray="0.1 3" stroke-linecap="round"' }
                           : { kind: "whole", col: "var(--whole)", w: 1.5, dash: ' stroke-dasharray="5 3"' };
-                s += `<line x1="${x0 + 2}" y1="${rollPitchY(a.midi)}" x2="${x1 - 2}" y2="${rollPitchY(b.midi)}" stroke="${st.col}" stroke-width="${st.w}" stroke-opacity="0.9"${st.dash} marker-end="url(#roll-arrow-${st.kind})"/>`;
+                s += `<line x1="${arrowStartX(i, a.midi)}" y1="${rollPitchY(a.midi)}" x2="${x1 - 2}" y2="${rollPitchY(b.midi)}" stroke="${st.col}" stroke-width="${st.w}" stroke-opacity="0.9"${st.dash} marker-end="url(#roll-arrow-${st.kind})"/>`;
             }
     }
     for (let i = 0; i < N; i++) for (const v of columns[i].voiced) s += rollNoteSvg(rollBoxX(i), v, false);
 
-    for (let i = 0; i < N; i++) {
-        const notes = columns[i].voiced;
-        for (let a = 0; a < notes.length; a++)
-            for (let b = a + 1; b < notes.length; b++) {
-                const gap = Math.abs(notes[a].midi - notes[b].midi);
-                if (DISSONANT_GAPS.has(gap))
-                    s += rollIbeamSvg(rollBoxX(i), rollPitchY(notes[a].midi), rollPitchY(notes[b].midi), DISSONANT_COLORS[gap]);
-            }
-    }
+    for (let i = 0; i < N; i++)
+        for (const beam of beamsByChord[i]) s += rollIbeamSvg(rollBoxX(i) + beam.stem, rollPitchY(beam.hi), rollPitchY(beam.lo), beam.col);
 
     host.innerHTML = s + "</svg>";
 }
