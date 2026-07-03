@@ -18,12 +18,14 @@
 let chords = [];
 
 // a fixed voicing (with octaves) for the demo progression CM7 → A7 → Dm7 → G7.
-// Chords here carry actual pitches, unlike the octave-free ch.pcs elsewhere.
+// Each chord carries its `root` (a pitch letter/accidental, no octave) plus the
+// actual sounding `notes`, so the piano roll can label every note by its degree
+// (R, M3, m7, …) above that root — information the octave-free ch.pcs lacks.
 const DEMO_VOICING = [
-    ["C2", "C4", "E4", "G4", "B4"], // CM7
-    ["A2", "C#4", "E4", "G4", "A4"], // A7
-    ["D2", "C4", "D4", "F4", "A4"], // Dm7
-    ["G2", "D4", "F4", "G4", "B4"], // G7
+    { root: "C", notes: ["C2", "C4", "E4", "G4", "B4"] }, // CM7
+    { root: "A", notes: ["A2", "C#4", "E4", "G4", "A4"] }, // A7
+    { root: "D", notes: ["D2", "C4", "D4", "F4", "A4"] }, // Dm7
+    { root: "G", notes: ["G2", "D4", "F4", "G4", "B4"] }, // G7
 ];
 let bpm = 120; // playback tempo (one chord per bar line); driven by the log tempo slider
 let metronomeOn = true; // click on every beat during playback
@@ -257,6 +259,70 @@ function refreshAxisSystem() {
     };
     document.getElementById("tonicPrev").onclick = () => shiftTonic(-1);
     document.getElementById("tonicNext").onclick = () => shiftTonic(1);
+}
+
+/* ====================== piano roll ======================
+ * Render DEMO_VOICING as a piano-roll grid: one table row per semitone (highest
+ * sounding note at the top, lowest at the bottom), one column-pair per chord.
+ * Each note a chord sounds shows a colored box with its note name, preceded by
+ * the note's degree above that chord's root (R, M3, m7, …). Nothing here is
+ * hard-coded — the rows, the pitch span, and the labels all follow the voicing.
+ */
+
+// major/perfect size (semitones) of each diatonic degree, indexed 0..6 = unison..7th
+const DIATONIC_SEMITONES = [0, 2, 4, 5, 7, 9, 11];
+const PERFECT_DEGREES = new Set([0, 3, 4]); // unison / 4th / 5th take P (not M/m)
+const LETTER_ORDER = "CDEFGAB";
+
+// pitch class (0..11) of a note name; the octave is optional ("C", "A♭", "C#4")
+function pitchClassOf(name) {
+    return ((noteToMidi(/-?\d/.test(name) ? name : name + "0") % 12) + 12) % 12;
+}
+
+// degree of `note` above chord root `root`, e.g. ("C","E4")→"M3", ("A","G4")→"m7".
+// The letter distance fixes the degree number and the semitone gap fixes the
+// quality, so enharmonic spelling is honoured (D→F reads m3, not ♯2).
+function degreeAboveRoot(root, note) {
+    const step = (LETTER_ORDER.indexOf(note[0].toUpperCase()) - LETTER_ORDER.indexOf(root[0].toUpperCase()) + 7) % 7;
+    if (step === 0 && pitchClassOf(note) === pitchClassOf(root)) return "R"; // the root itself
+    let diff = (((pitchClassOf(note) - pitchClassOf(root)) % 12) + 12) % 12 - DIATONIC_SEMITONES[step];
+    diff = (((diff + 6) % 12) + 12) % 12 - 6; // fold into −6..+5 (sharp side positive)
+    let quality;
+    if (PERFECT_DEGREES.has(step)) quality = diff === 0 ? "P" : diff > 0 ? "A".repeat(diff) : "d".repeat(-diff);
+    else quality = diff === 0 ? "M" : diff === -1 ? "m" : diff > 0 ? "A".repeat(diff) : "d".repeat(-diff - 1);
+    return quality + (step + 1);
+}
+
+// (re)build the grid from DEMO_VOICING; the voicing is fixed, so this runs once.
+function renderPianoRoll() {
+    const table = document.getElementById("piano-roll-grid");
+    if (!table) return;
+    // per chord: MIDI number → { name, label }, plus the overall pitch span
+    const perChord = DEMO_VOICING.map((chord) => {
+        const m = new Map();
+        for (const note of chord.notes) m.set(noteToMidi(note), { name: note, label: degreeAboveRoot(chord.root, note) });
+        return m;
+    });
+    let hi = -Infinity,
+        lo = Infinity;
+    for (const m of perChord)
+        for (const midi of m.keys()) {
+            hi = Math.max(hi, midi);
+            lo = Math.min(lo, midi);
+        }
+    let html = "";
+    for (let midi = hi; midi >= lo; midi--) {
+        // one row per semitone; &nbsp; keeps empty cells at full row height
+        html += "<tr>";
+        for (const m of perChord) {
+            const cell = m.get(midi);
+            html += cell
+                ? `<td class="interval">${escapeHtml(cell.label)}</td><td class="roll-note">${escapeHtml(cell.name)}</td>`
+                : `<td class="interval"></td><td>&nbsp;</td>`;
+        }
+        html += "</tr>";
+    }
+    table.innerHTML = html;
 }
 
 // refresh the DOM views (the axis-system panel + the connections list) after any
@@ -677,22 +743,25 @@ function playFrom(offset) {
     playBpm = bpm;
     playMeter = meterNum;
     positionSec = offset;
-    playVoicing(DEMO_VOICING, {
-        bpm,
-        beatsPerChord: meterNum,
-        metronome: metronomeOn,
-        meterNumerator: meterNum,
-        offset,
-        onEnd: (reason) => {
-            document.getElementById("play").textContent = "▶ Play";
-            stopPositionLoop();
-            if (reason === "ended") {
-                positionSec = 0; // natural end → cursor back to start
-                refreshTransportUI();
-                highlightChord(-1);
-            }
+    playVoicing(
+        DEMO_VOICING.map((c) => c.notes),
+        {
+            bpm,
+            beatsPerChord: meterNum,
+            metronome: metronomeOn,
+            meterNumerator: meterNum,
+            offset,
+            onEnd: (reason) => {
+                document.getElementById("play").textContent = "▶ Play";
+                stopPositionLoop();
+                if (reason === "ended") {
+                    positionSec = 0; // natural end → cursor back to start
+                    refreshTransportUI();
+                    highlightChord(-1);
+                }
+            },
         },
-    });
+    );
     document.getElementById("play").textContent = "⏸ Pause";
     stopPositionLoop();
     posRaf = requestAnimationFrame(positionLoop);
@@ -700,6 +769,7 @@ function playFrom(offset) {
 
 function setupUI() {
     progEl = document.getElementById("prog");
+    renderPianoRoll(); // draw the piano-roll grid from the fixed voicing (once)
 
     document.getElementById("play").onclick = () => {
         if (isPlaying()) {
