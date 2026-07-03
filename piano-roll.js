@@ -261,12 +261,22 @@ function refreshAxisSystem() {
     document.getElementById("tonicNext").onclick = () => shiftTonic(1);
 }
 
-/* ====================== piano roll ======================
- * Render DEMO_VOICING as a piano-roll grid: one table row per semitone (highest
- * sounding note at the top, lowest at the bottom), one column-pair per chord.
- * Each note a chord sounds shows a colored box with its note name, preceded by
- * the note's degree above that chord's root (R, M3, m7, …). Nothing here is
- * hard-coded — the rows, the pitch span, and the labels all follow the voicing.
+/* ====================== piano roll (SVG) ======================
+ * The piano roll is one SVG: pitch on the y-axis (C2 at the bottom, C6 at the
+ * top, one row per semitone), chords laid out left→right on the x-axis.
+ *
+ *   • Each sounded note is a solid box carrying its name and its degree above the
+ *     chord root (R, M3, m7, …). Every other octave of a chord tone within the
+ *     C2–C6 window is drawn faintly — ghost slots where an alternative voicing
+ *     could be toggled in (the click-to-toggle interaction is a later pass).
+ *   • Between adjacent chords a coloured arrow marks each voice that moves by at
+ *     most a whole tone — held (grey), semitone (green), whole tone (orange).
+ *     The cylinder is unwrapped here, so closeness is by real pitch: B4→C♯4 is a
+ *     ten-semitone leap (no arrow), not the whole tone it looks like on the ring.
+ *   • Within a chord a red I-beam brackets each harshly dissonant pair — a minor
+ *     2nd (1), a tritone (6) or a minor 9th (13) — but not the mellow major 7th (11).
+ *
+ * Nothing is hard-coded: the rows, the pitch span and every label follow the voicing.
  */
 
 // major/perfect size (semitones) of each diatonic degree, indexed 0..6 = unison..7th
@@ -293,36 +303,119 @@ function degreeAboveRoot(root, note) {
     return quality + (step + 1);
 }
 
-// (re)build the grid from DEMO_VOICING; the voicing is fixed, so this runs once.
+// the C2–C6 window shown on the pitch axis, and the geometry of the drawing
+const ROLL_MIDI_LO = 36, // C2
+    ROLL_MIDI_HI = 84; // C6
+const ROLL = { rowH: 10, boxW: 46, boxH: 8, padTop: 8, padLeft: 56, colW: 122, gutter: 24 };
+// absolute semitone gaps that clash like a minor second yet whose consonant
+// octave-complements do not: m2 (1), tritone (6), m9 (13) — note 11 (M7) is absent.
+const DISSONANT_GAPS = new Set([1, 6, 13]);
+const DISSONANT_COLORS = {1: "var(--semitone)", 6: "var(--tritone)", 13: "var(--semitone)"}
+const NOOCT_RE = /-?\d+$/; // trailing octave digits of a note name
+
+// y of a pitch's row centre (higher pitch → smaller y) and x of a chord's box column
+function rollPitchY(midi) {
+    return ROLL.padTop + (ROLL_MIDI_HI - midi) * ROLL.rowH + ROLL.rowH / 2;
+}
+function rollBoxX(i) {
+    return ROLL.padLeft + i * ROLL.colW;
+}
+
+// one note box: solid when sounded, faint when a ghost slot; ghosts carry data-*
+// so a later pass can turn them into clickable voicing toggles.
+function rollNoteSvg(x, note, ghost) {
+    const y = rollPitchY(note.midi);
+    const top = y - ROLL.boxH / 2;
+    let g = ghost ? `<g class="roll-ghost" data-midi="${note.midi}">` : "<g>";
+    g += `<rect x="${x}" y="${top}" width="${ROLL.boxW}" height="${ROLL.boxH}" rx="1.5" fill="#005242" fill-opacity="${ghost ? 0.16 : 1}"${ghost ? ' stroke="#008a6e" stroke-opacity="0.3"' : ""}/>`;
+    g += `<text x="${x + ROLL.boxW / 12}" y="${y}" fill="${ghost ? "#bfeee0" : "#eafff8"}" fill-opacity="${ghost ? 0.5 : 1}" text-anchor="start" dominant-baseline="central">${escapeHtml(note.name)}</text>`;
+    if (!ghost) g += `<text x="${x + ROLL.boxW * 11 / 12}" y="${y}" fill="#9fb8b0" text-anchor="end" dominant-baseline="central">${escapeHtml(note.label)}</text>`;
+    return g + "</g>";
+}
+
+// an I-beam (vertical stem + short caps) bracketing a dissonant pair, in the
+// gutter just right of the chord's boxes
+function rollIbeamSvg(x, y1, y2, col) {
+    const bx = x + ROLL.boxW / 2,
+        cap = 5;
+    return (
+        `<line x1="${bx}" y1="${y1}" x2="${bx}" y2="${y2}" stroke="${col}" stroke-width="1.3"/>` +
+        `<line x1="${bx - cap}" y1="${y1}" x2="${bx + cap}" y2="${y1}" stroke="${col}" stroke-width="1.3"/>` +
+        `<line x1="${bx - cap}" y1="${y2}" x2="${bx + cap}" y2="${y2}" stroke="${col}" stroke-width="1.3"/>`
+    );
+}
+
+// (re)build the SVG from DEMO_VOICING; the voicing is fixed, so this runs once.
 function renderPianoRoll() {
-    const table = document.getElementById("piano-roll-grid");
-    if (!table) return;
-    // per chord: MIDI number → { name, label }, plus the overall pitch span
-    const perChord = DEMO_VOICING.map((chord) => {
-        const m = new Map();
-        for (const note of chord.notes) m.set(noteToMidi(note), { name: note, label: degreeAboveRoot(chord.root, note) });
-        return m;
+    const host = document.getElementById("piano-roll-grid");
+    if (!host) return;
+    const N = DEMO_VOICING.length;
+    // per chord: the sounded notes plus the ghost slots (the same chord-tone pitch
+    // classes, spelled identically, in the C2–C6 window's other octaves)
+    const columns = DEMO_VOICING.map((chord) => {
+        const voiced = chord.notes.map((name) => ({ midi: noteToMidi(name), name, label: degreeAboveRoot(chord.root, name) }));
+        const voicedMidi = new Set(voiced.map((v) => v.midi));
+        const spellings = [...new Set(chord.notes.map((n) => n.replace(NOOCT_RE, "")))]; // letter+accidental
+        const ghosts = [];
+        for (const s of spellings)
+            for (let oct = 0; oct <= 8; oct++) {
+                const name = s + oct,
+                    midi = noteToMidi(name);
+                if (midi < ROLL_MIDI_LO || midi > ROLL_MIDI_HI || voicedMidi.has(midi)) continue;
+                ghosts.push({ midi, name, label: degreeAboveRoot(chord.root, name) });
+            }
+        return { voiced, ghosts };
     });
-    let hi = -Infinity,
-        lo = Infinity;
-    for (const m of perChord)
-        for (const midi of m.keys()) {
-            hi = Math.max(hi, midi);
-            lo = Math.min(lo, midi);
-        }
-    let html = "";
-    for (let midi = hi; midi >= lo; midi--) {
-        // one row per semitone; &nbsp; keeps empty cells at full row height
-        html += "<tr>";
-        for (const m of perChord) {
-            const cell = m.get(midi);
-            html += cell
-                ? `<td class="interval">${escapeHtml(cell.label)}</td><td class="roll-note">${escapeHtml(cell.name)}</td>`
-                : `<td class="interval"></td><td>&nbsp;</td>`;
-        }
-        html += "</tr>";
+
+    const width = ROLL.padLeft + (N - 1) * ROLL.colW + ROLL.boxW + ROLL.gutter;
+    const height = 2 * ROLL.padTop + (ROLL_MIDI_HI - ROLL_MIDI_LO + 1) * ROLL.rowH;
+    let s = `<svg id="piano-roll-svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" font-size="9">`;
+
+    // one arrowhead marker per motion colour
+    s += "<defs>";
+    for (const [id, col] of [
+        ["held", "#999"],
+        ["semitone", "var(--semitone)"],
+        ["whole", "var(--whole)"],
+    ])
+        s += `<marker id="roll-arrow-${id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${col}"/></marker>`;
+    s += "</defs>";
+
+    // faint octave gridlines + a pitch label at each C
+    for (let midi = ROLL_MIDI_LO; midi <= ROLL_MIDI_HI; midi += 12) {
+        const y = rollPitchY(midi);
+        s += `<line x1="${ROLL.padLeft - 8}" y1="${y}" x2="${width - 8}" y2="${y}" stroke="#fff" stroke-opacity="0.06"/>`;
+        s += `<text x="6" y="${y}" fill="#fff" fill-opacity="0.4" dominant-baseline="central">C${midi / 12 - 1}</text>`;
     }
-    table.innerHTML = html;
+
+    // ghost slots underneath, then arrows, then the solid notes, then I-beams on top
+    for (let i = 0; i < N; i++) for (const gh of columns[i].ghosts) s += rollNoteSvg(rollBoxX(i), gh, true);
+    
+    for (let i = 0; i < N - 1; i++) {
+        const x0 = rollBoxX(i) + ROLL.boxW,
+            x1 = rollBoxX(i + 1);
+        for (const a of columns[i].voiced)
+            for (const b of columns[i + 1].voiced) {
+                const d = Math.abs(a.midi - b.midi);
+                if (d > 2) continue; // only held / semitone / whole-tone steps get an arrow
+                const kind = d === 0 ? "held" : d === 1 ? "semitone" : "whole",
+                    col = d === 0 ? "#999" : d === 1 ? "var(--semitone)" : "var(--whole)";
+                s += `<line x1="${x0 + 2}" y1="${rollPitchY(a.midi)}" x2="${x1 - 2}" y2="${rollPitchY(b.midi)}" stroke="${col}" stroke-width="1.4" stroke-opacity="0.9" marker-end="url(#roll-arrow-${kind})"/>`;
+            }
+    }
+    for (let i = 0; i < N; i++) for (const v of columns[i].voiced) s += rollNoteSvg(rollBoxX(i), v, false);
+
+    for (let i = 0; i < N; i++) {
+        const notes = columns[i].voiced;
+        for (let a = 0; a < notes.length; a++)
+            for (let b = a + 1; b < notes.length; b++) {
+                const gap = Math.abs(notes[a].midi - notes[b].midi);
+                if (DISSONANT_GAPS.has(gap))
+                    s += rollIbeamSvg(rollBoxX(i), rollPitchY(notes[a].midi), rollPitchY(notes[b].midi), DISSONANT_COLORS[gap]);
+            }
+    }
+
+    host.innerHTML = s + "</svg>";
 }
 
 // refresh the DOM views (the axis-system panel + the connections list) after any

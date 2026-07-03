@@ -288,5 +288,5 @@ button.hide:hover {
     position: absolute;
     right: var(--box-spacing);
     bottom: calc(var(--bottom-bar-height) + var(--box-spacing));
-    height: 260px;
+    height: 140px;
 }
