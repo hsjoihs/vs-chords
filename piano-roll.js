@@ -371,14 +371,16 @@ function renderPianoRoll() {
     const height = 2 * ROLL.padTop + (ROLL_MIDI_HI - ROLL_MIDI_LO + 1) * ROLL.rowH;
     let s = `<svg id="piano-roll-svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" font-size="9">`;
 
-    // one arrowhead marker per motion colour
+    // one arrowhead marker per motion colour. markerUnits="userSpaceOnUse" keeps
+    // every head the same absolute size — otherwise the default (strokeWidth) would
+    // blow up the head on the thick held line.
     s += "<defs>";
     for (const [id, col] of [
         ["held", "#999"],
         ["semitone", "var(--semitone)"],
         ["whole", "var(--whole)"],
     ])
-        s += `<marker id="roll-arrow-${id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${col}"/></marker>`;
+        s += `<marker id="roll-arrow-${id}" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${col}"/></marker>`;
     s += "</defs>";
 
     // faint octave gridlines + a pitch label at each C
@@ -398,9 +400,15 @@ function renderPianoRoll() {
             for (const b of columns[i + 1].voiced) {
                 const d = Math.abs(a.midi - b.midi);
                 if (d > 2) continue; // only held / semitone / whole-tone steps get an arrow
-                const kind = d === 0 ? "held" : d === 1 ? "semitone" : "whole",
-                    col = d === 0 ? "#999" : d === 1 ? "var(--semitone)" : "var(--whole)";
-                s += `<line x1="${x0 + 2}" y1="${rollPitchY(a.midi)}" x2="${x1 - 2}" y2="${rollPitchY(b.midi)}" stroke="${col}" stroke-width="1.4" stroke-opacity="0.9" marker-end="url(#roll-arrow-${kind})"/>`;
+                // match the cylinder / legend: held = thick solid, whole tone =
+                // dashed, semitone = dotted (a round-capped fine dash reads as dots)
+                const st =
+                    d === 0
+                        ? { kind: "held", col: "#999", w: 2.6, dash: "" }
+                        : d === 1
+                          ? { kind: "semitone", col: "var(--semitone)", w: 1.5, dash: ' stroke-dasharray="0.1 3" stroke-linecap="round"' }
+                          : { kind: "whole", col: "var(--whole)", w: 1.5, dash: ' stroke-dasharray="5 3"' };
+                s += `<line x1="${x0 + 2}" y1="${rollPitchY(a.midi)}" x2="${x1 - 2}" y2="${rollPitchY(b.midi)}" stroke="${st.col}" stroke-width="${st.w}" stroke-opacity="0.9"${st.dash} marker-end="url(#roll-arrow-${st.kind})"/>`;
             }
     }
     for (let i = 0; i < N; i++) for (const v of columns[i].voiced) s += rollNoteSvg(rollBoxX(i), v, false);
