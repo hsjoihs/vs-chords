@@ -313,15 +313,46 @@ function rollBoxX(i) {
     return ROLL.padLeft + i * ROLL.colW;
 }
 
+// the circle-of-fifths hue index of a pitch class (C=0, G=1, D=2, …): (7·pc) mod 12
+function fifthsIndex(pc) {
+    return (((7 * (((pc % 12) + 12) % 12)) % 12) + 12) % 12;
+}
+// the fill colour of a note box, following the "colour pitch classes by" scheme:
+//   axis   → the harmonic-function colours (which the accessible CSS vars remap),
+//   fifths → the hue wheel (red-green-safe oklab in accessible mode),
+//   none   → the neutral teal. Matches the tonnetz/note colouring elsewhere.
+function rollNoteFill(midi) {
+    const pc = ((midi % 12) + 12) % 12;
+    if (noteScheme === "axis") return `var(--${pcFunction(pc, tonicResidue)}-color)`;
+    if (noteScheme === "fifths") {
+        const theta = fifthsIndex(pc) * 30; // degrees around the wheel
+        return accessibleColors
+            ? `oklab(calc(67.5% + 18% * cos(${theta}deg)) 0 calc(0.13 * sin(${theta}deg)))`
+            : `oklch(70% 0.12 ${theta}deg)`;
+    }
+    return "#005242"; // "nothing": the app's neutral teal
+}
+
 // one note box: solid when sounded, faint when a ghost slot; ghosts carry data-*
 // so a later pass can turn them into clickable voicing toggles.
 function rollNoteSvg(x, note, ghost) {
     const y = rollPitchY(note.midi);
     const top = y - ROLL.boxH / 2;
+    const col = rollNoteFill(note.midi); // set via inline style so var()/oklch parse
+    const pc = ((note.midi % 12) + 12) % 12;
+    // the axis/fifths fills are calibrated (like main.js) for pure-white text, so
+    // on a coloured box both the name and the degree go white — grey would blend
+    // into e.g. the tonic green. The exception: the brightest accessible fifths
+    // fills, C/F/G ("bright-cfg" in main.js), need black to stay readable. Faint
+    // ghost boxes are mostly dark background, so they keep light text.
+    const coloured = noteScheme !== "none";
+    const blackText = noteScheme === "fifths" && accessibleColors && (pc === 0 || pc === 5 || pc === 7);
+    const nameFill = ghost ? "#bfeee0" : blackText ? "#000" : coloured ? "#fff" : "#eafff8";
+    const degFill = blackText ? "#000" : coloured ? "#fff" : "#9fb8b0";
     let g = ghost ? `<g class="roll-ghost" data-midi="${note.midi}">` : "<g>";
-    g += `<rect x="${x}" y="${top}" width="${ROLL.boxW}" height="${ROLL.boxH}" rx="1.5" fill="#005242" fill-opacity="${ghost ? 0.16 : 1}"${ghost ? ' stroke="#008a6e" stroke-opacity="0.3"' : ""}/>`;
-    g += `<text x="${x + ROLL.boxW / 12}" y="${y}" fill="${ghost ? "#bfeee0" : "#eafff8"}" fill-opacity="${ghost ? 0.5 : 1}" text-anchor="start" dominant-baseline="central">${escapeHtml(note.name)}</text>`;
-    if (!ghost) g += `<text x="${x + ROLL.boxW * 11 / 12}" y="${y}" fill="#9fb8b0" text-anchor="end" dominant-baseline="central">${escapeHtml(note.label)}</text>`;
+    g += `<rect x="${x}" y="${top}" width="${ROLL.boxW}" height="${ROLL.boxH}" rx="1.5" style="fill:${col}${ghost ? ";stroke:" + col : ""}" fill-opacity="${ghost ? 0.16 : 1}"${ghost ? ' stroke-opacity="0.45"' : ""}/>`;
+    g += `<text x="${x + ROLL.boxW / 12}" y="${y}" fill="${nameFill}" fill-opacity="${ghost ? 0.5 : 1}" text-anchor="start" dominant-baseline="central">${escapeHtml(note.name)}</text>`;
+    if (!ghost) g += `<text x="${x + ROLL.boxW * 11 / 12}" y="${y}" fill="${degFill}" text-anchor="end" dominant-baseline="central">${escapeHtml(note.label)}</text>`;
     return g + "</g>";
 }
 
@@ -418,10 +449,12 @@ function renderPianoRoll() {
     host.innerHTML = s + "</svg>";
 }
 
-// refresh the DOM views (the chord-name row + colouring controls) after any
-// change to the chords, coloring, or key.
+// refresh the DOM views (the chord-name row + colouring controls, and the piano
+// roll — whose note colours follow the scheme) after any change to the chords,
+// coloring, or key.
 function build() {
     refreshAxisSystem();
+    renderPianoRoll();
     scheduleUrlUpdate();
 }
 
@@ -821,7 +854,6 @@ function playFrom(offset) {
 
 function setupUI() {
     progEl = document.getElementById("prog");
-    renderPianoRoll(); // draw the piano-roll grid from the fixed voicing (once)
 
     document.getElementById("play").onclick = () => {
         if (isPlaying()) {
