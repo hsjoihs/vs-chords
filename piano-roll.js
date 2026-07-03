@@ -52,8 +52,7 @@ function noteName(ch, pc) {
 let showConsonant = true, // m3, M3, P4/P5 interior intervals
     showDissonant = true, // H, W, TT interior intervals
     showIntervalLabels = true,
-    showConnections = true,
-    circleOfFifths = false; // chords are read on a chromatic ring here
+    showConnections = true;
 
 /* ====================== axis-system panel (harmonic function + tonnetz) ======================
  * A crude harmonic-function approximation (see theory-pitchclass.js): the chord
@@ -172,20 +171,6 @@ function sqNameAttrs(ch) {
     return { cls: "generic", style: ` style="background:linear-gradient(140deg,${stops});color:#fff"` };
 }
 
-// the circle-of-fifths hue index of a pitch class (C=0, G=1, D=2, …), keyed to
-// the `.note` CSS rules in musical-colors.css so the tonnetz cells and connection
-// chips match; deliberately independent of any ring arrangement.
-function fifthsIndex(pc) {
-    return ((7 * (((pc % 12) + 12) % 12)) % 12 + 12) % 12; // (7·pc) mod 12
-}
-// HTML for a colored note name in the connections box, matching the active scheme
-function noteChip(name, pc) {
-    const esc = escapeHtml(name);
-    if (noteScheme === "axis") return `<span class="note-chip fn-${pcFunction(pc, tonicResidue)}">${esc}</span>`;
-    if (noteScheme === "fifths") return `<span class="note-chip note-text" style="--n:${fifthsIndex(pc)}">${esc}</span>`;
-    return `<span class="note-chip">${esc}</span>`;
-}
-
 // Map the judgments to a chord-name style. Each judgment is one element; an
 // element "a|b" is a single *ambiguous* judgment ("or"), whereas several
 // elements are an overlap of distinct judgments ("plus"). A single function is a
@@ -221,44 +206,51 @@ function escapeHtml(s) {
 }
 
 let lastAxisSig = null;
-// re-render the axis-system panel only when the chord set actually changed
+// re-render (only when the chord set / colouring actually changed) two things:
+//   • the tonic-group shifter, which now lives in the Coloring lower box, and
+//   • the coloured chord names, each centred over its column in the piano roll.
 function refreshAxisSystem() {
     const el = document.getElementById("axis-system");
-    if (!el) return;
+    const ctrl = document.getElementById("tonic-group-control");
+    if (!el || !ctrl) return;
     const sig = JSON.stringify([tonicResidue, chordScheme, noteScheme, accessibleColors, relativeMode, analysisTonic, chords.map((c) => [c.symbol, c.pcs])]);
     if (sig === lastAxisSig) return;
     lastAxisSig = sig;
 
     if (chords.length === 0) {
         el.innerHTML = "";
+        ctrl.innerHTML = "";
         return;
     }
-    // shifter: which pc % 3 group is the tonic (rotates every colour & label)
+
+    // the shifter: which pc % 3 group is heard as the tonic (it rotates every
+    // axis-system colour and label). It belongs with the colouring controls.
     const tonicNotes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter((p) => p % 3 === tonicResidue).map((p) => NOTE_NAMES[p]).join(" ");
-    let html = "";
-    html +=
-        `<div class="axis-controls">tonic group: ` +
+    ctrl.innerHTML =
+        `tonic group: ` +
         `<button class="tonic-shift" id="tonicPrev" title="shift tonic group">◀</button>` +
         `<span class="tonic-group">${tonicNotes}</span>` +
-        `<button class="tonic-shift" id="tonicNext" title="shift tonic group">▶</button></div>`;
-    html += '<div class="axis-row">';
-    for (const ch of chords) {
-        // only the colored chord name — the per-chord tonnetz grid is omitted here
-        // because it, like the cylinder, overgeneralizes by octave equivalence
-        const { cls, style } = chordNameAttrs(ch);
-        // explain SoundQuest coloring on hover (also surfaces the fine T/P/Pm…
-        // distinction that the accessible 3-color merge hides)
-        const titleAttr = chordScheme === "soundquest" ? ` title="${escapeHtml(sqTooltip(ch))}"` : "";
-        html += `<div class="child-box"><span class="chord-name ${cls}"${style}${titleAttr}>${escapeHtml(chordLabel(ch))}</span></div>`;
-    }
-    html += "</div>";
-    el.innerHTML = html;
+        `<button class="tonic-shift" id="tonicNext" title="shift tonic group">▶</button>`;
     const shiftTonic = (delta) => {
         tonicResidue = (tonicResidue + delta + 3) % 3;
         build(); // re-render the panels (colours follow the tonic group)
     };
     document.getElementById("tonicPrev").onclick = () => shiftTonic(-1);
     document.getElementById("tonicNext").onclick = () => shiftTonic(1);
+
+    // the coloured chord names, each box centred on its piano-roll column so it
+    // sits directly above the notes it labels (only the name — no tonnetz grid,
+    // which like the cylinder would overgeneralize by octave equivalence)
+    let html = "";
+    chords.forEach((ch, i) => {
+        const { cls, style } = chordNameAttrs(ch);
+        // explain SoundQuest coloring on hover (also surfaces the fine T/P/Pm…
+        // distinction that the accessible 3-color merge hides)
+        const titleAttr = chordScheme === "soundquest" ? ` title="${escapeHtml(sqTooltip(ch))}"` : "";
+        const left = rollBoxX(i) + ROLL.boxW / 2; // centre of column i
+        html += `<div class="child-box" style="left:${left}px"><span class="chord-name ${cls}"${style}${titleAttr}>${escapeHtml(chordLabel(ch))}</span></div>`;
+    });
+    el.innerHTML = html;
 }
 
 /* ====================== piano roll (SVG) ======================
@@ -426,11 +418,10 @@ function renderPianoRoll() {
     host.innerHTML = s + "</svg>";
 }
 
-// refresh the DOM views (the axis-system panel + the connections list) after any
+// refresh the DOM views (the chord-name row + colouring controls) after any
 // change to the chords, coloring, or key.
 function build() {
     refreshAxisSystem();
-    renderAnalysis();
     scheduleUrlUpdate();
 }
 
@@ -623,46 +614,6 @@ function renderChips() {
     });
 }
 
-let analysisIdx = 0; // which transition the analysis panel shows
-function renderAnalysis() {
-    const el = document.getElementById("analysis");
-    if (chords.length < 2) {
-        el.innerHTML = "<h3>Connections</h3><div style='color:var(--muted)'>Add a second chord to see the connections.</div>";
-        return;
-    }
-    const nT = chords.length - 1;
-    analysisIdx = Math.max(0, Math.min(analysisIdx, nT - 1)); // clamp if chords shrank
-
-    // dropdown to pick a single transition (the whole list would be unwieldy)
-    const options = chords.slice(0, nT).map((_, i) => `<option value="${i}"${i === analysisIdx ? " selected" : ""}>⟨${i + 1}⟩ ${chordLabel(chords[i])} → ⟨${i + 2}⟩ ${chordLabel(chords[i + 1])}</option>`)
-        .join("");
-    let html = `<h3>Connections</h3><select id="analysisSel" class="anaSel">${options}</select>`;
-
-    const A = chords[analysisIdx],
-        B = chords[analysisIdx + 1];
-    voiceLeading(A.pcs, B.pcs, circleOfFifths).forEach((mv) => {
-        const s = Math.abs(mv.step);
-        let tag, txt;
-        if (s === 0) {
-            tag = "hold";
-            txt = "held";
-        } else if (s === 1) {
-            tag = circleOfFifths ? "fifth" : "semi";
-            txt = circleOfFifths ? (mv.step === 1 ? "P5" : "P4") : "H" + (mv.step === 1 ? "↑" : "↓");
-        } else {
-            tag = "whole";
-            txt = "W"+ (mv.step === 2 ? "↑" : "↓");
-        }
-        const arrow = `${noteChip(noteName(A, mv.from), mv.from)}→${noteChip(noteName(B, mv.to), mv.to)}`;
-        html += `<div class="mv"><b>${arrow}</b><span class="tag ${tag}">${txt}</span></div>`;
-    });
-    el.innerHTML = html;
-    document.getElementById("analysisSel").onchange = (e) => {
-        analysisIdx = Number(e.target.value);
-        renderAnalysis();
-    };
-}
-
 function doRender() {
     const err = document.getElementById("err");
     err.textContent = "";
@@ -801,7 +752,7 @@ function fmtTime(sec) {
 function currentChordIndex() {
     return Math.max(0, Math.min(DEMO_VOICING.length - 1, Math.floor(positionSec / chordDurSec())));
 }
-// tint the currently-sounding chip and axis-row chord name; idx < 0 clears
+// tint the currently-sounding chip and chord-name box; idx < 0 clears
 function highlightChord(idx) {
     document.querySelectorAll("#chips .chip").forEach((el, i) => el.classList.toggle("playing", i === idx));
     document.querySelectorAll("#axis-system .child-box").forEach((el, i) => el.classList.toggle("playing", i === idx));

@@ -33,6 +33,15 @@
 
 #piano-roll-grid { margin-top: 4px; }
 #piano-roll-svg text { font-family: inherit; }
+/* the chord-name header row: each box is absolutely placed (by JS) at its column's
+   x, so it sits directly above the notes it labels in the SVG below */
+#axis-system { position: relative; height: 26px; }
+#axis-system .child-box { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; padding: 2px 6px; }
+/* the tonic-group shifter, relocated from #axis-system into the Coloring box */
+#tonic-group-control { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+#tonic-group-control .tonic-shift { background: var(--panel2); color: var(--txt); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; line-height: 1; cursor: pointer; }
+#tonic-group-control .tonic-shift:hover { border-color: var(--accent); }
+#tonic-group-control .tonic-group { color: var(--txt); min-width: 84px; text-align: center; }
 /* the currently-sounding chord: a translucent overlay tints the background (via
    an inset box-shadow, so a colored chord-name keeps its scheme hue underneath) */
 .chip.playing, #axis-system .child-box.playing { box-shadow: inset 0 0 0 999px rgba(90, 150, 255, 0.45); }
@@ -40,7 +49,7 @@
 <body>
 <div id="app">
   <div id="piano-roll">
-          <div id="axis-system" style="padding-left: 4px;"></div>
+          <div id="axis-system"></div>
       <div id="piano-roll-grid"></div>
   </div>
   <div id="side">
@@ -76,8 +85,6 @@
     </div>
   </div>
   <div id="stage">
-    <div id="analysis" class="overlay-box"></div>
-    
     <!-- lower boxes -->
     <div id="tonnetz-and-coloring" class="overlay-box lower-box">
       <div class="block">
@@ -96,6 +103,7 @@
           <label><input type="radio" name="chordScheme" value="soundquest" id="csSoundQuest" checked><span>SoundQuest<a href="./soundquest-coloring-reorganized.html">-based</a></span></label>
           <label><input type="radio" name="chordScheme" value="hsjoihs" id="csHsjoihs">hsjoihs's <a href="explain-hsjoihs-interpretation.html" target="_blank">weird scheme</a></label>
         </div>
+        <div id="tonic-group-control"></div>
       </div>
     </div>
     <div id="key-degree" class="overlay-box lower-box">
