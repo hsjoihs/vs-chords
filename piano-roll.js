@@ -121,7 +121,7 @@ function refreshVoicingUI() {
 /* ====================== view state ====================== */
 let showConsonant = true, // m3, M3, P4/P5 interior intervals
     showDissonant = true, // H, W, TT interior intervals
-    showIntervalLabels = true,
+    showIntervalFromRootLabels = true,
     showConnections = true;
 
 /* ====================== axis-system panel (harmonic function + tonnetz) ======================
@@ -446,7 +446,7 @@ function rollNoteSvg(x, note, ghost, chordIdx) {
     g += `<rect class="roll-hit" x="${x}" y="${y - ROLL.rowH / 2}" width="${ROLL.boxW}" height="${ROLL.rowH}"/>`;
     g += `<rect x="${x}" y="${top}" width="${ROLL.boxW}" height="${ROLL.boxH}" rx="1.5" style="fill:${col}${ghost ? ";stroke:" + col : ""}" fill-opacity="${ghost ? 0.16 : 1}"${ghost ? ' stroke-opacity="0.45"' : ""}/>`;
     g += `<text x="${x + ROLL.boxW / 12}" y="${y}" fill="${nameFill}" fill-opacity="${ghost ? 0.5 : 1}" text-anchor="start" dominant-baseline="central">${escapeHtml(note.name)}</text>`;
-    if (!ghost && showIntervalLabels) g += `<text x="${x + ROLL.boxW * 11 / 12}" y="${y}" fill="${degFill}" text-anchor="end" dominant-baseline="central">${escapeHtml(note.label)}</text>`;
+    if (!ghost && showIntervalFromRootLabels) g += `<text x="${x + ROLL.boxW * 11 / 12}" y="${y}" fill="${degFill}" text-anchor="end" dominant-baseline="central">${escapeHtml(note.label)}</text>`;
     return g + "</g>";
 }
 
@@ -612,7 +612,7 @@ function encodeState() {
     return {
         v: 1,
         c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol, ch.bassPc]),
-        t: [showConsonant, showDissonant, showIntervalLabels, showConnections, accessibleColors].map((b) => (b ? 1 : 0)),
+        t: [showConsonant, showDissonant, showIntervalFromRootLabels, showConnections, accessibleColors].map((b) => (b ? 1 : 0)),
         ns: noteScheme,
         cs: chordScheme,
         bp: Math.round(bpm),
@@ -655,10 +655,10 @@ function restoreState() {
             symbol,
         }));
         if (Array.isArray(st.t)) {
-            [showConsonant, showDissonant, showIntervalLabels, showConnections, accessibleColors] = st.t.map(Boolean);
+            [showConsonant, showDissonant, showIntervalFromRootLabels, showConnections, accessibleColors] = st.t.map(Boolean);
             document.getElementById("tConsonant").checked = showConsonant;
             document.getElementById("tDissonant").checked = showDissonant;
-            document.getElementById("tIntervalLabels").checked = showIntervalLabels;
+            document.getElementById("tIntervalFromRootLabels").checked = showIntervalFromRootLabels;
             document.getElementById("tConnections").checked = showConnections;
             document.getElementById("tAccessible").checked = accessibleColors;
             document.body.classList.toggle("accessible", accessibleColors);
@@ -1112,8 +1112,8 @@ function setupUI() {
         document.body.classList.toggle("accessible", accessibleColors);
         build();
     };
-    document.getElementById("tIntervalLabels").onchange = (e) => {
-        showIntervalLabels = e.target.checked;
+    document.getElementById("tIntervalFromRootLabels").onchange = (e) => {
+        showIntervalFromRootLabels = e.target.checked;
         build();
     };
     document.getElementById("tConnections").onchange = (e) => {
