@@ -40,8 +40,13 @@
 #piano-roll-svg .roll-slot:hover .roll-hit { stroke: #fff; stroke-opacity: 0.5; }
 /* the chord-name header row: each box is absolutely placed (by JS) at its column's
    x, so it sits directly above the notes it labels in the SVG below */
-#axis-system { position: relative; height: 26px; }
-#axis-system .child-box { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; padding: 2px 6px; }
+#axis-system { position: relative; height: 40px; }
+/* the boxes are anchored at the bottom (near the roll); a "… missing" warning, when
+   present, grows upward above the chord name */
+#axis-system .child-box { position: absolute; bottom: 0; transform: translateX(-50%); white-space: nowrap; padding: 2px 6px; text-align: center; }
+#axis-system .chord-missing { font-size: 9px; font-weight: 600; line-height: 1.1; margin-bottom: 2px; color: var(--muted); }
+#axis-system .chord-missing .crit { color: #ff5a3c; }   /* missing 3rd / 7th — prominent */
+#axis-system .chord-missing .minor { color: var(--muted); }  /* missing 5th / root / tension — quiet */
 /* the tonic-group shifter, relocated from #axis-system into the Coloring box */
 #tonic-group-control { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: var(--muted); }
 #tonic-group-control .tonic-shift { background: var(--panel2); color: var(--txt); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; line-height: 1; cursor: pointer; }
@@ -200,7 +205,7 @@
           <div class="toggle"><input type="checkbox" id="tIntervalFromRootLabels" checked><label for="tIntervalFromRootLabels">Label intervals measured from the root</label></div>
           <div class="toggle" style="display: none;"><input type="checkbox" id="tConsonant" checked><label for="tConsonant">Show consonant intervals (<span style="text-decoration: var(--minor3rd) underline; text-underline-offset: 0.2em;">m3</span> <span style="text-decoration: var(--major3rd) underline; text-underline-offset: 0.2em;">M3</span> <span style="text-decoration: var(--p4p5) underline; text-underline-offset: 0.2em;">P4</span>)</label></div>
           <div class="toggle"><input type="checkbox" id="tDissonant" checked><label for="tDissonant">Show highly dissonant intervals (<span style="text-decoration: var(--semitone) underline; text-underline-offset: 0.2em;">m2 / m9</span>  <span style="text-decoration: var(--tritone) underline; text-underline-offset: 0.2em;">TT</span>)</label></div>
-          <div class="toggle"><input type="checkbox" id="tLabelsOnIntervalSegment" checked><label for="tLabelsOnIntervalSegment">Show labels on the I-beams</label></div>
+          <div class="toggle"><input type="checkbox" id="tLabelsOnIntervalSegment" checked><label for="tLabelsOnIntervalSegment">Show labels on the highly dissonant intervals</label></div>
         </div>
       </div>
       <div class="block">

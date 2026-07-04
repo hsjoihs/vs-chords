@@ -286,6 +286,26 @@ function slashSuffix(ch) {
     return "/" + (relativeMode ? noteToDegree(bassName, majorKeyName(analysisTonic)) : bassName);
 }
 
+// a "… missing" warning (HTML) for the chord tones that the sounding voicing omits,
+// shown above the chord's axis-system label. The identity-defining 3rd and 7th are
+// flagged prominently (.crit); the 5th (commonly dropped) and the root/tensions are
+// flagged quietly (.minor). Empty when nothing is missing. `ch` = a parsed chord,
+// `v` = its voicing entry ({ notes }).
+function missingTonesHtml(ch, v) {
+    if (!ch || !ch.pcs || !ch.pcs.length || ch.rootPc == null || !v) return "";
+    const voicedPc = new Set(v.notes.map((n) => ((noteToMidi(n) % 12) + 12) % 12));
+    const rootName = noteName(ch, ch.rootPc);
+    const spans = [];
+    for (const pc of ch.pcs) {
+        if (voicedPc.has(((pc % 12) + 12) % 12)) continue;
+        const deg = degreeAboveRoot(rootName, noteName(ch, pc));
+        const num = deg === "R" ? 1 : parseInt((deg.match(/\d+$/) || ["0"])[0], 10);
+        const cls = num === 3 || num === 7 ? "crit" : "minor";
+        spans.push(`<span class="${cls}">${escapeHtml(deg)}</span>`);
+    }
+    return spans.length ? `<div class="chord-missing">${spans.join(" ")} missing</div>` : "";
+}
+
 let lastAxisSig = null;
 // re-render (only when the chord set / colouring actually changed) two things:
 //   • the tonic-group shifter, which now lives in the Coloring lower box, and
@@ -294,7 +314,7 @@ function refreshAxisSystem() {
     const el = document.getElementById("axis-system");
     const ctrl = document.getElementById("tonic-group-control");
     if (!el || !ctrl) return;
-    const sig = JSON.stringify([tonicResidue, chordScheme, noteScheme, accessibleColors, relativeMode, analysisTonic, chords.map((c) => [c.symbol, c.pcs, c.bassPc])]);
+    const sig = JSON.stringify([tonicResidue, chordScheme, noteScheme, accessibleColors, relativeMode, analysisTonic, chords.map((c) => [c.symbol, c.pcs, c.bassPc]), voicing.map((v) => v.notes)]);
     if (sig === lastAxisSig) return;
     lastAxisSig = sig;
 
@@ -329,7 +349,7 @@ function refreshAxisSystem() {
         // distinction that the accessible 3-color merge hides)
         const titleAttr = chordScheme === "soundquest" ? ` title="${escapeHtml(sqTooltip(ch))}"` : "";
         const left = rollBoxX(i) + ROLL.boxW / 2 + BELL_PAD; // column centre (the SVG is shifted right by BELL_PAD)
-        html += `<div class="child-box" style="left:${left}px"><span class="chord-name ${cls}"${style}${titleAttr}>${escapeHtml(chordLabel(ch) + slashSuffix(ch))}</span></div>`;
+        html += `<div class="child-box" style="left:${left}px">${missingTonesHtml(ch, voicing[i])}<span class="chord-name ${cls}"${style}${titleAttr}>${escapeHtml(chordLabel(ch) + slashSuffix(ch))}</span></div>`;
     });
     el.innerHTML = html;
 }
