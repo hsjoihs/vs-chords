@@ -83,6 +83,24 @@ function regenerateVoicing() {
     refreshTransportUI();
     build();
 }
+// toggle whether a specific pitch (MIDI) sounds in chord `chordIdx`'s voicing: a
+// manual override of the sampled octaves. The clicked chord tone is added (if it was
+// a ghost slot) or removed (if it was sounding), and the new lowest note is recorded
+// as the chord's bass (bassPc) — the slash. A later re-roll keeps that bass but
+// re-samples everything else.
+function toggleVoicedNote(chordIdx, midi) {
+    const v = voicing[chordIdx],
+        ch = chords[chordIdx];
+    if (!v || !ch) return;
+    if (v.notes.some((n) => noteToMidi(n) === midi)) {
+        v.notes = v.notes.filter((n) => noteToMidi(n) !== midi); // was sounding → silence this octave
+    } else {
+        const pc = ((midi % 12) + 12) % 12; // was a ghost → sound this octave
+        v.notes = [...v.notes, spellMidi(noteName(ch, pc), midi)].sort((a, b) => noteToMidi(a) - noteToMidi(b));
+    }
+    if (v.notes.length) ch.bassPc = ((noteToMidi(v.notes[0]) % 12) + 12) % 12; // the lowest note is the bass
+    build(); // redraw the roll + the axis label (which now shows the slash), update the URL
+}
 // the temperature slider's log mapping and its inverse (0..1000 ↔ T)
 function voicingTfromSlider(v) {
     return VOICING_T_MIN * Math.pow(VOICING_T_MAX / VOICING_T_MIN, v / 1000);
@@ -257,6 +275,13 @@ function escapeHtml(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+// the slash-bass suffix for a piano-roll chord label, e.g. "/E" for A7/E; empty when
+// the bass is the root (root position) or unset. The bass is a piano-roll concern, so
+// this shows on the axis-system labels over the roll — never on the chord chips.
+function slashSuffix(ch) {
+    return ch.bassPc != null && ch.bassPc !== ch.rootPc ? "/" + noteName(ch, ch.bassPc) : "";
+}
+
 let lastAxisSig = null;
 // re-render (only when the chord set / colouring actually changed) two things:
 //   • the tonic-group shifter, which now lives in the Coloring lower box, and
@@ -265,7 +290,7 @@ function refreshAxisSystem() {
     const el = document.getElementById("axis-system");
     const ctrl = document.getElementById("tonic-group-control");
     if (!el || !ctrl) return;
-    const sig = JSON.stringify([tonicResidue, chordScheme, noteScheme, accessibleColors, relativeMode, analysisTonic, chords.map((c) => [c.symbol, c.pcs])]);
+    const sig = JSON.stringify([tonicResidue, chordScheme, noteScheme, accessibleColors, relativeMode, analysisTonic, chords.map((c) => [c.symbol, c.pcs, c.bassPc])]);
     if (sig === lastAxisSig) return;
     lastAxisSig = sig;
 
@@ -300,7 +325,7 @@ function refreshAxisSystem() {
         // distinction that the accessible 3-color merge hides)
         const titleAttr = chordScheme === "soundquest" ? ` title="${escapeHtml(sqTooltip(ch))}"` : "";
         const left = rollBoxX(i) + ROLL.boxW / 2 + BELL_PAD; // column centre (the SVG is shifted right by BELL_PAD)
-        html += `<div class="child-box" style="left:${left}px"><span class="chord-name ${cls}"${style}${titleAttr}>${escapeHtml(chordLabel(ch))}</span></div>`;
+        html += `<div class="child-box" style="left:${left}px"><span class="chord-name ${cls}"${style}${titleAttr}>${escapeHtml(chordLabel(ch) + slashSuffix(ch))}</span></div>`;
     });
     el.innerHTML = html;
 }
@@ -395,9 +420,10 @@ function rollNoteFill(midi) {
     return "#005242"; // "nothing": the app's neutral teal
 }
 
-// one note box: solid when sounded, faint when a ghost slot; ghosts carry data-*
-// so a later pass can turn them into clickable voicing toggles.
-function rollNoteSvg(x, note, ghost) {
+// one note box: solid when sounded, faint when a ghost slot. Both carry
+// data-chord / data-midi and a full-row transparent hit target, so clicking one
+// toggles that pitch in the voicing (see the delegated handler in setupUI).
+function rollNoteSvg(x, note, ghost, chordIdx) {
     const y = rollPitchY(note.midi);
     const top = y - ROLL.boxH / 2;
     const col = rollNoteFill(note.midi); // set via inline style so var()/oklch parse
@@ -411,7 +437,11 @@ function rollNoteSvg(x, note, ghost) {
     const blackText = noteScheme === "fifths" && accessibleColors && (pc === 0 || pc === 5 || pc === 7);
     const nameFill = ghost ? "#bfeee0" : blackText ? "#000" : coloured ? "#fff" : "#eafff8";
     const degFill = blackText ? "#000" : coloured ? "#fff" : "#9fb8b0";
-    let g = ghost ? `<g class="roll-ghost" data-midi="${note.midi}">` : "<g>";
+    let g = `<g class="roll-slot${ghost ? " roll-ghost" : ""}" data-chord="${chordIdx}" data-midi="${note.midi}">`;
+    // a full-row transparent rect makes the whole row easy to click; its fill + the
+    // pointer-events that capture clicks are set in CSS (attributes are unreliable
+    // for pointer-events). The painted box/text below are clickable too, as a fallback.
+    g += `<rect class="roll-hit" x="${x}" y="${y - ROLL.rowH / 2}" width="${ROLL.boxW}" height="${ROLL.rowH}"/>`;
     g += `<rect x="${x}" y="${top}" width="${ROLL.boxW}" height="${ROLL.boxH}" rx="1.5" style="fill:${col}${ghost ? ";stroke:" + col : ""}" fill-opacity="${ghost ? 0.16 : 1}"${ghost ? ' stroke-opacity="0.45"' : ""}/>`;
     g += `<text x="${x + ROLL.boxW / 12}" y="${y}" fill="${nameFill}" fill-opacity="${ghost ? 0.5 : 1}" text-anchor="start" dominant-baseline="central">${escapeHtml(note.name)}</text>`;
     if (!ghost && showIntervalLabels) g += `<text x="${x + ROLL.boxW * 11 / 12}" y="${y}" fill="${degFill}" text-anchor="end" dominant-baseline="central">${escapeHtml(note.label)}</text>`;
@@ -520,7 +550,7 @@ function renderPianoRoll() {
     s += `<path d="${bell.trim()}" fill="none" stroke="#9ecbff" stroke-opacity="0.75" stroke-width="1.2"/>`;
 
     // ghost slots underneath, then arrows, then the solid notes, then I-beams on top
-    for (let i = 0; i < N; i++) for (const gh of columns[i].ghosts) s += rollNoteSvg(rollBoxX(i), gh, true);
+    for (let i = 0; i < N; i++) for (const gh of columns[i].ghosts) s += rollNoteSvg(rollBoxX(i), gh, true, i);
     
     for (let i = 0; i < N - 1; i++) {
         const x1 = rollBoxX(i + 1);
@@ -539,7 +569,7 @@ function renderPianoRoll() {
                 s += `<line x1="${arrowStartX(i, a.midi)}" y1="${rollPitchY(a.midi)}" x2="${x1 - 2}" y2="${rollPitchY(b.midi)}" stroke="${st.col}" stroke-width="${st.w}" stroke-opacity="0.9"${st.dash} marker-end="url(#roll-arrow-${st.kind})"/>`;
             }
     }
-    for (let i = 0; i < N; i++) for (const v of columns[i].voiced) s += rollNoteSvg(rollBoxX(i), v, false);
+    for (let i = 0; i < N; i++) for (const v of columns[i].voiced) s += rollNoteSvg(rollBoxX(i), v, false, i);
 
     for (let i = 0; i < N; i++)
         for (const beam of beamsByChord[i]) s += rollIbeamSvg(rollBoxX(i) + beam.stem, rollPitchY(beam.hi), rollPitchY(beam.lo), beam.col);
@@ -576,7 +606,7 @@ let urlTimer = null;
 function encodeState() {
     return {
         v: 1,
-        c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol]),
+        c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol, ch.bassPc]),
         t: [showConsonant, showDissonant, showIntervalLabels, showConnections, accessibleColors].map((b) => (b ? 1 : 0)),
         ns: noteScheme,
         cs: chordScheme,
@@ -612,10 +642,10 @@ function restoreState() {
     if (!st || !Array.isArray(st.c)) return false;
     restoring = true;
     try {
-        chords = st.c.map(([pcs, rootPc, fifthStart, symbol]) => ({
+        chords = st.c.map(([pcs, rootPc, fifthStart, symbol, bassPc]) => ({
             pcs: pcs.slice(),
             rootPc: rootPc == null ? null : rootPc,
-            bassPc: rootPc == null ? null : rootPc, // restored in root position (no slash stored yet)
+            bassPc: bassPc != null ? bassPc : rootPc == null ? null : rootPc, // the slash (older links: root position)
             fifthStart,
             symbol,
         }));
@@ -962,6 +992,13 @@ function playFrom(offset) {
 
 function setupUI() {
     progEl = document.getElementById("prog");
+
+    // click a note box (solid or ghost) in the piano roll to toggle it in/out of the
+    // voicing. Delegated on the container, which survives each renderPianoRoll rebuild.
+    document.getElementById("piano-roll-grid").addEventListener("click", (e) => {
+        const g = e.target.closest("[data-chord]");
+        if (g) toggleVoicedNote(Number(g.dataset.chord), Number(g.dataset.midi));
+    });
 
     document.getElementById("play").onclick = () => {
         if (isPlaying()) {

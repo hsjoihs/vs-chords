@@ -33,6 +33,11 @@
 
 #piano-roll-grid { margin-top: 4px; }
 #piano-roll-svg text { font-family: inherit; }
+/* each note box is a clickable voicing toggle; the transparent full-row hit rect
+   captures the clicks (pointer-events in CSS is reliable for SVG, unlike the attr) */
+#piano-roll-svg .roll-slot { cursor: pointer; }
+#piano-roll-svg .roll-hit { fill: #fff; fill-opacity: 0; pointer-events: all; }
+#piano-roll-svg .roll-slot:hover .roll-hit { stroke: #fff; stroke-opacity: 0.5; }
 /* the chord-name header row: each box is absolutely placed (by JS) at its column's
    x, so it sits directly above the notes it labels in the SVG below */
 #axis-system { position: relative; height: 26px; }
@@ -55,10 +60,6 @@
 </style>
 <body>
 <div id="app">
-  <div id="piano-roll">
-          <div id="axis-system"></div>
-      <div id="piano-roll-grid"></div>
-  </div>
   <div id="side">
     <h1>vs.chords</h1>
     <div class="sub">A multi-purpose web app that helps you win the battle against chord progressions</div>
@@ -224,6 +225,10 @@
   <div id="left-bar" style="padding-top: 3px;">
     <img src="image/icons/cylinder.svg" title="Cylinder" width="45" height="45" style="opacity: 0.5; cursor: pointer;" />
     <img src="image/icons/piano-roll.svg" title="Piano Roll" width="45" height="45" style="border-left: 1px solid white; cursor: pointer;" />
+  </div>
+  <div id="piano-roll">
+          <div id="axis-system"></div>
+      <div id="piano-roll-grid"></div>
   </div>
 </div>
 
