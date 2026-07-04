@@ -122,6 +122,7 @@ function refreshVoicingUI() {
 let showConsonant = true, // m3, M3, P4/P5 interior intervals
     showDissonant = true, // H, W, TT interior intervals
     showIntervalFromRootLabels = true,
+    showIBeamLabels = true, // write m2 / m9 / TT on the I-beams (a non-colour cue); matches the checked box
     showConnections = true;
 
 /* ====================== axis-system panel (harmonic function + tonnetz) ======================
@@ -457,13 +458,16 @@ const BEAM_STEM_GAP = 5, // stem x, measured right of the note-box right edge
     BEAM_STEP = 12; // extra x per additional beam in the same chord
 
 // an I-beam (vertical stem + short caps) bracketing a dissonant pair, drawn with
-// its stem at `bx` (already positioned in the gutter right of the boxes)
-function rollIbeamSvg(bx, y1, y2, col) {
-    return (
+// its stem at `bx` (already positioned in the gutter right of the boxes). When
+// `label` is given (m2 / m9 / TT) it is written next to the stem's midpoint — a
+// non-colour cue for the interval, useful for colour-blind readers and everyone else.
+function rollIbeamSvg(bx, y1, y2, col, label) {
+    let s =
         `<line x1="${bx}" y1="${y1}" x2="${bx}" y2="${y2}" stroke="${col}" stroke-width="1.3"/>` +
         `<line x1="${bx - BEAM_CAP}" y1="${y1}" x2="${bx + BEAM_CAP}" y2="${y1}" stroke="${col}" stroke-width="1.3"/>` +
-        `<line x1="${bx - BEAM_CAP}" y1="${y2}" x2="${bx + BEAM_CAP}" y2="${y2}" stroke="${col}" stroke-width="1.3"/>`
-    );
+        `<line x1="${bx - BEAM_CAP}" y1="${y2}" x2="${bx + BEAM_CAP}" y2="${y2}" stroke="${col}" stroke-width="1.3"/>`;
+    if (label) s += `<text x="${bx}" y="${(y1 + y2) / 2}" style="fill:${col}" font-size="8" text-anchor="middle" dominant-baseline="central">${label}</text>`;
+    return s;
 }
 
 // (re)build the SVG from the current `voicing` (redraw only — no re-sampling)
@@ -501,7 +505,12 @@ function renderPianoRoll() {
             for (let b = a + 1; b < notes.length; b++) {
                 const gap = Math.abs(notes[a].midi - notes[b].midi); // take the absolute value before taking the mod, distinguishing M7 from m9
                 if (HIGHLY_DISSONANT_GAPS.has(gap % 12))
-                    beams.push({ lo: Math.min(notes[a].midi, notes[b].midi), hi: Math.max(notes[a].midi, notes[b].midi), col: HIGHLY_DISSONANT_COLORS[gap % 12] });
+                    beams.push({
+                        lo: Math.min(notes[a].midi, notes[b].midi),
+                        hi: Math.max(notes[a].midi, notes[b].midi),
+                        col: HIGHLY_DISSONANT_COLORS[gap % 12],
+                        label: gap % 12 === 6 ? "TT" : gap === 1 ? "m2" : "m9", // narrow=m2, an octave+ wide=m9
+                    });
             }
         beams.forEach((beam, k) => (beam.stem = ROLL.boxW + BEAM_STEM_GAP + k * BEAM_STEP)); // x, relative to the box left
         return beams;
@@ -557,7 +566,7 @@ function renderPianoRoll() {
     // ghost slots underneath, then arrows, then the solid notes, then I-beams on top
     for (let i = 0; i < N; i++) for (const gh of columns[i].ghosts) s += rollNoteSvg(rollBoxX(i), gh, true, i);
     
-    for (let i = 0; i < N - 1; i++) {
+    if (showConnections) for (let i = 0; i < N - 1; i++) {
         const x1 = rollBoxX(i + 1);
         for (const a of columns[i].voiced)
             for (const b of columns[i + 1].voiced) {
@@ -577,7 +586,7 @@ function renderPianoRoll() {
     for (let i = 0; i < N; i++) for (const v of columns[i].voiced) s += rollNoteSvg(rollBoxX(i), v, false, i);
 
     for (let i = 0; i < N; i++)
-        for (const beam of beamsByChord[i]) s += rollIbeamSvg(rollBoxX(i) + beam.stem, rollPitchY(beam.hi), rollPitchY(beam.lo), beam.col);
+        for (const beam of beamsByChord[i]) s += rollIbeamSvg(rollBoxX(i) + beam.stem, rollPitchY(beam.hi), rollPitchY(beam.lo), beam.col, showIBeamLabels ? beam.label : "");
 
     host.innerHTML = s + "</svg>";
 }
@@ -612,7 +621,7 @@ function encodeState() {
     return {
         v: 1,
         c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol, ch.bassPc]),
-        t: [showConsonant, showDissonant, showIntervalFromRootLabels, showConnections, accessibleColors].map((b) => (b ? 1 : 0)),
+        t: [showConsonant, showDissonant, showIntervalFromRootLabels, showConnections, accessibleColors, showIBeamLabels].map((b) => (b ? 1 : 0)),
         ns: noteScheme,
         cs: chordScheme,
         bp: Math.round(bpm),
@@ -656,10 +665,12 @@ function restoreState() {
         }));
         if (Array.isArray(st.t)) {
             [showConsonant, showDissonant, showIntervalFromRootLabels, showConnections, accessibleColors] = st.t.map(Boolean);
+            showIBeamLabels = Boolean(st.t[5]); // 6th flag; absent in older links → off
             document.getElementById("tConsonant").checked = showConsonant;
             document.getElementById("tDissonant").checked = showDissonant;
             document.getElementById("tIntervalFromRootLabels").checked = showIntervalFromRootLabels;
             document.getElementById("tConnections").checked = showConnections;
+            document.getElementById("tIBeamLabels").checked = showIBeamLabels;
             document.getElementById("tAccessible").checked = accessibleColors;
             document.body.classList.toggle("accessible", accessibleColors);
         }
@@ -1118,6 +1129,10 @@ function setupUI() {
     };
     document.getElementById("tConnections").onchange = (e) => {
         showConnections = e.target.checked;
+        build();
+    };
+    document.getElementById("tIBeamLabels").onchange = (e) => {
+        showIBeamLabels = e.target.checked;
         build();
     };
     // voicing controls: S (potential width) and the well centre are linear; T
