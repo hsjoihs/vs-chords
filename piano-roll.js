@@ -122,7 +122,7 @@ function refreshVoicingUI() {
 let showConsonant = true, // m3, M3, P4/P5 interior intervals
     showDissonant = true, // H, W, TT interior intervals
     showIntervalFromRootLabels = true,
-    showIBeamLabels = true, // write m2 / m9 / TT on the I-beams (a non-colour cue); matches the checked box
+    showLabelsOnIntervalSegment = true, // write m2 / m9 / TT on the I-beams (a non-colour cue); matches the checked box
     showConnections = true;
 
 /* ====================== axis-system panel (harmonic function + tonnetz) ======================
@@ -586,7 +586,7 @@ function renderPianoRoll() {
     for (let i = 0; i < N; i++) for (const v of columns[i].voiced) s += rollNoteSvg(rollBoxX(i), v, false, i);
 
     for (let i = 0; i < N; i++)
-        for (const beam of beamsByChord[i]) s += rollIbeamSvg(rollBoxX(i) + beam.stem, rollPitchY(beam.hi), rollPitchY(beam.lo), beam.col, showIBeamLabels ? beam.label : "");
+        for (const beam of beamsByChord[i]) s += rollIbeamSvg(rollBoxX(i) + beam.stem, rollPitchY(beam.hi), rollPitchY(beam.lo), beam.col, showLabelsOnIntervalSegment ? beam.label : "");
 
     host.innerHTML = s + "</svg>";
 }
@@ -621,7 +621,7 @@ function encodeState() {
     return {
         v: 1,
         c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol, ch.bassPc]),
-        t: [showConsonant, showDissonant, showIntervalFromRootLabels, showConnections, accessibleColors, showIBeamLabels].map((b) => (b ? 1 : 0)),
+        t: [showConsonant, showDissonant, showIntervalFromRootLabels, showConnections, accessibleColors, showLabelsOnIntervalSegment].map((b) => (b ? 1 : 0)),
         ns: noteScheme,
         cs: chordScheme,
         bp: Math.round(bpm),
@@ -665,12 +665,12 @@ function restoreState() {
         }));
         if (Array.isArray(st.t)) {
             [showConsonant, showDissonant, showIntervalFromRootLabels, showConnections, accessibleColors] = st.t.map(Boolean);
-            showIBeamLabels = Boolean(st.t[5]); // 6th flag; absent in older links → off
+            showLabelsOnIntervalSegment = Boolean(st.t[5]); // 6th flag; absent in older links → off
             document.getElementById("tConsonant").checked = showConsonant;
             document.getElementById("tDissonant").checked = showDissonant;
             document.getElementById("tIntervalFromRootLabels").checked = showIntervalFromRootLabels;
             document.getElementById("tConnections").checked = showConnections;
-            document.getElementById("tIBeamLabels").checked = showIBeamLabels;
+            document.getElementById("tLabelsOnIntervalSegment").checked = showLabelsOnIntervalSegment;
             document.getElementById("tAccessible").checked = accessibleColors;
             document.body.classList.toggle("accessible", accessibleColors);
         }
@@ -1131,8 +1131,8 @@ function setupUI() {
         showConnections = e.target.checked;
         build();
     };
-    document.getElementById("tIBeamLabels").onchange = (e) => {
-        showIBeamLabels = e.target.checked;
+    document.getElementById("tLabelsOnIntervalSegment").onchange = (e) => {
+        showLabelsOnIntervalSegment = e.target.checked;
         build();
     };
     // voicing controls: S (potential width) and the well centre are linear; T

@@ -103,7 +103,7 @@ let LAYER = 4.2; // vertical gap between chords (stretch/compress the cylinder)
 let spin = false,
     showConsonant = true, // m3, M3, P4/P5 interior intervals
     showDissonant = true, // H, W, TT interior intervals
-    showIntervalLabels = true,
+    showLabelsOnIntervalSegment = true,
     showConnections = true,
     circleOfFifths = false, // arrange the ring by fifths instead of chromatically
     tetradShorthand = false; // false = bare Δ/°/dim/− are triads; true = bare Δ/°/dim/− are tetrads
@@ -844,7 +844,7 @@ function build() {
                 const a = pcPos(pcs[i], y),
                     b = pcPos(pcs[j], y);
                 group.add(tube(a, b, col, rad));
-                if (showIntervalLabels) {
+                if (showLabelsOnIntervalSegment) {
                     // interval name (H/W/m3/M3/P4/TT) at the segment midpoint
                     const lbl = makeLabel(intervalLabel(semi), hexCss(col), 0.95);
                     lbl.position.copy(a.clone().lerp(b, 0.5));
@@ -990,7 +990,7 @@ function encodeState() {
     return {
         v: 1,
         c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol]),
-        t: [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, accessibleColors].map((b) => (b ? 1 : 0)),
+        t: [showConsonant, showDissonant, showLabelsOnIntervalSegment, showConnections, spin, circleOfFifths, accessibleColors].map((b) => (b ? 1 : 0)),
         ns: noteScheme,
         cs: chordScheme,
         cv2: tetradShorthand,
@@ -1030,11 +1030,11 @@ function restoreState() {
             symbol,
         }));
         if (Array.isArray(st.t)) {
-            [showConsonant, showDissonant, showIntervalLabels, showConnections, spin, circleOfFifths, accessibleColors] =
+            [showConsonant, showDissonant, showLabelsOnIntervalSegment, showConnections, spin, circleOfFifths, accessibleColors] =
                 st.t.map(Boolean);
             document.getElementById("tConsonant").checked = showConsonant;
             document.getElementById("tDissonant").checked = showDissonant;
-            document.getElementById("tIntervalLabels").checked = showIntervalLabels;
+            document.getElementById("tLabelsOnIntervalSegment").checked = showLabelsOnIntervalSegment;
             document.getElementById("tConnections").checked = showConnections;
             document.getElementById("tSpin").checked = spin;
             document.getElementById("tFifths").checked = circleOfFifths;
@@ -1419,8 +1419,8 @@ function setupUI() {
         document.body.classList.toggle("accessible", accessibleColors);
         build();
     };
-    document.getElementById("tIntervalLabels").onchange = (e) => {
-        showIntervalLabels = e.target.checked;
+    document.getElementById("tLabelsOnIntervalSegment").onchange = (e) => {
+        showLabelsOnIntervalSegment = e.target.checked;
         build();
     };
     document.getElementById("tConnections").onchange = (e) => {
