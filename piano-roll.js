@@ -383,7 +383,6 @@ const ROLL = { rowH: 10, boxW: 46, boxH: 8, padTop: 8, padLeft: 56, colW: 122, g
 // octave-complements do not: m2/m9 (1), tritone (6) but not M7 (11).
 const HIGHLY_DISSONANT_GAPS = new Set([1, 6]);
 const HIGHLY_DISSONANT_COLORS = {1: "var(--semitone)", 6: "var(--tritone)"};
-const NOOCT_RE = /-?\d+$/; // trailing octave digits of a note name
 
 // a Gaussian "register weight" bell drawn to the left of the C-labels: the
 // equilibrium single-note distribution of the sampler, X = -BELL_AMP · e^(−Y²/2σ²)
@@ -472,12 +471,15 @@ function renderPianoRoll() {
     const host = document.getElementById("piano-roll-grid");
     if (!host) return;
     const N = voicing.length;
-    // per chord: the sounded notes plus the ghost slots (the same chord-tone pitch
-    // classes, spelled identically, in the C2–C6 window's other octaves)
-    const columns = voicing.map((chord) => {
+    // per chord: the sounded notes plus the ghost slots (every octave of the chord's
+    // pitch classes, in the C2–C6 window). The ghosts come from the chord's pcs — not
+    // from what is currently voiced — so toggling a note off leaves its every-octave
+    // slots (including the one just vacated) available to toggle back on.
+    const columns = voicing.map((chord, i) => {
         const voiced = chord.notes.map((name) => ({ midi: noteToMidi(name), name, label: degreeAboveRoot(chord.root, name) }));
         const voicedMidi = new Set(voiced.map((v) => v.midi));
-        const spellings = [...new Set(chord.notes.map((n) => n.replace(NOOCT_RE, "")))]; // letter+accidental
+        const ch = chords[i];
+        const spellings = ch && ch.pcs ? ch.pcs.map((pc) => noteName(ch, pc)) : []; // letter+accidental, from the chip's pcs
         const ghosts = [];
         for (const s of spellings)
             for (let oct = 0; oct <= 8; oct++) {
