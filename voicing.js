@@ -37,9 +37,9 @@
     const BASS_CENTER = 40, // E2 — the bass's own (independent) potential minimum
         BASS_LO = 34, // B♭1 — a roughly one-octave bass window
         BASS_HI = 48; // C3
-    const EPS_M2 = 8, // mild penalty: a bare minor 2nd (1 semitone)
-        EPS_M9 = 13, // heavy penalty: a minor 9th or wider (avoid notes)
-        VL_LAMBDA = 0.6; // voice-leading energy per semitone of motion
+    const EPS_M2 = 13, // mild penalty: a bare minor 2nd (1 semitone)
+        EPS_M9 = 21, // heavy penalty: a minor 9th or wider (avoid notes)
+        VL_LAMBDA = 1; // voice-leading energy per semitone of motion
 
     // a small deterministic PRNG (mulberry32) so sampling is reproducible in tests
     function mulberry32(seed) {

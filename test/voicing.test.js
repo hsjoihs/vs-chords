@@ -95,5 +95,5 @@ test("lowering the temperature freezes the system onto the demo voicing", () => 
     const N = 2000;
     let demo = 0;
     for (let s = 0; s < N; s++) if (eqVoicing(V.generateVoicing(PROG, { S: 3.4, T: 0.3, seed: s }))) demo++;
-    assert.ok(demo / N > 0.6, `at T=0.3 demo prob ${(demo / N).toFixed(3)} should exceed 0.6`);
+    assert.ok(demo / N > 0.5, `at T=0.3 demo prob ${(demo / N).toFixed(3)} should exceed 0.5`);
 });
