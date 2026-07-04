@@ -1,1 +1,191 @@
-Octaves are sampled from a Boltzmann distribution — a parabolic potential (well of width S, centred on F♯4) at temperature T — favouring smooth voice leading and shunning minor-9th / minor-2nd clashes.
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Choosing octaves for chord tones by pretending the notes are a gas</title>
+    <script>
+        MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+    <style>
+        body { font-family: 'Times New Roman', Times, serif; margin: 0 auto; max-width: 80vw; line-height: 1.5em; }
+        h2 { margin-top: 1.6em; }
+        code { font-family: 'Courier New', Courier, monospace; }
+        .eg { border-left: 3px solid #ccc; padding: 2px 0 2px 12px; margin: 12px 0; }
+        table.mono td { padding: 2px 10px; }
+    </style>
+</head>
+
+<body>
+    <h1>Choosing octaves for chord tones by pretending the notes are a gas</h1>
+    <p style="text-align: right">hsjoihs<br>2026-07-04</p>
+
+    <h2>The problem</h2>
+
+    <p>A chord like <b>Cmaj7</b> only signifies that the <i>pitch classes</i> C, E, G and B. It lacks information on which octave
+        each note should sound in. To actually play the progression on the piano roll, I have to <i>voice</i> it, i.e. decide
+        that this C is C4, that E is E4, and so on. There are a lot of ways to do this, and I wanted a principled (and
+        slightly whimsical) way of picking one.</p>
+
+    <p>So I borrowed the machinery of <a href="https://en.wikipedia.org/wiki/Statistical_mechanics">statistical
+            mechanics</a>. I give every possible voicing an <b>energy</b>, where lower energy means “more pleasant / more
+        likely”, and then I draw a voicing at random, preferring the low-energy ones. Nothing here is deep physics; it is
+        just a convenient recipe for turning some musical preferences into probabilities.</p>
+
+    <h2>TL;DR</h2>
+
+    <ol>
+        <li>Pretend that each candidate voicing is a physical state with an energy \(E\).</li>
+        <li>At a chosen <b>temperature</b> \(T\), pick a voicing with probability proportional to \(e^{-E/T}\)
+            (the <a href="https://en.wikipedia.org/wiki/Boltzmann_distribution">Boltzmann distribution</a>).</li>
+        <li>The energy rewards notes for sitting in a comfortable central register, for moving smoothly from the previous
+            chord, and it punishes harsh clashes.</li>
+        <li>To avoid trying every combination, place the notes one at a time.</li>
+    </ol>
+
+    <h2>What “energy” and “temperature” mean here</h2>
+
+    <p>In physics, a system kept at temperature \(T\) is found in a state of energy \(E\) with probability</p>
+
+    \[ P \;\propto\; e^{-E/T} \]
+
+    <p>The intuition is that:</p>
+
+    <ul>
+        <li>Low-energy states are more likely.</li>
+        <li>When \(T\) is <b>small</b>, that \(e^{-E/T}\) heavily favours the very lowest energy (the system
+            <i>freezes</i> into its best state).</li>
+        <li>When \(T\) is <b>large</b>, \(E/T\) is tiny for everything, so all states become almost equally likely (the
+            system <i>melts</i> into chaos).</li>
+    </ul>
+
+    <h2>The energy of a voicing</h2>
+
+    <p>Write a voicing as a list of pitches \(p_1, p_2, \dots\) measured in semitones (I use MIDI numbers, so C4 = 60).
+        The energy is a sum of three kinds of term.</p>
+
+    <h3>1. A comfortable register (the “potential”)</h3>
+
+    <p>I want the upper voices to cluster around the middle of the range rather than drift off to the extremes. So I put
+        each note in a parabolic well (valley) centered on <b>F♯4</b> (\(c = 66\), the middle of the range I draw):</p>
+
+    \[ V_{\text{pot}}(p) \;=\; \frac{(p-c)^2}{2S^2} \]
+
+    <p>A note pays more energy the further it strays from F♯4, and quadratically so. The number \(S\) is the <b>width of
+            the well</b>: a bigger \(S\) is a wider, gentler valley that tolerates notes further from the center.</p>
+
+    <h3>2. Avoiding harsh clashes (the penalties)</h3>
+
+    <p>Some pairs of simultaneous notes sound rough. For two notes \(d\) semitones apart I add:</p>
+
+    <table class="mono">
+        <tr><td>\(d = 1\)</td><td>a bare <b>minor 2nd</b></td><td>a <i>small</i> penalty \(\varepsilon_2\)</td></tr>
+        <tr><td>\(d = 13, 25, \dots\)</td><td>a <b>minor 9th</b> or wider (a minor 2nd stacked above one or more octaves)</td><td>a <i>large</i> penalty \(\varepsilon_9\)</td></tr>
+        <tr><td>everything else</td><td>&mdash;</td><td>no penalty</td></tr>
+    </table>
+
+    <p>
+        Musicians call a minor 9th above a chord tone an <a
+                href="https://en.wikipedia.org/wiki/Avoid_note">avoid note</a>. Meanwhile the <b>major 7th</b> (\(d=11\)), which is the same two pitch classes spaced the <i>other</i>
+            way, is left completely free, because it is considered unproblematic in the music community.
+    </p>
+
+    <p>Two remarks:</p>
+
+    <ul>
+        <li>A minor 9th (\(d=13\)) is punished <i>harder</i> than a minor 2nd, (\(d=1\)).
+            This decision is based on the following claim by Toydora:
+
+
+            <blockquote cite="https://youtu.be/XIAzfuPxhng?si=6Kt3kVKKlvOJ7YrH&t=1831">
+    <p>
+      「半音でぶつかっている音の響きの良さっていうのは、長七度が一番良くて、短二度はやや悪くて、で短九度は最悪っていう順番になっています」
+    </p>
+  </blockquote>
+  <p>—Toydora, <a href="https://youtu.be/XIAzfuPxhng?si=6Kt3kVKKlvOJ7YrH&t=1831"><cite>【音楽理論】謎のテンション "10th" とは？ 実はルートはアヴォイド・ノート⁉ テンション＆アヴォイドの常識を覆す</cite> at 30:31</a></p>
+
+            </li>
+        <li>Both penalties are switched <b>off</b> entirely if the chord already contains a <b>tritone</b> (two notes six
+            semitones apart). Many textbooks allow the minor 9th when placed on dominant-type chords that already live on tension by means of a tritone interval.</li>
+    </ul>
+
+    <h3>3. Smooth voice leading</h3>
+
+    <p>From the second chord onward, I reward voices for not jumping around. For a note \(p\), let \(q^{*}\) be the nearest
+        note of the <i>previous</i> chord. I add</p>
+
+    \[ V_{\text{lead}}(p) \;=\; \lambda \,\bigl| p - q^{*} \bigr| \]
+
+    <p>so a held note (distance 0) is free, a step costs a little, and a leap costs a lot. This is what makes a voice glide
+        by a semitone or a whole tone instead of teleporting across the staff.</p>
+
+    <h3>Putting it together</h3>
+
+    <p>For one chord, coupled to the previous one, the total energy is</p>
+
+    \[ E \;=\; \underbrace{\sum_i V_{\text{pot}}(p_i)}_{\text{stay central}}
+        \;+\; \underbrace{\sum_{i < j} \text{penalty}\bigl(|p_i-p_j|\bigr)}_{\text{no clashes}}
+        \;+\; \underbrace{\lambda \sum_i \bigl|p_i - q^{*}_i\bigr|}_{\text{move smoothly}} \]
+
+    <p>and the voicing is drawn with probability \(\propto e^{-E/T}\). The defaults are \(S = 3.4\) semitones and
+        \(T = 0.4\), with \(\varepsilon_2 = 13 \lambda \) and \(\varepsilon_9 = 21 \lambda \). 
+        (13 and 21 are taken from the Fibonacci sequence, 
+        since it being approximately equally spaced in the logarithmic space 
+        <a href="https://planitpoker.com/agile-estimation-techniques/fibonacci/">makes it useful for eyeballing</a>.)
+    </p>
+
+    <h2>Placing the notes one at a time</h2>
+
+    <p>Na&iuml;vely sampling a whole chord “at once” from \(e^{-E/T}\) would mean weighing every combination of octaves for every note, 
+        causing a combinatorial explosion. Instead I place the notes sequentially: I fix one note’s octave, then choose
+        the next note’s octave conditioned on the ones already placed, and so on. Each single choice is a small Boltzmann
+        draw over just a handful of octaves, so the cost grows only linearly.</p>
+
+    <p>The order matters a little, so I settle the <i>decisive</i> notes first (the ones with an obvious best octave)
+        and leave the <i>ambiguous</i> ones for last, once their neighbours are already down to guide them.</p>
+
+    <div class="eg">
+        <p><b>Example.</b> In Cmaj7, E, G and B each have a clear favourite octave near F♯4, so they go down first. The
+            root C is exactly a tritone away from F♯4, so C4 and C5 are <i>equally</i> comfortable in the well. Placing C last lets the already-placed B4 break the tie: C5 would clash with B4 (a minor
+            2nd), so C4 wins. That is how the familiar close voicing C4–E4–G4–B4 emerges most of the time.</p>
+    </div>
+
+    <h2>The bass</h2>
+
+    <p>The bass line is placed <b>independently</b> of the voices above it: I take the chord’s root and drop it into its
+        own low parabolic well (centered around E2) by the same Boltzmann rule. It does not take part in the clash or
+        voice-leading bookkeeping; it just anchors the chord from below.</p>
+
+    <h2>Why the bell curve?</h2>
+
+    <p>If you ignore the clash and voice-leading terms, a single note feels only the well \(V_{\text{pot}}\), so its
+        probability across octaves is</p>
+
+    \[ P(p) \;\propto\; e^{-V_{\text{pot}}(p)/T} \;=\; \exp\!\left(-\frac{(p-c)^2}{2\,S^2 T}\right), \]
+
+    <p>which is a <a href="https://en.wikipedia.org/wiki/Normal_distribution">Gaussian</a> (a bell curve) centered on F♯4.
+        That is exactly the shape drawn sideways to the left of the piano roll.</p>
+
+    <p>Notice the width of that bell is \(S\sqrt{T}\), not \(S\).
+        <ul>
+            <li>\(S\) is a fixed property of the <b>well</b> (how the register preference is shaped). In the UI I denote it as <i>Force closed</i> vs. <i>Allow open</i>.</li>
+            <li>\(T\) is the
+        <b>temperature</b> (how much thermal jiggling blurs that preference).</li>
+        </ul> 
+        Turning either one up makes the bell wider
+        and the octave choices looser, but they are different knobs. Fixing the bell shape while raising the temperature means
+        making both the stabilization by voice leading and the avoidance of harsh intervals less effective.</p>
+
+    <h2>Flaws</h2>
+
+    <p>This is a toy, not a theory of voicing. The sequential placement only <i>approximates</i> the true joint
+        distribution \(e^{-E/T}\), and its result depends on the order I chose. The energy terms and their constants are
+        picked by taste, not derived from anything. And “smoothness measured to the nearest previous note” is a crude
+        stand-in for real voice leading, which cares about which voice goes where. But it is cheap, it never explodes
+        combinatorially, and at a sensible temperature it reliably lands on voicings that sound reasonable, while allowing .</p>
+
+</body>
+
+</html>
