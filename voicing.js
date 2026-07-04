@@ -97,17 +97,17 @@
         return out;
     }
 
-    // the distance from a pitch class's best (nearest-to-centre) octave to CENTER
-    function bestDist(pc) {
+    // the distance from a pitch class's best (nearest-to-centre) octave to the well
+    function bestDist(pc, center) {
         let best = Infinity;
-        for (const p of octaveCandidates(pc, UPPER_LO, UPPER_HI)) best = Math.min(best, Math.abs(p - POT_CENTER));
+        for (const p of octaveCandidates(pc, UPPER_LO, UPPER_HI)) best = Math.min(best, Math.abs(p - center));
         return best;
     }
     // Place the pitch classes whose octave is most decisive (nearest the well) first
-    // and the ambiguous ones (e.g. a pc a tritone from CENTER, equidistant either
+    // and the ambiguous ones (e.g. a pc a tritone from the centre, equidistant either
     // octave) last, so the latter can be settled by the already-placed neighbours.
-    function placementOrder(pcs) {
-        return pcs.slice().sort((a, b) => bestDist(a) - bestDist(b));
+    function placementOrder(pcs, center = POT_CENTER) {
+        return pcs.slice().sort((a, b) => bestDist(a, center) - bestDist(b, center));
     }
 
     // place one upper voice (pitch class pc), given the already-placed upper pitches
@@ -115,7 +115,7 @@
     function placeUpper(pc, placed, prevUppers, opts) {
         const cands = octaveCandidates(pc, UPPER_LO, UPPER_HI);
         const energies = cands.map((p) => {
-            let E = potential(p, POT_CENTER, opts.S);
+            let E = potential(p, opts.center, opts.S);
             for (const q of placed) E += penalty(Math.abs(p - q), opts.tritone);
             if (prevUppers && prevUppers.length) {
                 let dmin = Infinity;
@@ -136,18 +136,20 @@
 
     // Generate a voicing for a progression. `chords` = [{ rootPc, pcs:[…] }].
     // Returns one { bass, uppers:[ascending midis] } per chord. Options: S (potential
-    // width), T (temperature), and either rng (a () → [0,1) function) or seed.
+    // width), T (temperature), center (the well's centre, default F♯4), and either
+    // rng (a () → [0,1) function) or seed.
     function generateVoicing(chords, options) {
         const opts = options || {};
         const S = opts.S != null ? opts.S : 3.4;
         const T = opts.T != null ? opts.T : 1;
+        const center = opts.center != null ? opts.center : POT_CENTER;
         const rng = opts.rng || (opts.seed != null ? mulberry32(opts.seed) : Math.random);
         const out = [];
         let prevUppers = null;
         for (const ch of chords) {
             const tritone = hasTritone(ch.pcs);
             const placed = [];
-            for (const pc of placementOrder(ch.pcs)) placed.push(placeUpper(pc, placed, prevUppers, { S, T, tritone, rng }));
+            for (const pc of placementOrder(ch.pcs, center)) placed.push(placeUpper(pc, placed, prevUppers, { S, T, center, tritone, rng }));
             const uppers = placed.slice().sort((a, b) => a - b);
             const bass = ch.rootPc != null ? placeBass(ch.rootPc, { S, T, rng }) : null;
             out.push({ bass, uppers });

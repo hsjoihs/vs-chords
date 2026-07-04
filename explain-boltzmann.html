@@ -69,11 +69,11 @@
     <h3>1. A comfortable register (the “potential”)</h3>
 
     <p>I want the upper voices to cluster around the middle of the range rather than drift off to the extremes. So I put
-        each note in a parabolic well (valley) centered on <b>F♯4</b> (\(c = 66\), the middle of the range I draw):</p>
+        each note in a parabolic well (valley) centered at a particular pitch (default <b>F♯4</b>, \(c = 66\)):</p>
 
     \[ V_{\text{pot}}(p) \;=\; \frac{(p-c)^2}{2S^2} \]
 
-    <p>A note pays more energy the further it strays from F♯4, and quadratically so. The number \(S\) is the <b>width of
+    <p>A note pays more energy the further it strays from the center, and quadratically so. The number \(S\) is the <b>width of
             the well</b>: a bigger \(S\) is a wider, gentler valley that tolerates notes further from the center.</p>
 
     <h3>2. Avoiding harsh clashes (the penalties)</h3>
@@ -147,8 +147,10 @@
         and leave the <i>ambiguous</i> ones for last, once their neighbours are already down to guide them.</p>
 
     <div class="eg">
-        <p><b>Example.</b> In Cmaj7, E, G and B each have a clear favourite octave near F♯4, so they go down first. The
-            root C is exactly a tritone away from F♯4, so C4 and C5 are <i>equally</i> comfortable in the well. Placing C last lets the already-placed B4 break the tie: C5 would clash with B4 (a minor
+        <p><b>Example.</b> Assume the center of the well is placed at F♯4. In Cmaj7, E and G have a clear favorite octave,
+            so they go down first. As for B, F♯4 - B4 is 5 semitones while B3 - F♯4 is 7 semitones, so B4 is slightly preferred. The
+            root C is exactly a tritone away from F♯4, so C4 and C5 are <i>equally</i> comfortable in the well.
+            Placing C last lets the already-placed B4 break the tie: C5 would clash with B4 (a minor
             2nd), so C4 wins. That is how the familiar close voicing C4–E4–G4–B4 emerges most of the time.</p>
     </div>
 
@@ -165,8 +167,7 @@
 
     \[ P(p) \;\propto\; e^{-V_{\text{pot}}(p)/T} \;=\; \exp\!\left(-\frac{(p-c)^2}{2\,S^2 T}\right), \]
 
-    <p>which is a <a href="https://en.wikipedia.org/wiki/Normal_distribution">Gaussian</a> (a bell curve) centered on F♯4.
-        That is exactly the shape drawn sideways to the left of the piano roll.</p>
+    <p>which is a <a href="https://en.wikipedia.org/wiki/Normal_distribution">Gaussian</a> (a bell curve) centered on a certain pitch, drawn sideways to the left of the piano roll.</p>
 
     <p>Notice the width of that bell is \(S\sqrt{T}\), not \(S\).
         <ul>

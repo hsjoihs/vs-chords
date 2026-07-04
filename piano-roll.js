@@ -24,7 +24,11 @@ let chords = [];
 // produced by the statistical-mechanics sampler in voicing.js (see sampleVoicing).
 let voicing = [];
 let voicingS = 3.4, // width of the parabolic potential (note-heights)
-    voicingT = 1; // temperature; the equilibrium note spread is S·√T
+    voicingT = 1, // temperature; the equilibrium note spread is S·√T
+    voicingCenter = 66; // MIDI pitch the potential well is centred on (default F♯4)
+// the temperature slider's log-scaled span (module-level so restoreState can invert it)
+const VOICING_T_MIN = 0.1,
+    VOICING_T_MAX = 1;
 let bpm = 120; // playback tempo (one chord per bar line); driven by the log tempo slider
 let metronomeOn = true; // click on every beat during playback
 let meterNum = 4, // time-signature numerator — drives the metronome accent grouping
@@ -64,7 +68,7 @@ function spellVoicedChord(ch, gen) {
 // via the statistical-mechanics generator (voicing.js)
 function sampleVoicing() {
     const nonEmpty = chords.filter((c) => c.pcs && c.pcs.length);
-    const gen = generateVoicing(nonEmpty.map((c) => ({ rootPc: c.rootPc, pcs: c.pcs })), { S: voicingS, T: voicingT });
+    const gen = generateVoicing(nonEmpty.map((c) => ({ rootPc: c.rootPc, pcs: c.pcs })), { S: voicingS, T: voicingT, center: voicingCenter });
     let gi = 0;
     return chords.map((c) => (c.pcs && c.pcs.length ? spellVoicedChord(c, gen[gi++]) : { root: c.rootPc != null ? noteName(c, c.rootPc) : "C", notes: [] }));
 }
@@ -73,6 +77,22 @@ function regenerateVoicing() {
     voicing = sampleVoicing();
     refreshTransportUI();
     build();
+}
+// the temperature slider's log mapping and its inverse (0..1000 ↔ T)
+function voicingTfromSlider(v) {
+    return VOICING_T_MIN * Math.pow(VOICING_T_MAX / VOICING_T_MIN, v / 1000);
+}
+function voicingTtoSlider(T) {
+    return Math.round((1000 * Math.log(T / VOICING_T_MIN)) / Math.log(VOICING_T_MAX / VOICING_T_MIN));
+}
+// mirror voicingS / voicingT / voicingCenter back onto their sliders (after a restore)
+function refreshVoicingUI() {
+    const sEl = document.getElementById("voicingS");
+    if (sEl) sEl.value = voicingS;
+    const tEl = document.getElementById("voicingT");
+    if (tEl) tEl.value = voicingTtoSlider(voicingT);
+    const cEl = document.getElementById("voicingCenter");
+    if (cEl) cEl.value = voicingCenter;
 }
 
 /* ====================== view state ====================== */
@@ -389,7 +409,7 @@ function rollNoteSvg(x, note, ghost) {
     let g = ghost ? `<g class="roll-ghost" data-midi="${note.midi}">` : "<g>";
     g += `<rect x="${x}" y="${top}" width="${ROLL.boxW}" height="${ROLL.boxH}" rx="1.5" style="fill:${col}${ghost ? ";stroke:" + col : ""}" fill-opacity="${ghost ? 0.16 : 1}"${ghost ? ' stroke-opacity="0.45"' : ""}/>`;
     g += `<text x="${x + ROLL.boxW / 12}" y="${y}" fill="${nameFill}" fill-opacity="${ghost ? 0.5 : 1}" text-anchor="start" dominant-baseline="central">${escapeHtml(note.name)}</text>`;
-    if (!ghost) g += `<text x="${x + ROLL.boxW * 11 / 12}" y="${y}" fill="${degFill}" text-anchor="end" dominant-baseline="central">${escapeHtml(note.label)}</text>`;
+    if (!ghost && showIntervalLabels) g += `<text x="${x + ROLL.boxW * 11 / 12}" y="${y}" fill="${degFill}" text-anchor="end" dominant-baseline="central">${escapeHtml(note.label)}</text>`;
     return g + "</g>";
 }
 
@@ -434,6 +454,7 @@ function renderPianoRoll() {
     // dissonant-pair I-beams per chord, each assigned a stem x in the right gutter
     // (stacked rightwards when a chord has more than one)
     const beamsByChord = columns.map((c) => {
+        if (!showDissonant) return []; // the "highly dissonant intervals" toggle hides the I-beams
         const notes = c.voiced,
             beams = [];
         for (let a = 0; a < notes.length; a++)
@@ -481,9 +502,9 @@ function renderPianoRoll() {
         s += `<text x="6" y="${y}" fill="#fff" fill-opacity="0.4" dominant-baseline="central">C${midi / 12 - 1}</text>`;
     }
 
-    // the register-weight bell to the left of the labels: X = -BELL_AMP·e^(−Y²/2S²),
-    // Y measured in note-heights up from F♯4, sampled down the pixel column
-    const bellMeanY = rollPitchY(noteToMidi("F#4"));
+    // the register-weight bell to the left of the labels: X = -BELL_AMP·e^(−Y²/2σ²),
+    // Y measured in note-heights up from the well centre, sampled down the pixel column
+    const bellMeanY = rollPitchY(voicingCenter);
     const bellSigma = voicingS * Math.sqrt(voicingT); // equilibrium spread S·√T
     let bell = "";
     for (let py = 0; py <= height; py += 2) {
@@ -562,6 +583,9 @@ function encodeState() {
         rm: relativeMode,
         at: analysisTonic,
         ap: tonicUserSet,
+        vs: voicingS, // voicing potential width
+        vt: voicingT, // voicing temperature
+        vc: voicingCenter, // voicing well centre (MIDI)
     };
 }
 function scheduleUrlUpdate() {
@@ -620,9 +644,13 @@ function restoreState() {
         document.getElementById("tRoman").checked = relativeMode;
         document.getElementById("key-picker").hidden = !relativeMode;
         refreshKeyUI();
+        if (st.vs != null) voicingS = st.vs;
+        if (st.vt != null) voicingT = st.vt;
+        if (st.vc != null) voicingCenter = st.vc;
+        refreshVoicingUI(); // put the voicing sliders where the URL says
         progEl.value = chipsText();
         renderChips();
-        regenerateVoicing(); // restored progression → sample a voicing for it
+        regenerateVoicing(); // restored progression + params → sample a voicing
     } finally {
         restoring = false;
     }
@@ -1042,26 +1070,29 @@ function setupUI() {
         showConnections = e.target.checked;
         build();
     };
-    // voicing controls: S (potential width) is linear; T (temperature) is log-scaled
-    // like the tempo slider. Dragging redraws the bell live; releasing re-samples.
-    const T_MIN = 0.1,
-        T_MAX = 1;
+    // voicing controls: S (potential width) and the well centre are linear; T
+    // (temperature) is log-scaled. Dragging redraws the bell live; releasing re-samples.
     const sEl = document.getElementById("voicingS");
     sEl.oninput = () => {
         voicingS = Number(sEl.value);
-        document.getElementById("voicingS-val").textContent = voicingS.toFixed(1);
         renderPianoRoll(); // the bell widens live; voicing re-rolls on release
     };
     sEl.onchange = regenerateVoicing;
+    voicingS = Number(sEl.value); // sync state to the slider's start
     const tEl = document.getElementById("voicingT");
-    const readT = () => (voicingT = T_MIN * Math.pow(T_MAX / T_MIN, Number(tEl.value) / 1000));
     tEl.oninput = () => {
-        readT();
-        document.getElementById("voicingT-val").textContent = voicingT.toFixed(2);
+        voicingT = voicingTfromSlider(Number(tEl.value));
         renderPianoRoll();
     };
     tEl.onchange = regenerateVoicing;
-    readT(); // sync the state to the slider's initial position
+    voicingT = voicingTfromSlider(Number(tEl.value)); // sync state to the slider's start
+    const cEl = document.getElementById("voicingCenter");
+    cEl.oninput = () => {
+        voicingCenter = Number(cEl.value);
+        renderPianoRoll(); // the bell slides up/down live
+    };
+    cEl.onchange = regenerateVoicing;
+    voicingCenter = Number(cEl.value);
     document.getElementById("reroll").onclick = regenerateVoicing;
 
     // a bottom-bar button toggles its overlay panel (on click), or reveals it on a
