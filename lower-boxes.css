@@ -56,12 +56,12 @@ button.hide:hover {
  **************************/
 
 #toggle-box-of-tonnetz-and-coloring {
-    right: 770px;
+    right: 420px;
 }
 
 #tonnetz-and-coloring {
     position: absolute;
-    left: var(--box-spacing);
+    left: calc(var(--box-spacing) * 2 + 290px);
     bottom: calc(var(--bottom-bar-height) + var(--box-spacing));
     width: 560px;
     height: 260px;
@@ -211,12 +211,12 @@ button.hide:hover {
  *****************/
 
 #toggle-box-of-key-degree {
-    right: 370px;
+    right: 920px;
 }
 
 #key-degree {
     position: absolute;
-    left: calc(var(--box-spacing) * 2 + 560px);
+    left: var(--box-spacing);
     bottom: calc(var(--bottom-bar-height) + var(--box-spacing));
     width: 290px;
     height: 260px;

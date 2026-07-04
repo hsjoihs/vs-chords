@@ -43,11 +43,15 @@
 #tonic-group-control .tonic-shift:hover { border-color: var(--accent); }
 #tonic-group-control .tonic-group { color: var(--txt); min-width: 84px; text-align: center; }
 /* the Voicing panel (Boltzmann sampler controls), an overlay lower box */
-#voicing { position: absolute; right: var(--box-spacing); bottom: calc(var(--bottom-bar-height) + var(--box-spacing)); width: 300px; }
+#voicing { position: absolute; left: var(--box-spacing); bottom: calc(var(--bottom-bar-height) + var(--box-spacing) + 280px); width: 300px; }
 #voicing .spechint { margin: 2px 0 6px; }
 /* the currently-sounding chord: a translucent overlay tints the background (via
    an inset box-shadow, so a colored chord-name keeps its scheme hue underneath) */
 .chip.playing, #axis-system .child-box.playing { box-shadow: inset 0 0 0 999px rgba(90, 150, 255, 0.45); }
+
+#toggle-box-of-voicing {
+    right: 1100px;
+}
 </style>
 <body>
 <div id="app">
@@ -156,7 +160,7 @@
     <div id="voicing" class="overlay-box lower-box">
       <div class="block">
         <div class="title-and-hiding">
-          <h2>Voicing</h2>
+          <h2>Automatic Voicing</h2>
           <button class="hide" title="Hide"><img src="image/icons/hide.svg" width="10.8" height="9" /></button>
         </div>
         <div class="spechint"><a href="explain-boltzmann.html" target="_blank">See how it works</a></div>
@@ -186,15 +190,11 @@
         <h2>Inside a chord</h2>
         <div class="legend">
           <table class="intervals">
-            <tr><td><i style="border-color:var(--semitone)"></i></td><td><b>H</b></td><td>half step</td><td>1 semitone</td></tr>
-            <tr><td><i style="border-color:var(--whole)"></i></td><td><b>W</b></td><td>whole step</td><td>2 semitones</td></tr>
-            <tr><td><i style="border-color:var(--minor3rd)"></i></td><td><b>m3</b></td><td>minor 3rd</td><td>3 semitones</td></tr>
-            <tr><td><i style="border-color:var(--major3rd)"></i></td><td><b>M3</b></td><td>major 3rd</td><td>4 semitones</td></tr>
-            <tr><td><i style="border-color:var(--p4p5)"></i></td><td><b>P4</b></td><td>perfect 4th</td><td>5 semitones</td></tr>
-            <tr><td><i style="border-color:var(--tritone)"></i></td><td><b>TT</b></td><td>tritone</td><td>6 semitones</td></tr>
+            <tr><td><i style="border-color:var(--semitone)"></i></td><td><b>m2 / m9</b></td></tr>
+            <tr><td><i style="border-color:var(--tritone)"></i></td><td><b>TT</b></td></tr>
           </table>
-          <div class="toggle"><input type="checkbox" id="tConsonant" checked><label for="tConsonant">Show consonant intervals (<span style="text-decoration: var(--minor3rd) underline; text-underline-offset: 0.2em;">m3</span> <span style="text-decoration: var(--major3rd) underline; text-underline-offset: 0.2em;">M3</span> <span style="text-decoration: var(--p4p5) underline; text-underline-offset: 0.2em;">P4</span>)</label></div>
-          <div class="toggle"><input type="checkbox" id="tDissonant" checked><label for="tDissonant">Show dissonant intervals (<span style="text-decoration: var(--semitone) underline; text-underline-offset: 0.2em;">H</span> <span style="text-decoration: var(--whole) underline; text-underline-offset: 0.2em;">W</span> <span style="text-decoration: var(--tritone) underline; text-underline-offset: 0.2em;">TT</span>)</label></div>
+          <div class="toggle" style="display: none;"><input type="checkbox" id="tConsonant" checked><label for="tConsonant">Show consonant intervals (<span style="text-decoration: var(--minor3rd) underline; text-underline-offset: 0.2em;">m3</span> <span style="text-decoration: var(--major3rd) underline; text-underline-offset: 0.2em;">M3</span> <span style="text-decoration: var(--p4p5) underline; text-underline-offset: 0.2em;">P4</span>)</label></div>
+          <div class="toggle"><input type="checkbox" id="tDissonant" checked><label for="tDissonant">Show highly dissonant intervals (<span style="text-decoration: var(--semitone) underline; text-underline-offset: 0.2em;">m2 / m9</span>  <span style="text-decoration: var(--tritone) underline; text-underline-offset: 0.2em;">TT</span>)</label></div>
           <div class="toggle"><input type="checkbox" id="tIntervalLabels" checked><label for="tIntervalLabels">Label intervals</label></div>
         </div>
       </div>
@@ -216,7 +216,7 @@
     <div class="box-visibility-toggler" id="toggle-box-of-tonnetz-and-coloring">Adjust Coloring 🎨</div>
     <div class="box-visibility-toggler" id="toggle-box-of-key-degree">🔑 Adjust Key / Degree 📐</div>
     <div class="box-visibility-toggler" id="toggle-box-of-tempo-metronome">🕰️ Adjust Tempo / Metronome 🎚️</div>
-    <div class="box-visibility-toggler" id="toggle-box-of-voicing">🎲 Adjust Voicing 🎛️</div>
+    <div class="box-visibility-toggler" id="toggle-box-of-voicing">🎲 Adjust Automatic Voicing 🎛️</div>
   </div>
   <div id="left-bar" style="padding-top: 3px;">
     <img src="image/icons/cylinder.svg" title="Cylinder" width="45" height="45" style="opacity: 0.5; cursor: pointer;" />
