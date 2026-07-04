@@ -42,7 +42,10 @@ let positionSec = 0, // the retained cursor position (seconds into the piece)
 
 // build an editor chord from a parsed symbol, auto-choosing the spelling slider
 function chordFromParsed(c) {
-    return { symbol: c.symbol, pcs: c.pcs, rootPc: c.rootPc, fifthStart: bestFifthStart(c.notes) };
+    // bassPc is the piano-roll-owned slash bass; it starts at the root (root
+    // position) and is preserved across re-rolls (a future piano-roll interaction
+    // will let the user move it, recording e.g. A7/E).
+    return { symbol: c.symbol, pcs: c.pcs, rootPc: c.rootPc, bassPc: c.rootPc, fifthStart: bestFifthStart(c.notes) };
 }
 
 // name of a pitch class within a chord, via that chord's spelling window
@@ -56,11 +59,13 @@ function spellMidi(pcName, midi) {
     return pcName + (midi - noteToMidi(pcName + "0")) / 12;
 }
 // build a { root, notes } display chord from a parsed chord and a generated
-// { bass, uppers } octave assignment (bass first, then ascending upper voices)
+// { bass, uppers } octave assignment (bass first, then ascending upper voices).
+// The bass is spelled by its own pitch class (so a slash bass reads correctly),
+// while `root` stays the naming root that the degree labels are measured against.
 function spellVoicedChord(ch, gen) {
     const rootName = ch.rootPc != null ? noteName(ch, ch.rootPc) : ch.pcs.length ? noteName(ch, ch.pcs[0]) : "C";
     const notes = [];
-    if (gen.bass != null) notes.push(spellMidi(noteName(ch, ch.rootPc), gen.bass));
+    if (gen.bass != null) notes.push(spellMidi(noteName(ch, ((gen.bass % 12) + 12) % 12), gen.bass));
     for (const m of gen.uppers) notes.push(spellMidi(noteName(ch, ((m % 12) + 12) % 12), m));
     return { root: rootName, notes };
 }
@@ -68,7 +73,7 @@ function spellVoicedChord(ch, gen) {
 // via the statistical-mechanics generator (voicing.js)
 function sampleVoicing() {
     const nonEmpty = chords.filter((c) => c.pcs && c.pcs.length);
-    const gen = generateVoicing(nonEmpty.map((c) => ({ rootPc: c.rootPc, pcs: c.pcs })), { S: voicingS, T: voicingT, center: voicingCenter });
+    const gen = generateVoicing(nonEmpty.map((c) => ({ pcs: c.pcs, bass: c.bassPc != null ? c.bassPc : c.rootPc })), { S: voicingS, T: voicingT, center: voicingCenter });
     let gi = 0;
     return chords.map((c) => (c.pcs && c.pcs.length ? spellVoicedChord(c, gen[gi++]) : { root: c.rootPc != null ? noteName(c, c.rootPc) : "C", notes: [] }));
 }
@@ -610,6 +615,7 @@ function restoreState() {
         chords = st.c.map(([pcs, rootPc, fifthStart, symbol]) => ({
             pcs: pcs.slice(),
             rootPc: rootPc == null ? null : rootPc,
+            bassPc: rootPc == null ? null : rootPc, // restored in root position (no slash stored yet)
             fifthStart,
             symbol,
         }));
@@ -711,7 +717,7 @@ function renderChips() {
                 }
                 renameChord(ch);
                 refresh();
-                build();
+                regenerateVoicing(); // the chord's notes changed → re-sample the voicing
             };
             // right-click: tag (or untag) the root
             b.oncontextmenu = (e) => {
@@ -724,7 +730,9 @@ function renderChips() {
                 }
                 renameChord(ch);
                 refresh();
-                build();
+                // the naming root changed (degree labels + spelling), so re-sample —
+                // but the bass slash (bassPc) is a piano-roll concern and is preserved
+                regenerateVoicing();
             };
             ring.appendChild(b);
         }
@@ -739,7 +747,7 @@ function renderChips() {
         chip.querySelector(".del").onclick = () => {
             chords.splice(idx, 1);
             renderChips();
-            build();
+            regenerateVoicing(); // a removed chord shortens the voicing
         };
 
         wrap.appendChild(chip);

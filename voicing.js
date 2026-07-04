@@ -134,7 +134,9 @@
         return cands[boltzmannPick(energies, opts.T, opts.rng)];
     }
 
-    // Generate a voicing for a progression. `chords` = [{ rootPc, pcs:[…] }].
+    // Generate a voicing for a progression. Each chord is { pcs:[…], bass } where
+    // `bass` is the pitch class to double in the bass — the slash note, an
+    // independent piano-roll concern (it falls back to a legacy `rootPc` field).
     // Returns one { bass, uppers:[ascending midis] } per chord. Options: S (potential
     // width), T (temperature), center (the well's centre, default F♯4), and either
     // rng (a () → [0,1) function) or seed.
@@ -151,7 +153,8 @@
             const placed = [];
             for (const pc of placementOrder(ch.pcs, center)) placed.push(placeUpper(pc, placed, prevUppers, { S, T, center, tritone, rng }));
             const uppers = placed.slice().sort((a, b) => a - b);
-            const bass = ch.rootPc != null ? placeBass(ch.rootPc, { S, T, rng }) : null;
+            const bassPc = ch.bass != null ? ch.bass : ch.rootPc; // the slash bass (default: the naming root)
+            const bass = bassPc != null ? placeBass(bassPc, { S, T, rng }) : null;
             out.push({ bass, uppers });
             prevUppers = uppers;
         }
