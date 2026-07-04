@@ -17,16 +17,14 @@
 // fifths is adopted as the circle of fifths (see theory-chordname.js).
 let chords = [];
 
-// a fixed voicing (with octaves) for the demo progression CM7 → A7 → Dm7 → G7.
-// Each chord carries its `root` (a pitch letter/accidental, no octave) plus the
-// actual sounding `notes`, so the piano roll can label every note by its degree
-// (R, M3, m7, …) above that root — information the octave-free ch.pcs lacks.
-const DEMO_VOICING = [
-    { root: "C", notes: ["C2", "C4", "E4", "G4", "B4"] }, // CM7
-    { root: "A", notes: ["A2", "C#4", "E4", "G4", "A4"] }, // A7
-    { root: "D", notes: ["D2", "C4", "D4", "F4", "A4"] }, // Dm7
-    { root: "G", notes: ["G2", "D4", "F4", "G4", "B4"] }, // G7
-];
+// the current voicing (with octaves), one entry per chord. Each carries its `root`
+// (a pitch letter/accidental, no octave) plus the actual sounding `notes` (bass
+// first, then ascending upper voices), so the piano roll can label every note by
+// its degree (R, M3, m7, …) — information the octave-free ch.pcs lacks. It is
+// produced by the statistical-mechanics sampler in voicing.js (see sampleVoicing).
+let voicing = [];
+let voicingS = 3.4, // width of the parabolic potential (note-heights)
+    voicingT = 1; // temperature; the equilibrium note spread is S·√T
 let bpm = 120; // playback tempo (one chord per bar line); driven by the log tempo slider
 let metronomeOn = true; // click on every beat during playback
 let meterNum = 4, // time-signature numerator — drives the metronome accent grouping
@@ -46,6 +44,35 @@ function chordFromParsed(c) {
 // name of a pitch class within a chord, via that chord's spelling window
 function noteName(ch, pc) {
     return nameInWindow(pc, ch.fifthStart);
+}
+
+// spell a MIDI pitch whose pitch class is written `pcName` (letter+accidental, no
+// octave), e.g. spellMidi("C", 60) → "C4", spellMidi("C#", 61) → "C#4"
+function spellMidi(pcName, midi) {
+    return pcName + (midi - noteToMidi(pcName + "0")) / 12;
+}
+// build a { root, notes } display chord from a parsed chord and a generated
+// { bass, uppers } octave assignment (bass first, then ascending upper voices)
+function spellVoicedChord(ch, gen) {
+    const rootName = ch.rootPc != null ? noteName(ch, ch.rootPc) : ch.pcs.length ? noteName(ch, ch.pcs[0]) : "C";
+    const notes = [];
+    if (gen.bass != null) notes.push(spellMidi(noteName(ch, ch.rootPc), gen.bass));
+    for (const m of gen.uppers) notes.push(spellMidi(noteName(ch, ((m % 12) + 12) % 12), m));
+    return { root: rootName, notes };
+}
+// sample a fresh voicing for the current progression at the current S and T,
+// via the statistical-mechanics generator (voicing.js)
+function sampleVoicing() {
+    const nonEmpty = chords.filter((c) => c.pcs && c.pcs.length);
+    const gen = generateVoicing(nonEmpty.map((c) => ({ rootPc: c.rootPc, pcs: c.pcs })), { S: voicingS, T: voicingT });
+    let gi = 0;
+    return chords.map((c) => (c.pcs && c.pcs.length ? spellVoicedChord(c, gen[gi++]) : { root: c.rootPc != null ? noteName(c, c.rootPc) : "C", notes: [] }));
+}
+// re-roll the voicing (a fresh random draw) and redraw everything
+function regenerateVoicing() {
+    voicing = sampleVoicing();
+    refreshTransportUI();
+    build();
 }
 
 /* ====================== view state ====================== */
@@ -247,7 +274,7 @@ function refreshAxisSystem() {
         // explain SoundQuest coloring on hover (also surfaces the fine T/P/Pm…
         // distinction that the accessible 3-color merge hides)
         const titleAttr = chordScheme === "soundquest" ? ` title="${escapeHtml(sqTooltip(ch))}"` : "";
-        const left = rollBoxX(i) + ROLL.boxW / 2; // centre of column i
+        const left = rollBoxX(i) + ROLL.boxW / 2 + BELL_PAD; // column centre (the SVG is shifted right by BELL_PAD)
         html += `<div class="child-box" style="left:${left}px"><span class="chord-name ${cls}"${style}${titleAttr}>${escapeHtml(chordLabel(ch))}</span></div>`;
     });
     el.innerHTML = html;
@@ -300,10 +327,20 @@ const ROLL_MIDI_LO = 36, // C2
     ROLL_MIDI_HI = 84; // C6
 const ROLL = { rowH: 10, boxW: 46, boxH: 8, padTop: 8, padLeft: 56, colW: 122, gutter: 24 };
 // absolute semitone gaps that clash like a minor second yet whose consonant
-// octave-complements do not: m2 (1), tritone (6), m9 (13) — note 11 (M7) is absent.
-const DISSONANT_GAPS = new Set([1, 6, 13]);
-const DISSONANT_COLORS = {1: "var(--semitone)", 6: "var(--tritone)", 13: "var(--semitone)"}
+// octave-complements do not: m2/m9 (1), tritone (6) but not M7 (11).
+const HIGHLY_DISSONANT_GAPS = new Set([1, 6]);
+const HIGHLY_DISSONANT_COLORS = {1: "var(--semitone)", 6: "var(--tritone)"};
 const NOOCT_RE = /-?\d+$/; // trailing octave digits of a note name
+
+// a Gaussian "register weight" bell drawn to the left of the C-labels: the
+// equilibrium single-note distribution of the sampler, X = -BELL_AMP · e^(−Y²/2σ²)
+// (X, Y, σ in note-height units), with the mean Y = 0 pinned to F♯4 and the X = 0
+// baseline at x = BELL_BASE_X. Its width σ = S·√T tracks the potential width and
+// temperature. Since the peak reaches BELL_AMP note-heights left of the baseline,
+// the whole drawing (and the chord-name row above it) shifts right by BELL_PAD.
+const BELL_AMP = 8,
+    BELL_BASE_X = 6; // = the C-labels' x, so the bell's baseline meets them
+const BELL_PAD = BELL_AMP * ROLL.rowH - BELL_BASE_X + 6; // px the view extends left of x=0
 
 // y of a pitch's row centre (higher pitch → smaller y) and x of a chord's box column
 function rollPitchY(midi) {
@@ -372,14 +409,14 @@ function rollIbeamSvg(bx, y1, y2, col) {
     );
 }
 
-// (re)build the SVG from DEMO_VOICING; the voicing is fixed, so this runs once.
+// (re)build the SVG from the current `voicing` (redraw only — no re-sampling)
 function renderPianoRoll() {
     const host = document.getElementById("piano-roll-grid");
     if (!host) return;
-    const N = DEMO_VOICING.length;
+    const N = voicing.length;
     // per chord: the sounded notes plus the ghost slots (the same chord-tone pitch
     // classes, spelled identically, in the C2–C6 window's other octaves)
-    const columns = DEMO_VOICING.map((chord) => {
+    const columns = voicing.map((chord) => {
         const voiced = chord.notes.map((name) => ({ midi: noteToMidi(name), name, label: degreeAboveRoot(chord.root, name) }));
         const voicedMidi = new Set(voiced.map((v) => v.midi));
         const spellings = [...new Set(chord.notes.map((n) => n.replace(NOOCT_RE, "")))]; // letter+accidental
@@ -401,9 +438,9 @@ function renderPianoRoll() {
             beams = [];
         for (let a = 0; a < notes.length; a++)
             for (let b = a + 1; b < notes.length; b++) {
-                const gap = Math.abs(notes[a].midi - notes[b].midi);
-                if (DISSONANT_GAPS.has(gap))
-                    beams.push({ lo: Math.min(notes[a].midi, notes[b].midi), hi: Math.max(notes[a].midi, notes[b].midi), col: DISSONANT_COLORS[gap] });
+                const gap = Math.abs(notes[a].midi - notes[b].midi); // take the absolute value before taking the mod, distinguishing M7 from m9
+                if (HIGHLY_DISSONANT_GAPS.has(gap % 12))
+                    beams.push({ lo: Math.min(notes[a].midi, notes[b].midi), hi: Math.max(notes[a].midi, notes[b].midi), col: HIGHLY_DISSONANT_COLORS[gap % 12] });
             }
         beams.forEach((beam, k) => (beam.stem = ROLL.boxW + BEAM_STEM_GAP + k * BEAM_STEP)); // x, relative to the box left
         return beams;
@@ -421,7 +458,9 @@ function renderPianoRoll() {
 
     const width = ROLL.padLeft + (N - 1) * ROLL.colW + ROLL.boxW + ROLL.gutter;
     const height = 2 * ROLL.padTop + (ROLL_MIDI_HI - ROLL_MIDI_LO + 1) * ROLL.rowH;
-    let s = `<svg id="piano-roll-svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" font-size="9">`;
+    // the viewBox is opened out to the left by BELL_PAD so the register bell fits
+    const viewW = width + BELL_PAD;
+    let s = `<svg id="piano-roll-svg" viewBox="${-BELL_PAD} 0 ${viewW} ${height}" width="${viewW}" height="${height}" font-size="9">`;
 
     // one arrowhead marker per motion colour. markerUnits="userSpaceOnUse" keeps
     // every head the same absolute size — otherwise the default (strokeWidth) would
@@ -441,6 +480,18 @@ function renderPianoRoll() {
         s += `<line x1="${ROLL.padLeft - 8}" y1="${y}" x2="${width - 8}" y2="${y}" stroke="#fff" stroke-opacity="0.06"/>`;
         s += `<text x="6" y="${y}" fill="#fff" fill-opacity="0.4" dominant-baseline="central">C${midi / 12 - 1}</text>`;
     }
+
+    // the register-weight bell to the left of the labels: X = -BELL_AMP·e^(−Y²/2S²),
+    // Y measured in note-heights up from F♯4, sampled down the pixel column
+    const bellMeanY = rollPitchY(noteToMidi("F#4"));
+    const bellSigma = voicingS * Math.sqrt(voicingT); // equilibrium spread S·√T
+    let bell = "";
+    for (let py = 0; py <= height; py += 2) {
+        const Y = (bellMeanY - py) / ROLL.rowH; // note-heights above the mean
+        const X = -BELL_AMP * Math.exp(-(Y * Y) / (2 * bellSigma * bellSigma));
+        bell += (py === 0 ? "M" : "L") + (BELL_BASE_X + X * ROLL.rowH).toFixed(2) + " " + py + " ";
+    }
+    s += `<path d="${bell.trim()}" fill="none" stroke="#9ecbff" stroke-opacity="0.75" stroke-width="1.2"/>`;
 
     // ghost slots underneath, then arrows, then the solid notes, then I-beams on top
     for (let i = 0; i < N; i++) for (const gh of columns[i].ghosts) s += rollNoteSvg(rollBoxX(i), gh, true);
@@ -571,7 +622,7 @@ function restoreState() {
         refreshKeyUI();
         progEl.value = chipsText();
         renderChips();
-        build();
+        regenerateVoicing(); // restored progression → sample a voicing for it
     } finally {
         restoring = false;
     }
@@ -683,7 +734,7 @@ function doRender() {
         chords = parsed.map(chordFromParsed);
         maybeAutoTonic(); // follow the new progression (Roman mode or SoundQuest)
         renderChips();
-        build();
+        regenerateVoicing(); // a new progression → sample a fresh voicing
     } catch (e) {
         err.textContent = e.message;
     }
@@ -705,7 +756,7 @@ function transposeBy(deltaFifths) {
     refreshKeyUI();
     progEl.value = chipsText();
     renderChips();
-    build();
+    regenerateVoicing(); // transposed pitches → re-sample the voicing
 }
 
 // recompute the auto default tonic from the current chords
@@ -796,7 +847,7 @@ function chordDurSec() {
     return (isPlaying() ? playMeter : meterNum) * (60 / (isPlaying() ? playBpm : bpm));
 }
 function pieceTotalSec() {
-    return DEMO_VOICING.length * chordDurSec();
+    return voicing.length * chordDurSec();
 }
 function fmtTime(sec) {
     sec = Math.max(0, Math.round(sec));
@@ -804,7 +855,7 @@ function fmtTime(sec) {
 }
 // the chord index sounding at `positionSec` (0-based, clamped to the voicing)
 function currentChordIndex() {
-    return Math.max(0, Math.min(DEMO_VOICING.length - 1, Math.floor(positionSec / chordDurSec())));
+    return Math.max(0, Math.min(voicing.length - 1, Math.floor(positionSec / chordDurSec())));
 }
 // tint the currently-sounding chip and chord-name box; idx < 0 clears
 function highlightChord(idx) {
@@ -850,7 +901,7 @@ function playFrom(offset) {
     playMeter = meterNum;
     positionSec = offset;
     playVoicing(
-        DEMO_VOICING.map((c) => c.notes),
+        voicing.map((c) => c.notes),
         {
             bpm,
             beatsPerChord: meterNum,
@@ -928,7 +979,7 @@ function setupUI() {
     document.getElementById("add").onclick = () => {
         chords.push(chordFromParsed(parseChord("C")));
         renderChips();
-        build();
+        regenerateVoicing(); // an added chord extends the voicing
     };
     document.getElementById("tConsonant").onchange = (e) => {
         showConsonant = e.target.checked;
@@ -991,11 +1042,34 @@ function setupUI() {
         showConnections = e.target.checked;
         build();
     };
+    // voicing controls: S (potential width) is linear; T (temperature) is log-scaled
+    // like the tempo slider. Dragging redraws the bell live; releasing re-samples.
+    const T_MIN = 0.1,
+        T_MAX = 1;
+    const sEl = document.getElementById("voicingS");
+    sEl.oninput = () => {
+        voicingS = Number(sEl.value);
+        document.getElementById("voicingS-val").textContent = voicingS.toFixed(1);
+        renderPianoRoll(); // the bell widens live; voicing re-rolls on release
+    };
+    sEl.onchange = regenerateVoicing;
+    const tEl = document.getElementById("voicingT");
+    const readT = () => (voicingT = T_MIN * Math.pow(T_MAX / T_MIN, Number(tEl.value) / 1000));
+    tEl.oninput = () => {
+        readT();
+        document.getElementById("voicingT-val").textContent = voicingT.toFixed(2);
+        renderPianoRoll();
+    };
+    tEl.onchange = regenerateVoicing;
+    readT(); // sync the state to the slider's initial position
+    document.getElementById("reroll").onclick = regenerateVoicing;
+
     // a bottom-bar button toggles its overlay panel (on click), or reveals it on a
     // 0.5 s hover; the panel's own hide button hides it.
     wirePanelToggle("tonnetz-and-coloring", "toggle-box-of-tonnetz-and-coloring");
     wirePanelToggle("key-degree", "toggle-box-of-key-degree");
     wirePanelToggle("tempo-metronome", "toggle-box-of-tempo-metronome");
+    wirePanelToggle("voicing", "toggle-box-of-voicing");
 }
 
 window.addEventListener("DOMContentLoaded", () => {

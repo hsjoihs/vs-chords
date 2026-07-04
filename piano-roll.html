@@ -42,6 +42,9 @@
 #tonic-group-control .tonic-shift { background: var(--panel2); color: var(--txt); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; line-height: 1; cursor: pointer; }
 #tonic-group-control .tonic-shift:hover { border-color: var(--accent); }
 #tonic-group-control .tonic-group { color: var(--txt); min-width: 84px; text-align: center; }
+/* the Voicing panel (Boltzmann sampler controls), an overlay lower box */
+#voicing { position: absolute; right: var(--box-spacing); bottom: calc(var(--bottom-bar-height) + var(--box-spacing)); width: 300px; }
+#voicing .spechint { margin: 2px 0 6px; }
 /* the currently-sounding chord: a translucent overlay tints the background (via
    an inset box-shadow, so a colored chord-name keeps its scheme hue underneath) */
 .chip.playing, #axis-system .child-box.playing { box-shadow: inset 0 0 0 999px rgba(90, 150, 255, 0.45); }
@@ -150,6 +153,28 @@
         </div>
       </div>
     </div>
+    <div id="voicing" class="overlay-box lower-box">
+      <div class="block">
+        <div class="title-and-hiding">
+          <h2>Voicing</h2>
+          <button class="hide" title="Hide"><img src="image/icons/hide.svg" width="10.8" height="9" /></button>
+        </div>
+        <div class="spechint">Octaves are sampled from a Boltzmann distribution — a parabolic potential (well of width S, centred on F♯4) at temperature T — favouring smooth voice leading and shunning minor-9th / minor-2nd clashes.</div>
+        <div class="row" style="align-items: center; gap: 8px;">
+          <span class="fld" style="min-width: 86px;">Potential width S</span>
+          <input id="voicingS" type="range" min="1" max="8" step="0.1" value="3.4" title="width of the potential well" style="flex: 1; accent-color: var(--main); cursor: pointer;">
+          <span id="voicingS-val" style="min-width: 30px; text-align: right; font-size: 12px; color: var(--muted);">3.4</span>
+        </div>
+        <div class="row" style="align-items: center; gap: 8px;">
+          <span class="fld" style="min-width: 86px;">Temperature T</span>
+          <input id="voicingT" type="range" min="0" max="1000" step="1" value="602" title="temperature (log scale)" style="flex: 1; accent-color: var(--main); cursor: pointer;">
+          <span id="voicingT-val" style="min-width: 30px; text-align: right; font-size: 12px; color: var(--muted);">0.40</span>
+        </div>
+        <div class="row">
+          <button type="button" id="reroll" class="primary" style="margin: 4px 0 0 auto;">🎲 Re-roll voicing</button>
+        </div>
+      </div>
+    </div>
     <div id="legends" class="overlay-box">
       <div class="block" style="border-top: 0 solid var(--line)">
         <h2>Inside a chord</h2>
@@ -185,6 +210,7 @@
     <div class="box-visibility-toggler" id="toggle-box-of-tonnetz-and-coloring">Adjust Coloring 🎨</div>
     <div class="box-visibility-toggler" id="toggle-box-of-key-degree">🔑 Adjust Key / Degree 📐</div>
     <div class="box-visibility-toggler" id="toggle-box-of-tempo-metronome">🕰️ Adjust Tempo / Metronome 🎚️</div>
+    <div class="box-visibility-toggler" id="toggle-box-of-voicing">🎲 Adjust Voicing 🎛️</div>
   </div>
   <div id="left-bar" style="padding-top: 3px;">
     <img src="image/icons/cylinder.svg" title="Cylinder" width="45" height="45" style="opacity: 0.5; cursor: pointer;" />
@@ -197,6 +223,7 @@
 <script src="theory-roman.js"></script>
 <script src="soundquest-data.js"></script>
 <script src="audio.js"></script>
+<script src="voicing.js"></script>
 <script src="piano-roll.js"></script>
 </body>
 </html>
