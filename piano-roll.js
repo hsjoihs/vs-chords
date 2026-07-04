@@ -275,11 +275,14 @@ function escapeHtml(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// the slash-bass suffix for a piano-roll chord label, e.g. "/E" for A7/E; empty when
-// the bass is the root (root position) or unset. The bass is a piano-roll concern, so
-// this shows on the axis-system labels over the roll — never on the chord chips.
+// the slash-bass suffix for a piano-roll chord label, e.g. "/E" for A7/E (or "/III"
+// in Roman mode: the bass is named as a scale degree, matching the numeral). Empty
+// when the bass is the root (root position) or unset. The bass is a piano-roll
+// concern, so this shows on the axis-system labels over the roll — never on the chips.
 function slashSuffix(ch) {
-    return ch.bassPc != null && ch.bassPc !== ch.rootPc ? "/" + noteName(ch, ch.bassPc) : "";
+    if (ch.bassPc == null || ch.bassPc === ch.rootPc) return "";
+    const bassName = noteName(ch, ch.bassPc);
+    return "/" + (relativeMode ? noteToDegree(bassName, majorKeyName(analysisTonic)) : bassName);
 }
 
 let lastAxisSig = null;

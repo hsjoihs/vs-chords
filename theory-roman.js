@@ -282,6 +282,7 @@
         chordToRelative,
         progression: { parseAndResolveCurlyBraceRelative },
         degreeNote,
+        noteToDegree,
         accValue,
     };
 });

@@ -90,6 +90,16 @@ test("absolute → relative → absolute round-trips the pitch classes", () => {
     }
 });
 
+test("noteToDegree names a single pitch as a scale degree (flat-leaning, uppercase)", () => {
+    // used for the piano-roll slash bass in Roman mode: A7/E → …/III in key C
+    assert.equal(T.noteToDegree("E", "C"), "III");
+    assert.equal(T.noteToDegree("E♭", "C"), "♭III");
+    assert.equal(T.noteToDegree("G", "C"), "V");
+    assert.equal(T.noteToDegree("F♯", "C"), "♯IV");
+    assert.equal(T.noteToDegree("C", "C"), "I");
+    assert.equal(T.noteToDegree("E", "A"), "V"); // key-relative, not absolute
+});
+
 test("parse and resolve 'curly brace relative'", () => {
     assert.deepEqual(
         T.progression.parseAndResolveCurlyBraceRelative("C {V7 → i=} Am {V7 → I=} F {=I V} {II7 V7 I=} C"),
