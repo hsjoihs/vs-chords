@@ -72,6 +72,10 @@ function spellVoicedChord(ch, gen) {
 // sample a fresh voicing for the current progression at the current S and T,
 // via the statistical-mechanics generator (voicing.js)
 function sampleVoicing() {
+    // keep each slash bass valid: if it is no longer one of the chord's pitch classes
+    // (the note was deselected in the chip, or the chord is now N.C.), fall back to
+    // root position — so the voicing and the "…/bass" label never disagree.
+    for (const c of chords) if (c.bassPc == null || !c.pcs.includes(c.bassPc)) c.bassPc = c.pcs.includes(c.rootPc) ? c.rootPc : null;
     const nonEmpty = chords.filter((c) => c.pcs && c.pcs.length);
     const gen = generateVoicing(nonEmpty.map((c) => ({ pcs: c.pcs, bass: c.bassPc != null ? c.bassPc : c.rootPc })), { S: voicingS, T: voicingT, center: voicingCenter });
     let gi = 0;
