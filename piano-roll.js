@@ -296,10 +296,11 @@ function effectiveRootPc(ch) {
 // when the bass is the chord's root (root position — compared against the *named*
 // root, so an untagged chord doesn't get a redundant "/I") or unset. The bass is a
 // piano-roll concern, so this shows on the axis-system labels — never on the chips.
-function slashSuffix(ch) {
+// `absolute` forces an absolute pitch name even in Roman mode (for #prog-readonly).
+function slashSuffix(ch, absolute) {
     if (ch.bassPc == null || !ch.pcs || !ch.pcs.length || ch.bassPc === effectiveRootPc(ch)) return "";
     const bassName = noteName(ch, ch.bassPc);
-    return "/" + (relativeMode ? noteToDegree(bassName, majorKeyName(analysisTonic)) : bassName);
+    return "/" + (!absolute && relativeMode ? noteToDegree(bassName, majorKeyName(analysisTonic)) : bassName);
 }
 
 // a "… missing" warning (HTML) for the chord tones that the sounding voicing omits,
@@ -335,6 +336,7 @@ function refreshAxisSystem() {
     const sig = JSON.stringify([tonicResidue, chordScheme, noteScheme, accessibleColors, relativeMode, analysisTonic, chords.map((c) => [c.symbol, c.pcs, c.bassPc]), voicing.map((v) => v.notes)]);
     if (sig === lastAxisSig) return;
     lastAxisSig = sig;
+    if (progEl) progEl.value = progReadonlyText(); // mirror the labels into #prog-readonly (always absolute)
 
     if (chords.length === 0) {
         el.innerHTML = "";
@@ -640,11 +642,13 @@ function build() {
 
 /* ====================== chord text ====================== */
 let progEl;
-// the current progression as a text string (the chips joined)
-function chipsText() {
+// the read-only progression text mirrored into #prog-readonly: the same chords the
+// axis-system labels show, but ALWAYS in absolute pitch (never Roman) and with the
+// slash bass. e.g. labels "Vsus4/I → VI7" in C ⟶ "Gsus4/C → A7".
+function progReadonlyText() {
     return chords
-        .map((c) => c.symbol)
-        .filter(Boolean)
+        .filter((ch) => ch.symbol)
+        .map((ch) => ch.symbol + slashSuffix(ch, true))
         .join(" → ");
 }
 
@@ -738,9 +742,8 @@ function restoreState() {
         if (st.vt != null) voicingT = st.vt;
         if (st.vc != null) voicingCenter = st.vc;
         refreshVoicingUI(); // put the voicing sliders where the URL says
-        progEl.value = chipsText();
         renderChips();
-        regenerateVoicing(); // restored progression + params → sample a voicing
+        regenerateVoicing(); // restored progression + params → sample a voicing (fills #prog-readonly)
     } finally {
         restoring = false;
     }
@@ -839,25 +842,15 @@ function renderChips() {
     });
 }
 
+// the progression shown on first load (when there's no ?s=… to restore). #prog-readonly
+// is an output only, so the default lives here rather than being parsed from the DOM.
+const DEFAULT_PROGRESSION = "CM7 → A7 → Dm7 → G7";
+
 function doRender() {
-    const err = document.getElementById("err");
-    err.textContent = "";
-    try {
-        const raw = document.getElementById("prog").value;
-        // resolve "curly-brace relative" notation (e.g. "{V7 → i=} Am") to absolute chords
-        const text = raw.includes("{") ? progression.parseAndResolveCurlyBraceRelative(raw).join(" → ") : raw;
-        const parsed = parseProgression(text);
-        if (parsed.length === 0) {
-            err.textContent = "Enter at least one chord.";
-            return;
-        }
-        chords = parsed.map(chordFromParsed);
-        maybeAutoTonic(); // follow the new progression (Roman mode or SoundQuest)
-        renderChips();
-        regenerateVoicing(); // a new progression → sample a fresh voicing
-    } catch (e) {
-        err.textContent = e.message;
-    }
+    chords = parseProgression(DEFAULT_PROGRESSION).map(chordFromParsed);
+    maybeAutoTonic(); // follow the progression (Roman mode or SoundQuest)
+    renderChips();
+    regenerateVoicing(); // sample a fresh voicing (which redraws + fills #prog-readonly)
 }
 
 // Transpose the whole progression by `deltaFifths` line-of-fifths steps
@@ -874,9 +867,8 @@ function transposeBy(deltaFifths) {
     analysisTonic = (((analysisTonic + 7 * deltaFifths) % 12) + 12) % 12;
     tonicResidue = (((tonicResidue + 7 * deltaFifths) % 3) + 3) % 3; // ride the group along
     refreshKeyUI();
-    progEl.value = chipsText();
     renderChips();
-    regenerateVoicing(); // transposed pitches → re-sample the voicing
+    regenerateVoicing(); // transposed pitches → re-sample the voicing (fills #prog-readonly)
 }
 
 // recompute the auto default tonic from the current chords
@@ -1045,7 +1037,7 @@ function playFrom(offset) {
 }
 
 function setupUI() {
-    progEl = document.getElementById("prog");
+    progEl = document.getElementById("prog-readonly");
 
     // click a note box (solid or ghost) in the piano roll to toggle it in/out of the
     // voicing. Delegated on the container, which survives each renderPianoRoll rebuild.
