@@ -280,12 +280,24 @@ function escapeHtml(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+// the pitch class the chord is actually named on — its tagged root, or (when the
+// chip has untagged it) the root that `describe` chose for the displayed symbol.
+function effectiveRootPc(ch) {
+    if (ch.rootPc != null) return ch.rootPc;
+    try {
+        const p = parseChord(ch.symbol);
+        return p ? p.rootPc : null;
+    } catch (e) {
+        return null;
+    }
+}
 // the slash-bass suffix for a piano-roll chord label, e.g. "/E" for A7/E (or "/III"
 // in Roman mode: the bass is named as a scale degree, matching the numeral). Empty
-// when the bass is the root (root position) or unset. The bass is a piano-roll
-// concern, so this shows on the axis-system labels over the roll — never on the chips.
+// when the bass is the chord's root (root position — compared against the *named*
+// root, so an untagged chord doesn't get a redundant "/I") or unset. The bass is a
+// piano-roll concern, so this shows on the axis-system labels — never on the chips.
 function slashSuffix(ch) {
-    if (ch.bassPc == null || ch.bassPc === ch.rootPc) return "";
+    if (ch.bassPc == null || !ch.pcs || !ch.pcs.length || ch.bassPc === effectiveRootPc(ch)) return "";
     const bassName = noteName(ch, ch.bassPc);
     return "/" + (relativeMode ? noteToDegree(bassName, majorKeyName(analysisTonic)) : bassName);
 }
@@ -296,9 +308,11 @@ function slashSuffix(ch) {
 // flagged quietly (.minor). Empty when nothing is missing. `ch` = a parsed chord,
 // `v` = its voicing entry ({ notes }).
 function missingTonesHtml(ch, v) {
-    if (!ch || !ch.pcs || !ch.pcs.length || ch.rootPc == null || !v) return "";
+    if (!ch || !ch.pcs || !ch.pcs.length || !v) return "";
+    const rootPc = effectiveRootPc(ch); // fall back to describe's chosen root when untagged
+    if (rootPc == null) return "";
     const voicedPc = new Set(v.notes.map((n) => ((noteToMidi(n) % 12) + 12) % 12));
-    const rootName = noteName(ch, ch.rootPc);
+    const rootName = noteName(ch, rootPc);
     const spans = [];
     for (const pc of ch.pcs) {
         if (voicedPc.has(((pc % 12) + 12) % 12)) continue;
