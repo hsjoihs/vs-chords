@@ -70,7 +70,10 @@ function spellMidi(pcName, midi) {
 // The bass is spelled by its own pitch class (so a slash bass reads correctly),
 // while `root` stays the naming root that the degree labels are measured against.
 function spellVoicedChord(ch, gen) {
-    const rootName = ch.rootPc != null ? noteName(ch, ch.rootPc) : ch.pcs.length ? noteName(ch, ch.pcs[0]) : "C";
+    // degree labels are measured from the *named* root — the tagged root, or the one
+    // describe chose (so an untagged Gsus4 reads G=R / C=P4 / D=P5, not rooted on C)
+    const rp = effectiveRootPc(ch);
+    const rootName = rp != null ? noteName(ch, rp) : ch.pcs.length ? noteName(ch, ch.pcs[0]) : "C";
     const notes = [];
     if (gen.bass != null) notes.push(spellMidi(noteName(ch, ((gen.bass % 12) + 12) % 12), gen.bass));
     for (const m of gen.uppers) notes.push(spellMidi(noteName(ch, ((m % 12) + 12) % 12), m));
