@@ -125,6 +125,11 @@ h1 {
     border-top: 1px solid var(--line)
 }
 
+.overlay-box .block {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
 .block h2 {
     font-size: calc(var(--scale) * 11px);
     text-transform: uppercase;
@@ -325,6 +330,10 @@ button.primary:hover {
     color: var(--muted)
 }
 
+.row .spec {
+    margin-top: 0;
+}
+
 .spec .slider {
     flex: 1;
     accent-color: var(--main);
@@ -437,7 +446,7 @@ button.primary:hover {
     font-size: calc(var(--scale) * 12px);
     color: var(--muted);
     background: rgba(14, 17, 22, .7);
-    padding: 0 var(--box-spacing);
+    padding: 0 4px;
     border: 1px solid var(--line);
     backdrop-filter: blur(4px);
 }
@@ -446,6 +455,7 @@ button.primary:hover {
     position: absolute;
     left: var(--box-spacing);
     top: var(--box-spacing);
+    width: 290px;
 }
 
 #analysis {
