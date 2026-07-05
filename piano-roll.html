@@ -47,6 +47,12 @@
 #axis-system .chord-missing { font-size: 9px; font-weight: 600; line-height: 1.1; margin-bottom: 2px; color: var(--muted); }
 #axis-system .chord-missing .crit { color: #ff5a3c; }   /* missing 3rd / 7th — prominent */
 #axis-system .chord-missing .minor { color: var(--muted); }  /* missing 5th / root / tension — quiet */
+/* a row of ❄ freeze toggles along the bottom of the roll, one under each column
+   (aligned to the SVG columns by JS-set left). Faint until pinned, then bright blue. */
+#freeze-row { position: relative; height: 16px; margin-top: 2px; }
+#freeze-row .freeze-toggle { position: absolute; transform: translateX(-50%); cursor: pointer; font-size: 12px; line-height: 1; color: var(--muted); opacity: 0.4; user-select: none; }
+#freeze-row .freeze-toggle:hover { opacity: 0.9; }
+#freeze-row .freeze-toggle.on { color: #5a9bff; opacity: 1; }
 /* the tonic-group shifter, relocated from #axis-system into the Coloring box */
 #tonic-group-control { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: var(--muted); }
 #tonic-group-control .tonic-shift { background: var(--panel2); color: var(--txt); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; line-height: 1; cursor: pointer; }
@@ -235,6 +241,7 @@
   <div id="piano-roll">
           <div id="axis-system"></div>
       <div id="piano-roll-grid"></div>
+      <div id="freeze-row"></div>
   </div>
 </div>
 

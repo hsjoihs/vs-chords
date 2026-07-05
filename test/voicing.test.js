@@ -97,3 +97,35 @@ test("lowering the temperature freezes the system onto the demo voicing", () => 
     for (let s = 0; s < N; s++) if (eqVoicing(V.generateVoicing(PROG, { S: 3.4, T: 0.3, seed: s }))) demo++;
     assert.ok(demo / N > 0.5, `at T=0.3 demo prob ${(demo / N).toFixed(3)} should exceed 0.5`);
 });
+
+test("a frozen chord is returned verbatim, whatever the temperature or seed", () => {
+    const frozen = { bass: 36, uppers: [60, 64, 67, 71] };
+    const prog = [{ pcs: [0, 4, 7, 11], bass: 0, frozen }];
+    for (const seed of [1, 7, 99]) {
+        const v = V.generateVoicing(prog, { S: 3.4, T: 5, seed }); // hot → would scatter if sampled
+        assert.deepEqual(v[0], frozen);
+    }
+});
+
+test("forward voice leading pulls an unfrozen chord toward a following frozen chord", () => {
+    // chord 0 (unfrozen C major) is followed by a frozen C major, once low, once high;
+    // the frozen chord's register should tug chord 0's mean pitch in the same direction
+    const meanUpper = (nextUppers) => {
+        const prog = [
+            { pcs: [0, 4, 7], bass: 0 },
+            { pcs: [0, 4, 7], bass: 0, frozen: { bass: 36, uppers: nextUppers } },
+        ];
+        let sum = 0,
+            n = 0;
+        for (let s = 0; s < 1500; s++) {
+            for (const u of V.generateVoicing(prog, { S: 3.4, T: 0.6, seed: s })[0].uppers) {
+                sum += u;
+                n++;
+            }
+        }
+        return sum / n;
+    };
+    const low = meanUpper([48, 52, 55]); // C3 E3 G3
+    const high = meanUpper([76, 79, 84]); // E5 G5 C6
+    assert.ok(high > low + 2, `pulled-high mean ${high.toFixed(1)} should exceed pulled-low ${low.toFixed(1)}`);
+});

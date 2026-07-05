@@ -43,9 +43,16 @@ let positionSec = 0, // the retained cursor position (seconds into the piece)
 // build an editor chord from a parsed symbol, auto-choosing the spelling slider
 function chordFromParsed(c) {
     // bassPc is the piano-roll-owned slash bass; it starts at the root (root
-    // position) and is preserved across re-rolls (a future piano-roll interaction
-    // will let the user move it, recording e.g. A7/E).
-    return { symbol: c.symbol, pcs: c.pcs, rootPc: c.rootPc, bassPc: c.rootPc, fifthStart: bestFifthStart(c.notes) };
+    // position) and is preserved across re-rolls. `frozen` (null unless the user
+    // pins this chord) holds a fixed { bass, uppers } voicing (MIDIs).
+    return { symbol: c.symbol, pcs: c.pcs, rootPc: c.rootPc, bassPc: c.rootPc, fifthStart: bestFifthStart(c.notes), frozen: null };
+}
+
+// capture a display voicing entry ({ notes: [names] }) as a frozen { bass, uppers }
+// in MIDI (lowest note is the bass, the rest are the ascending upper voices)
+function captureFrozen(v) {
+    const midis = v.notes.map((n) => noteToMidi(n)).sort((a, b) => a - b);
+    return midis.length ? { bass: midis[0], uppers: midis.slice(1) } : { bass: null, uppers: [] };
 }
 
 // name of a pitch class within a chord, via that chord's spelling window
@@ -77,7 +84,10 @@ function sampleVoicing() {
     // root position — so the voicing and the "…/bass" label never disagree.
     for (const c of chords) if (c.bassPc == null || !c.pcs.includes(c.bassPc)) c.bassPc = c.pcs.includes(c.rootPc) ? c.rootPc : null;
     const nonEmpty = chords.filter((c) => c.pcs && c.pcs.length);
-    const gen = generateVoicing(nonEmpty.map((c) => ({ pcs: c.pcs, bass: c.bassPc != null ? c.bassPc : c.rootPc })), { S: voicingS, T: voicingT, center: voicingCenter });
+    const gen = generateVoicing(
+        nonEmpty.map((c) => ({ pcs: c.pcs, bass: c.bassPc != null ? c.bassPc : c.rootPc, frozen: c.frozen || null })),
+        { S: voicingS, T: voicingT, center: voicingCenter },
+    );
     let gi = 0;
     return chords.map((c) => (c.pcs && c.pcs.length ? spellVoicedChord(c, gen[gi++]) : { root: c.rootPc != null ? noteName(c, c.rootPc) : "C", notes: [] }));
 }
@@ -103,7 +113,23 @@ function toggleVoicedNote(chordIdx, midi) {
         v.notes = [...v.notes, spellMidi(noteName(ch, pc), midi)].sort((a, b) => noteToMidi(a) - noteToMidi(b));
     }
     if (v.notes.length) ch.bassPc = ((noteToMidi(v.notes[0]) % 12) + 12) % 12; // the lowest note is the bass
+    if (ch.frozen) ch.frozen = captureFrozen(v); // editing a frozen chord updates its pin
     build(); // redraw the roll + the axis label (which now shows the slash), update the URL
+}
+// freeze / thaw chord `chordIdx`'s voicing. Freezing pins the current octaves (kept
+// across re-rolls and stored in the URL); thawing lets it be re-sampled again.
+function freezeChord(chordIdx) {
+    const ch = chords[chordIdx],
+        v = voicing[chordIdx];
+    if (!ch || !v || !v.notes.length) return;
+    ch.frozen = captureFrozen(v);
+    build(); // no re-sample — the voicing is unchanged; just show the frozen state + update the URL
+}
+function thawChord(chordIdx) {
+    const ch = chords[chordIdx];
+    if (!ch) return;
+    ch.frozen = null;
+    regenerateVoicing(); // this chord may now be re-sampled
 }
 // the temperature slider's log mapping and its inverse (0..1000 ↔ T)
 function voicingTfromSlider(v) {
@@ -333,7 +359,7 @@ function refreshAxisSystem() {
     const el = document.getElementById("axis-system");
     const ctrl = document.getElementById("tonic-group-control");
     if (!el || !ctrl) return;
-    const sig = JSON.stringify([tonicResidue, chordScheme, noteScheme, accessibleColors, relativeMode, analysisTonic, chords.map((c) => [c.symbol, c.pcs, c.bassPc]), voicing.map((v) => v.notes)]);
+    const sig = JSON.stringify([tonicResidue, chordScheme, noteScheme, accessibleColors, relativeMode, analysisTonic, chords.map((c) => [c.symbol, c.pcs, c.bassPc, !!c.frozen]), voicing.map((v) => v.notes)]);
     if (sig === lastAxisSig) return;
     lastAxisSig = sig;
     if (progEl) progEl.value = progReadonlyText(); // mirror the labels into #prog-readonly (always absolute)
@@ -341,6 +367,8 @@ function refreshAxisSystem() {
     if (chords.length === 0) {
         el.innerHTML = "";
         ctrl.innerHTML = "";
+        const fr = document.getElementById("freeze-row");
+        if (fr) fr.innerHTML = "";
         return;
     }
 
@@ -363,6 +391,7 @@ function refreshAxisSystem() {
     // sits directly above the notes it labels (only the name — no tonnetz grid,
     // which like the cylinder would overgeneralize by octave equivalence)
     let html = "";
+    let freezeHtml = ""; // a ❄ toggle per column, placed in #freeze-row at the roll's bottom
     chords.forEach((ch, i) => {
         const { cls, style } = chordNameAttrs(ch);
         // explain SoundQuest coloring on hover (also surfaces the fine T/P/Pm…
@@ -370,8 +399,11 @@ function refreshAxisSystem() {
         const titleAttr = chordScheme === "soundquest" ? ` title="${escapeHtml(sqTooltip(ch))}"` : "";
         const left = rollBoxX(i) + ROLL.boxW / 2 + BELL_PAD; // column centre (the SVG is shifted right by BELL_PAD)
         html += `<div class="child-box" style="left:${left}px">${missingTonesHtml(ch, voicing[i])}<span class="chord-name ${cls}"${style}${titleAttr}>${escapeHtml(chordLabel(ch) + slashSuffix(ch))}</span></div>`;
+        freezeHtml += `<span class="freeze-toggle${ch.frozen ? " on" : ""}" data-idx="${i}" style="left:${left}px" title="${ch.frozen ? "thaw" : "freeze"} this chord's voicing">❄ ${ch.frozen ? "Frozen" : "Freeze"}</span>`;
     });
     el.innerHTML = html;
+    const fr = document.getElementById("freeze-row");
+    if (fr) fr.innerHTML = freezeHtml;
 }
 
 /* ====================== piano roll (SVG) ======================
@@ -662,7 +694,7 @@ let urlTimer = null;
 function encodeState() {
     return {
         v: 1,
-        c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol, ch.bassPc]),
+        c: chords.map((ch) => [ch.pcs, ch.rootPc, ch.fifthStart, ch.symbol, ch.bassPc, ch.frozen]),
         t: [showConsonant, showDissonant, showIntervalFromRootLabels, showConnections, accessibleColors, showLabelsOnIntervalSegment].map((b) => (b ? 1 : 0)),
         ns: noteScheme,
         cs: chordScheme,
@@ -698,12 +730,13 @@ function restoreState() {
     if (!st || !Array.isArray(st.c)) return false;
     restoring = true;
     try {
-        chords = st.c.map(([pcs, rootPc, fifthStart, symbol, bassPc]) => ({
+        chords = st.c.map(([pcs, rootPc, fifthStart, symbol, bassPc, frozen]) => ({
             pcs: pcs.slice(),
             rootPc: rootPc == null ? null : rootPc,
             bassPc: bassPc != null ? bassPc : rootPc == null ? null : rootPc, // the slash (older links: root position)
             fifthStart,
             symbol,
+            frozen: frozen || null, // a pinned { bass, uppers } voicing (older links: none)
         }));
         if (Array.isArray(st.t)) {
             [showConsonant, showDissonant, showIntervalFromRootLabels, showConnections, accessibleColors] = st.t.map(Boolean);
@@ -1044,6 +1077,13 @@ function setupUI() {
     document.getElementById("piano-roll-grid").addEventListener("click", (e) => {
         const g = e.target.closest("[data-chord]");
         if (g) toggleVoicedNote(Number(g.dataset.chord), Number(g.dataset.midi));
+    });
+    // the ❄ toggles along the roll's bottom freeze/thaw each chord's voicing
+    document.getElementById("freeze-row").addEventListener("click", (e) => {
+        const t = e.target.closest(".freeze-toggle");
+        if (!t) return;
+        const i = Number(t.dataset.idx);
+        chords[i] && chords[i].frozen ? thawChord(i) : freezeChord(i);
     });
 
     document.getElementById("play").onclick = () => {

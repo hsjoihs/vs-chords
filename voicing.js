@@ -110,18 +110,23 @@
         return pcs.slice().sort((a, b) => bestDist(a, center) - bestDist(b, center));
     }
 
+    // the semitone distance from p to the nearest pitch in `targets` (∞ if empty)
+    function nearestDist(p, targets) {
+        let dmin = Infinity;
+        if (targets) for (const q of targets) dmin = Math.min(dmin, Math.abs(p - q));
+        return dmin;
+    }
     // place one upper voice (pitch class pc), given the already-placed upper pitches
-    // of this chord and the previous chord's upper pitches (null for the first chord)
-    function placeUpper(pc, placed, prevUppers, opts) {
+    // of this chord, the previous chord's upper pitches (null for the first chord),
+    // and — when the *next* chord is frozen (its voicing is known ahead of time) —
+    // that next chord's upper pitches, so the voice also leads smoothly into it.
+    function placeUpper(pc, placed, prevUppers, nextUppers, opts) {
         const cands = octaveCandidates(pc, UPPER_LO, UPPER_HI);
         const energies = cands.map((p) => {
             let E = potential(p, opts.center, opts.S);
             for (const q of placed) E += penalty(Math.abs(p - q), opts.tritone);
-            if (prevUppers && prevUppers.length) {
-                let dmin = Infinity;
-                for (const q of prevUppers) dmin = Math.min(dmin, Math.abs(p - q));
-                E += VL_LAMBDA * dmin;
-            }
+            if (prevUppers && prevUppers.length) E += VL_LAMBDA * nearestDist(p, prevUppers);
+            if (nextUppers && nextUppers.length) E += VL_LAMBDA * nearestDist(p, nextUppers);
             return E;
         });
         return cands[boltzmannPick(energies, opts.T, opts.rng)];
@@ -134,12 +139,13 @@
         return cands[boltzmannPick(energies, opts.T, opts.rng)];
     }
 
-    // Generate a voicing for a progression. Each chord is { pcs:[…], bass } where
-    // `bass` is the pitch class to double in the bass — the slash note, an
-    // independent piano-roll concern (it falls back to a legacy `rootPc` field).
-    // Returns one { bass, uppers:[ascending midis] } per chord. Options: S (potential
-    // width), T (temperature), center (the well's centre, default F♯4), and either
-    // rng (a () → [0,1) function) or seed.
+    // Generate a voicing for a progression. Each chord is { pcs:[…], bass, frozen }
+    // where `bass` is the pitch class to double in the bass — the slash note, an
+    // independent piano-roll concern (it falls back to a legacy `rootPc` field) — and
+    // an optional `frozen` = { bass, uppers } pins that chord's exact voicing (it is
+    // not re-sampled, and a preceding unfrozen chord leads into it). Returns one
+    // { bass, uppers:[ascending midis] } per chord. Options: S (potential width),
+    // T (temperature), center (the well's centre, default F♯4), and rng or seed.
     function generateVoicing(chords, options) {
         const opts = options || {};
         const S = opts.S != null ? opts.S : 3.4;
@@ -148,10 +154,20 @@
         const rng = opts.rng || (opts.seed != null ? mulberry32(opts.seed) : Math.random);
         const out = [];
         let prevUppers = null;
-        for (const ch of chords) {
+        for (let i = 0; i < chords.length; i++) {
+            const ch = chords[i];
+            if (ch.frozen) {
+                // pinned: use the stored voicing verbatim
+                out.push({ bass: ch.frozen.bass, uppers: ch.frozen.uppers.slice() });
+                prevUppers = ch.frozen.uppers;
+                continue;
+            }
             const tritone = hasTritone(ch.pcs);
+            // if the next chord is frozen its voicing is known, so lead into it too
+            const next = chords[i + 1];
+            const nextUppers = next && next.frozen ? next.frozen.uppers : null;
             const placed = [];
-            for (const pc of placementOrder(ch.pcs, center)) placed.push(placeUpper(pc, placed, prevUppers, { S, T, center, tritone, rng }));
+            for (const pc of placementOrder(ch.pcs, center)) placed.push(placeUpper(pc, placed, prevUppers, nextUppers, { S, T, center, tritone, rng }));
             const uppers = placed.slice().sort((a, b) => a - b);
             const bassPc = ch.bass != null ? ch.bass : ch.rootPc; // the slash bass (default: the naming root)
             const bass = bassPc != null ? placeBass(bassPc, { S, T, rng }) : null;
