@@ -449,7 +449,11 @@ test("describe spells a 7th through the base, not as a tension", () => {
 // [1] quartal symbols (q/q7/q10/q13) are reserved for purely quartal chords
 test("describe never writes a quartal chord with a tension", () => {
     assert.equal(T.describe([7, 0, 5], 7, -3), "Gq7"); // a pure quartal chord still uses q7
-    for (const pcs of [[0, 5, 10, 2], [0, 4, 5, 10], [0, 5, 10, 1], [0, 5, 11]]) {
+    // pure quartal-mode stacks are legitimately quartal-named (no tension involved)
+    assert.equal(T.describe([0, 5, 11], 0, -3), "CqIon7");
+    assert.equal(T.describe([0, 4, 5, 10], 0, -3), "CqMix10");
+    // …but a quartal stack PLUS an extra tension is never written with "q"
+    for (const pcs of [[0, 5, 10, 2], [0, 5, 10, 1], [0, 5, 8, 10], [0, 5, 9, 10], [0, 2, 4, 5, 10]]) {
         const name = T.describe(pcs, pcs[0], -3);
         assert.ok(!/q/.test(name), `quartal+tension leaked "q": ${JSON.stringify(pcs)} -> "${name}"`);
         assert.deepEqual(sortSet(T.parseChord(name).pcs), sortSet(pcs), `"${name}"`);

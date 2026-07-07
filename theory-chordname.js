@@ -230,11 +230,40 @@
         ["-7", { 1: 0, 3: 3, 5: 7, 7: 10 }],
         ["-", BARE_MIN], // minor triad (Conv.1) or minor 7th (Conv.2)
 
-        // quartal
+        // quartal — pure perfect-4th stacks (q / q7 / … / q19) and mode-flavoured
+        // stacks where some 4ths turn augmented (qIon7, qLyd10, qAeo16, …). Each is
+        // an atomic quality: no tensions or modifications are ever added (see QUARTAL).
+        // The mode-prefixed names contain letters (I in qIon, A in qAeo, V in nothing
+        // yet) that must NOT be mistaken for note names or Roman numerals — those live
+        // only in the quality suffix, after the root/numeral has already been consumed.
+        ["qLyd4", { 1: 0, 4: 6 }],
+        ["qIon7", { 1: 0, 4: 5, 7: 11 }],
+        ["qLyd7", { 1: 0, 4: 6, 7: 11 }],
+        ["qIon10", { 1: 0, 4: 5, 7: 11, 10: 16 }],
+        ["qLyd10", { 1: 0, 4: 6, 7: 11, 10: 16 }],
+        ["qMix10", { 1: 0, 4: 5, 7: 10, 10: 16 }],
+        ["qDblTri10", { 1: 0, 4: 6, 7: 11, 10: 17 }],
+        ["qIon13", { 1: 0, 4: 5, 7: 11, 10: 16, 13: 21 }],
+        ["qDor13", { 1: 0, 4: 5, 7: 10, 10: 15, 13: 21 }],
+        ["qLyd13", { 1: 0, 4: 6, 7: 11, 10: 16, 13: 21 }],
+        ["qMix13", { 1: 0, 4: 5, 7: 10, 10: 16, 13: 21 }],
+        ["qIon16", { 1: 0, 4: 5, 7: 11, 10: 16, 13: 21, 16: 26 }],
+        ["qDor16", { 1: 0, 4: 5, 7: 10, 10: 15, 13: 21, 16: 26 }],
+        ["qLyd16", { 1: 0, 4: 6, 7: 11, 10: 16, 13: 21, 16: 26 }],
+        ["qMix16", { 1: 0, 4: 5, 7: 10, 10: 16, 13: 21, 16: 26 }],
+        ["qAeo16", { 1: 0, 4: 5, 7: 10, 10: 15, 13: 20, 16: 26 }],
+        ["qIon19", { 1: 0, 4: 5, 7: 11, 10: 16, 13: 21, 16: 26, 19: 31 }],
+        ["qDor19", { 1: 0, 4: 5, 7: 10, 10: 15, 13: 21, 16: 26, 19: 31 }],
+        ["qPhr19", { 1: 0, 4: 5, 7: 10, 10: 15, 13: 20, 16: 25, 19: 31 }],
+        ["qLyd19", { 1: 0, 4: 6, 7: 11, 10: 16, 13: 21, 16: 26, 19: 31 }],
+        ["qMix19", { 1: 0, 4: 5, 7: 10, 10: 16, 13: 21, 16: 26, 19: 31 }],
+        ["qAeo19", { 1: 0, 4: 5, 7: 10, 10: 15, 13: 20, 16: 26, 19: 31 }],
+        ["q16", { 1: 0, 4: 5, 7: 10, 10: 15, 13: 20, 16: 25 }],
+        ["q19", { 1: 0, 4: 5, 7: 10, 10: 15, 13: 20, 16: 25, 19: 30 }],
         ["q7", {1: 0, 4: 5, 7: 10 }],
         ["q10", {1: 0, 4: 5, 7: 10, 10: 15 }],
         ["q13", {1: 0, 4: 5, 7: 10, 10: 15, 13: 20 }],
-        ["q", { 1: 0, 4: 5 }], 
+        ["q", { 1: 0, 4: 5 }],
 
         ["", { 1: 0, 3: 4, 5: 7 }], // bare major — must stay last
     ];
@@ -507,7 +536,14 @@
                 return ADD_ACC[a] + d;
             });
 
-    const QUARTAL = new Set(["q", "q7", "q10", "q13"]);
+    const QUARTAL = new Set([
+        "q", "q7", "q10", "q13", "q16", "q19",
+        "qLyd4", "qIon7", "qLyd7",
+        "qIon10", "qLyd10", "qMix10", "qDblTri10",
+        "qIon13", "qDor13", "qLyd13", "qMix13",
+        "qIon16", "qDor16", "qLyd16", "qMix16", "qAeo16",
+        "qIon19", "qDor19", "qPhr19", "qLyd19", "qMix19", "qAeo19",
+    ]);
     // the degree in a quality's formula that produces pitch class `v`
     function degreeOfInterval(formula, v) {
         for (const d of Object.keys(formula)) if (mod12(formula[d]) === v) return Number(d);

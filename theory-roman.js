@@ -81,10 +81,11 @@
         return d;
     }
 
-    // does the quality suffix already state the chord's third (so the numeral's
-    // upper/lower case should be ignored rather than adding another "m")?
+    // does the quality suffix already fix the chord's third — or, for quartal (q…),
+    // dispense with a third entirely — so the numeral's upper/lower case must not add
+    // another "m"? (The "q" here is the quartal marker.)
     function qualityStatesThird(q) {
-        return /^(maj|Maj|M|m|Δ|△|dim|°|aug|\+|sus|∅|ø)/.test(q);
+        return /^(maj|Maj|M|m|Δ|△|dim|°|aug|\+|sus|∅|ø|q)/.test(q);
     }
 
     // a single scale degree -> absolute note name
