@@ -1,6 +1,6 @@
 # vs.chords
 
-A multi-purpose web app that helps you win the battle against chord progressions.
+Helps you win the battle against chord progressions
 
 It is intentionally packed with features, not unlike an [IDE (Integrated development environment)](https://en.wikipedia.org/wiki/Integrated_development_environment): type a progression, see it spelled correctly, watch it on a 3-D cylinder, re-read it as Roman numerals in any key, transpose it, and color it by several theories of harmonic function — all from a single static page.
 

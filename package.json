@@ -1,7 +1,7 @@
 {
     "name": "vs-chords",
     "version": "1.0.0",
-    "description": "A multi-purpose web app that helps you win the battle against chord progressions",
+    "description": "Helps you win the battle against chord progressions",
     "private": true,
     "type": "commonjs",
     "scripts": {
