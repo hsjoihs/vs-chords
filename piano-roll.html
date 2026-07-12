@@ -48,7 +48,7 @@
 /* a row of ❄ freeze toggles along the bottom of the roll, one under each column
    (aligned to the SVG columns by JS-set left). Faint until pinned, then bright blue. */
 #freeze-row { position: relative; height: 16px; margin-top: 2px; }
-#freeze-row .freeze-toggle { position: absolute; transform: translateX(-50%); cursor: pointer; font-size: 12px; line-height: 1; color: var(--muted); opacity: 0.4; user-select: none; }
+#freeze-row .freeze-toggle { white-space: nowrap; position: absolute; transform: translateX(-50%); cursor: pointer; font-size: 12px; line-height: 1; color: var(--muted); opacity: 0.4; user-select: none; }
 #freeze-row .freeze-toggle:hover { opacity: 0.9; }
 #freeze-row .freeze-toggle.on { color: #5a9bff; opacity: 1; }
 /* the tonic-group shifter, relocated from #axis-system into the Coloring box */
