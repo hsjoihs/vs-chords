@@ -89,7 +89,7 @@ function sampleVoicing() {
     const nonEmpty = chords.filter((c) => c.pcs && c.pcs.length);
     const gen = generateVoicing(
         nonEmpty.map((c) => ({ pcs: c.pcs, bass: c.bassPc != null ? c.bassPc : c.rootPc, frozen: c.frozen || null })),
-        { S: voicingS, T: voicingT, center: voicingCenter },
+        { S: voicingS, T: voicingT, center: voicingCenter, loop: loopEnabled },
     );
     let gi = 0;
     return chords.map((c) => (c.pcs && c.pcs.length ? spellVoicedChord(c, gen[gi++]) : { root: c.rootPc != null ? noteName(c, c.rootPc) : "C", notes: [] }));
@@ -156,7 +156,8 @@ let showConsonant = true, // m3, M3, P4/P5 interior intervals
     showDissonant = true, // H, W, TT interior intervals
     showIntervalFromRootLabels = true,
     showLabelsOnIntervalSegment = true, // write m2 / m9 / TT on the I-beams (a non-colour cue); matches the checked box
-    showConnections = true;
+    showConnections = true,
+    loopEnabled = false; // when set, the last chord voice-leads back into the first and playback repeats
 
 /* ====================== axis-system panel (harmonic function + tonnetz) ======================
  * A crude harmonic-function approximation (see theory-pitchclass.js): the chord
@@ -601,7 +602,9 @@ function renderPianoRoll() {
         return x;
     }
 
-    const width = ROLL.padLeft + (N - 1) * ROLL.colW + ROLL.boxW + ROLL.gutter;
+    // loop mode reaches one column past the end for the wrap-around arrow into the initial chord
+    const loopExtra = loopEnabled && N > 1 ? ROLL.colW : 0;
+    const width = ROLL.padLeft + (N - 1) * ROLL.colW + ROLL.boxW + ROLL.gutter + loopExtra;
     const height = 2 * ROLL.padTop + (ROLL_MIDI_HI - ROLL_MIDI_LO + 1) * ROLL.rowH;
     // the viewBox is opened out to the left by BELL_PAD so the register bell fits
     const viewW = width + BELL_PAD;
@@ -641,22 +644,31 @@ function renderPianoRoll() {
     // ghost slots underneath, then arrows, then the solid notes, then I-beams on top
     for (let i = 0; i < N; i++) for (const gh of columns[i].ghosts) s += rollNoteSvg(rollBoxX(i), gh, true, i);
     
-    if (showConnections) for (let i = 0; i < N - 1; i++) {
-        const x1 = rollBoxX(i + 1);
-        for (const a of columns[i].voiced)
-            for (const b of columns[i + 1].voiced) {
-                const d = Math.abs(a.midi - b.midi);
-                if (d > 2) continue; // only held / semitone / whole-tone steps get an arrow
-                // match the cylinder / legend: held = thick solid, whole tone =
-                // dashed, semitone = dotted (a round-capped fine dash reads as dots)
-                const st =
-                    d === 0
-                        ? { kind: "held", col: "#999", w: 2.6, dash: "" }
-                        : d === 1
-                          ? { kind: "semitone", col: "var(--semitone)", w: 1.5, dash: ' stroke-dasharray="0.1 3" stroke-linecap="round"' }
-                          : { kind: "whole", col: "var(--whole)", w: 1.5, dash: ' stroke-dasharray="5 3"' };
-                s += `<line x1="${arrowStartX(i, a.midi)}" y1="${rollPitchY(a.midi)}" x2="${x1 - 2}" y2="${rollPitchY(b.midi)}" stroke="${st.col}" stroke-width="${st.w}" stroke-opacity="0.9"${st.dash} marker-end="url(#roll-arrow-${st.kind})"/>`;
-            }
+    // one arrow for every held / semitone / whole-tone step between adjacent columns.
+    // match the cylinder / legend: held = thick solid, whole tone = dashed, semitone
+    // = dotted (a round-capped fine dash reads as dots). fromX is the source column.
+    const stepArrow = (fromCol, a, x2, b) => {
+        const d = Math.abs(a.midi - b.midi);
+        if (d > 2) return ""; // only held / semitone / whole-tone steps get an arrow
+        const st =
+            d === 0
+                ? { kind: "held", col: "#999", w: 2.6, dash: "" }
+                : d === 1
+                  ? { kind: "semitone", col: "var(--semitone)", w: 1.5, dash: ' stroke-dasharray="0.1 3" stroke-linecap="round"' }
+                  : { kind: "whole", col: "var(--whole)", w: 1.5, dash: ' stroke-dasharray="5 3"' };
+        return `<line x1="${arrowStartX(fromCol, a.midi)}" y1="${rollPitchY(a.midi)}" x2="${x2 - 2}" y2="${rollPitchY(b.midi)}" stroke="${st.col}" stroke-width="${st.w}" stroke-opacity="0.9"${st.dash} marker-end="url(#roll-arrow-${st.kind})"/>`;
+    };
+    if (showConnections) {
+        for (let i = 0; i < N - 1; i++) {
+            const x1 = rollBoxX(i + 1);
+            for (const a of columns[i].voiced) for (const b of columns[i + 1].voiced) s += stepArrow(i, a, x1, b);
+        }
+        // in loop mode the final chord leads into the (non-displayed) next chord — the
+        // initial chord repeating — so its arrows reach out to a phantom column past the end
+        if (loopEnabled && N > 1) {
+            const xEnd = rollBoxX(N);
+            for (const a of columns[N - 1].voiced) for (const b of columns[0].voiced) s += stepArrow(N - 1, a, xEnd, b);
+        }
     }
     for (let i = 0; i < N; i++) for (const v of columns[i].voiced) s += rollNoteSvg(rollBoxX(i), v, false, i);
 
@@ -712,6 +724,7 @@ function encodeState() {
         vs: voicingS, // voicing potential width
         vt: voicingT, // voicing temperature
         vc: voicingCenter, // voicing well centre (MIDI)
+        lp: loopEnabled ? 1 : 0, // loop playback (final chord leads back into the first)
     };
 }
 function scheduleUrlUpdate() {
@@ -777,6 +790,8 @@ function restoreState() {
         if (st.vs != null) voicingS = st.vs;
         if (st.vt != null) voicingT = st.vt;
         if (st.vc != null) voicingCenter = st.vc;
+        loopEnabled = !!st.lp; // absent in older links → off
+        document.getElementById("tLoop").checked = loopEnabled;
         refreshVoicingUI(); // put the voicing sliders where the URL says
         renderChips();
         regenerateVoicing(); // restored progression + params → sample a voicing (fills #prog-readonly)
@@ -1057,12 +1072,18 @@ function playFrom(offset) {
             meterNumerator: meterNum,
             offset,
             onEnd: (reason) => {
-                document.getElementById("play").textContent = "▶ Play";
                 stopPositionLoop();
                 if (reason === "ended") {
+                    if (loopEnabled) {
+                        playFrom(0); // loop: start the progression over from the top
+                        return;
+                    }
+                    document.getElementById("play").textContent = "▶ Play";
                     positionSec = 0; // natural end → cursor back to start
                     refreshTransportUI();
                     highlightChord(-1);
+                } else {
+                    document.getElementById("play").textContent = "▶ Play";
                 }
             },
         },
@@ -1232,6 +1253,10 @@ function setupUI() {
     cEl.onchange = regenerateVoicing;
     voicingCenter = Number(cEl.value);
     document.getElementById("reroll").onclick = regenerateVoicing;
+    document.getElementById("tLoop").onchange = (e) => {
+        loopEnabled = e.target.checked;
+        regenerateVoicing(); // the final chord now leads into (or away from) the first
+    };
 
     // a bottom-bar button toggles its overlay panel (on click), or reveals it on a
     // 0.5 s hover; the panel's own hide button hides it.

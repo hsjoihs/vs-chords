@@ -145,7 +145,9 @@
     // an optional `frozen` = { bass, uppers } pins that chord's exact voicing (it is
     // not re-sampled, and a preceding unfrozen chord leads into it). Returns one
     // { bass, uppers:[ascending midis] } per chord. Options: S (potential width),
-    // T (temperature), center (the well's centre, default F♯4), and rng or seed.
+    // T (temperature), center (the well's centre, default F♯4), rng or seed, and
+    // `loop` — when true the final chord also leads into the first chord (which, being
+    // sampled first, is known), so the progression joins up smoothly when it repeats.
     function generateVoicing(chords, options) {
         const opts = options || {};
         const S = opts.S != null ? opts.S : 3.4;
@@ -163,9 +165,11 @@
                 continue;
             }
             const tritone = hasTritone(ch.pcs);
-            // if the next chord is frozen its voicing is known, so lead into it too
+            // if the next chord is frozen its voicing is known, so lead into it too;
+            // in loop mode the "next" of the final chord is the (already-sampled) first
             const next = chords[i + 1];
-            const nextUppers = next && next.frozen ? next.frozen.uppers : null;
+            let nextUppers = next && next.frozen ? next.frozen.uppers : null;
+            if (opts.loop && i === chords.length - 1 && out.length) nextUppers = out[0].uppers;
             const placed = [];
             for (const pc of placementOrder(ch.pcs, center)) placed.push(placeUpper(pc, placed, prevUppers, nextUppers, { S, T, center, tritone, rng }));
             const uppers = placed.slice().sort((a, b) => a - b);
